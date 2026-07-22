@@ -11,7 +11,7 @@
       "targetType": "mtp",
       "deviceName": "MyCollector",
       "destinationPath": "Internal shared storage\\Projects\\ExampleProject\\Design",
-      "extensions": [ ".csv", ".dxf" ]
+      "extensions": [ ".csv", ".dxf", ".xml", ".ttm" ]
     },
     {
       "name": "Stage to USB stick",
@@ -19,7 +19,7 @@
       "targetType": "folder",
       "deviceName": "",
       "destinationPath": "E:\\Projects\\ExampleProject\\Design",
-      "extensions": [ ".csv", ".dxf" ]
+      "extensions": [ ".csv", ".dxf", ".xml", ".ttm" ]
     },
     {
       "name": "Collector - pull from USB",
@@ -27,7 +27,7 @@
       "targetType": "folder",
       "deviceName": "",
       "destinationPath": "C:\\Projects\\ExampleProject\\Design",
-      "extensions": [ ".csv", ".dxf" ]
+      "extensions": [ ".csv", ".dxf", ".xml", ".ttm" ]
     }
   ]
 }

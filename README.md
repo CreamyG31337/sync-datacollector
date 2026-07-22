@@ -1,7 +1,8 @@
 # Sync DataCollector
 
 A lightweight Windows GUI for **one-way file sync from a PC to survey data collectors** —
-push your design files (`.csv`, `.dxf`, …) onto a field data collector before you head out.
+push your design files (`.csv`, `.dxf`, LandXML `.xml`, Trimble `.ttm` surfaces, …) onto a
+field data collector before you head out.
 
 It handles the two ways collectors actually connect:
 
@@ -77,7 +78,9 @@ All of this uses only built-in Windows components — nothing to download or ins
    - **Device name** (mtp only) — click **Detect…** to list connected MTP devices and pick yours.
    - **Destination** — the folder to create/fill on the target. For `mtp`, the first
      segment is the device storage, e.g. `Internal shared storage\Projects\MyJob\Design`.
-   - **File types** — comma-separated, defaults to `.csv, .dxf`.
+   - **File types** — comma-separated, defaults to `.csv, .dxf, .xml, .ttm`. `.xml`
+     files are only synced if they are actually **LandXML** (root `<LandXML>`), so
+     unrelated project/config XML is skipped automatically.
 4. Click **Save** to persist the profile, then **Sync now**. Watch the log; the status line
    shows `Copied N, skipped M, failed K`.
 
@@ -121,7 +124,7 @@ tool runs on both ends.
 | `profiles[].targetType` | `"folder"` or `"mtp"`. |
 | `profiles[].deviceName` | MTP device name as shown under "This PC" (mtp only). Use **Detect…** if unsure. |
 | `profiles[].destinationPath` | Target folder. For `mtp`, first segment is the device storage, e.g. `Internal shared storage\Projects\...\Design`. |
-| `profiles[].extensions` | File types to sync, e.g. `[".csv", ".dxf"]`. |
+| `profiles[].extensions` | File types to sync, e.g. `[".csv", ".dxf", ".xml", ".ttm"]`. `.xml` is content-checked and only synced when it is LandXML. |
 | `mtp.retries` | Extra attempts per file after the first (default 2). |
 | `mtp.verifyAfterUpload` | Re-read the on-device size and confirm it matches (default true). |
 

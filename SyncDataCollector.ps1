@@ -47,7 +47,7 @@ function New-Profile {
         [string]$TargetType = 'folder',
         [string]$DeviceName = '',
         [string]$DestinationPath = '',
-        [string[]]$Extensions = @('.csv', '.dxf')
+        [string[]]$Extensions = @('.csv', '.dxf', '.xml', '.ttm')
     )
     [pscustomobject]@{
         name            = $Name
@@ -410,6 +410,31 @@ function Get-MtpInfo {
     return @{ Item = $it; Length = $len; Mtime = $md }
 }
 
+# A .xml file is only synced if it is actually LandXML (root element <LandXML>).
+# Streams just to the first element, so it is cheap even for large surfaces.
+function Test-LandXml {
+    param([string]$Path)
+    try {
+        $settings = New-Object System.Xml.XmlReaderSettings
+        $settings.DtdProcessing = [System.Xml.DtdProcessing]::Prohibit  # fast + safe (no external DTD)
+        $settings.XmlResolver = $null
+        $settings.IgnoreComments = $true
+        $settings.IgnoreProcessingInstructions = $true
+        $settings.IgnoreWhitespace = $true
+        $reader = [System.Xml.XmlReader]::Create($Path, $settings)
+        try {
+            while ($reader.Read()) {
+                if ($reader.NodeType -eq [System.Xml.XmlNodeType]::Element) {
+                    return ($reader.LocalName -eq 'LandXML')   # LocalName ignores any namespace prefix
+                }
+            }
+            return $false
+        }
+        finally { $reader.Dispose() }
+    }
+    catch { return $false }
+}
+
 # --------------------------------------------------------------------------
 # Sync engine
 # --------------------------------------------------------------------------
@@ -461,10 +486,21 @@ function Invoke-Sync {
         Target-EnsureDir $ctx $destRoot
 
         & $OnLog "Scanning source for $($exts -join ', ') ..." 'INFO'
-        $files = @(Get-ChildItem -LiteralPath $src -Recurse -File -ErrorAction SilentlyContinue |
+        $candidates = @(Get-ChildItem -LiteralPath $src -Recurse -File -ErrorAction SilentlyContinue |
             Where-Object { $exts -contains $_.Extension.ToLowerInvariant() })
+        # .xml only counts if it is LandXML; other extensions pass on name alone.
+        $files = @()
+        $skippedXml = 0
+        foreach ($cand in $candidates) {
+            if ($cand.Extension.ToLowerInvariant() -eq '.xml' -and -not (Test-LandXml $cand.FullName)) {
+                $skippedXml++
+                continue
+            }
+            $files += $cand
+        }
         $total = $files.Count
-        & $OnLog "Found $total matching file(s)." 'INFO'
+        $note = if ($skippedXml -gt 0) { " (excluded $skippedXml non-LandXML .xml)" } else { '' }
+        & $OnLog "Found $total matching file(s)$note." 'INFO'
         & $OnProgress 0 $total
 
         $copied = 0; $skipped = 0; $failed = 0
