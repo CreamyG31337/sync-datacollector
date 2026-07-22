@@ -1,0 +1,12 @@
+# Real per-site config with network paths / device names / project folders.
+# Never commit this — copy config.example.json to config.json and edit locally.
+config.json
+
+# Runtime log
+sync-log.txt
+
+# Windows / editor noise
+Thumbs.db
+Desktop.ini
+*.tmp
+.vs/
