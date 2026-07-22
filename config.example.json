@@ -2,8 +2,6 @@
   "lastProfile": "Collector over USB (MTP)",
   "mtp": {
     "retries": 2,
-    "fileTimeoutSec": 90,
-    "minBytesPerSec": 200000,
     "verifyAfterUpload": true
   },
   "profiles": [

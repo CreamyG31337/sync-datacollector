@@ -11,8 +11,8 @@ It handles the two ways collectors actually connect:
   disk (useful when IT policy blocks the collector from connecting to the PC directly,
   so you stage to a USB stick and pull from it on the collector).
 
-No install, no build step: it's a single PowerShell script + WinForms GUI that runs on
-stock Windows (PowerShell 5.1 + .NET Framework 4.x).
+No install, no build step, **no third-party libraries**: a single PowerShell script +
+WinForms GUI that runs on stock Windows (PowerShell 5.1 + .NET Framework 4.x).
 
 > Not affiliated with, or endorsed by, any hardware manufacturer. "MTP" is a generic
 > protocol; this tool works with any MTP-class device.
@@ -24,28 +24,41 @@ stock Windows (PowerShell 5.1 + .NET Framework 4.x).
 - **Named profiles** — one install drives several jobs (a collector over MTP, staging to
   a USB stick, pulling from USB on the collector). Pick a profile, press **Sync now**.
 - **Mirrors your folder tree** under the destination (subfolders preserved).
-- **Copies only new or changed files** — compares size and timestamp; re-syncs are fast.
+- **Copies only new or changed files** — compares size and modified-time; re-syncs are fast.
 - **Live check every run** — it re-reads what's actually on the target each time; it never
   trusts a cached list/manifest.
 - **One-way and additive** — never deletes anything on the collector.
 - **Configurable** source, target, device name, and file types per profile.
-- **MTP reliability safeguards** (MTP is flaky by nature):
-  - **Atomic finalize** — uploads to a `*.partsync` temp name, verifies it, then renames
-    into place. An interrupted transfer never leaves a half file masquerading as the real one.
-  - **Per-file watchdog timeout** — a stuck transfer is cancelled and retried instead of
-    hanging the app forever. Timeout scales with file size.
-  - **On-device size verification** after each upload.
-  - **Retry with reconnect** — transient failures are retried, reconnecting the device
-    between attempts.
+- **Reliable MTP** — see below.
+
+---
+
+## How MTP works here (and why it's reliable)
+
+Most MTP/WPD automation libraries open the device with `IPortableDevice`, which on some
+real collectors (e.g. the Trimble TSC5) **hangs indefinitely** — freezing both the app and
+File Explorer. This tool avoids that entirely: it drives MTP through the **Windows Shell
+namespace** — the exact mechanism File Explorer uses — plus **`IFileOperation`** for the
+actual transfers. Concretely:
+
+- **Navigate / list / create folders / read size+date** via `Shell.Application`.
+- **Copy / overwrite / delete** via `IFileOperation` — silent, synchronous (no progress
+  dialogs, no "replace?" or "delete?" prompts), and it **coexists with an open Explorer
+  window** on the device.
+- **Size verification** after each upload; **retries** on transient failures.
+- MTP devices report modified-times in **UTC**; the tool accounts for that so unchanged
+  files are correctly skipped on re-sync.
+
+All of this uses only built-in Windows components — nothing to download or install.
 
 ---
 
 ## Requirements
 
 - Windows 10/11 (or a Windows data collector) with **PowerShell 5.1** and
-  **.NET Framework 4.6.1+** (both are present on a default modern Windows).
-- For **MTP** targets: the bundled `lib\MediaDevices.dll` (already included).
-  Folder targets need nothing extra.
+  **.NET Framework 4.x** — both present on a default modern Windows.
+- For **MTP** targets: the collector connected over USB, unlocked, and set to
+  **File transfer (MTP)** mode. Nothing else to install.
 
 ---
 
@@ -57,12 +70,13 @@ stock Windows (PowerShell 5.1 + .NET Framework 4.x).
    ```
    (`config.json` is git-ignored so your real network paths and project names never
    get committed.)
-2. **Run it.** Double-click **`SyncDataCollector.cmd`** (or run the `.ps1` with `-STA`).
+2. **Run it.** Double-click **`SyncDataCollector.cmd`**.
 3. In the GUI, pick or edit a **profile**:
    - **Source folder** — where your design files live (Browse…).
    - **Target type** — `folder` (USB / local path) or `mtp` (device over USB).
    - **Device name** (mtp only) — click **Detect…** to list connected MTP devices and pick yours.
-   - **Destination** — the folder to create/fill on the target.
+   - **Destination** — the folder to create/fill on the target. For `mtp`, the first
+     segment is the device storage, e.g. `Internal shared storage\Projects\MyJob\Design`.
    - **File types** — comma-separated, defaults to `.csv, .dxf`.
 4. Click **Save** to persist the profile, then **Sync now**. Watch the log; the status line
    shows `Copied N, skipped M, failed K`.
@@ -91,7 +105,7 @@ Destination: C:\...\Design            (a folder on the collector)
 ```
 
 Copy this whole app folder onto the USB stick (or install it on the collector) so the same
-tool runs on both ends. Folder→folder legs don't use MediaDevices.dll at all.
+tool runs on both ends.
 
 ---
 
@@ -105,12 +119,10 @@ tool runs on both ends. Folder→folder legs don't use MediaDevices.dll at all.
 | `profiles[].name` | Display name in the dropdown. |
 | `profiles[].sourcePath` | Folder to copy **from** (always a normal path). |
 | `profiles[].targetType` | `"folder"` or `"mtp"`. |
-| `profiles[].deviceName` | MTP device friendly name (mtp only). Use **Detect…** if unsure. |
-| `profiles[].destinationPath` | Target folder. For `mtp`, the first segment is the device storage, e.g. `Internal shared storage\Projects\...\Design`. |
+| `profiles[].deviceName` | MTP device name as shown under "This PC" (mtp only). Use **Detect…** if unsure. |
+| `profiles[].destinationPath` | Target folder. For `mtp`, first segment is the device storage, e.g. `Internal shared storage\Projects\...\Design`. |
 | `profiles[].extensions` | File types to sync, e.g. `[".csv", ".dxf"]`. |
 | `mtp.retries` | Extra attempts per file after the first (default 2). |
-| `mtp.fileTimeoutSec` | Base per-file timeout floor in seconds (default 90). |
-| `mtp.minBytesPerSec` | Adds `fileSize / this` seconds to the timeout for large files (default 200000). |
 | `mtp.verifyAfterUpload` | Re-read the on-device size and confirm it matches (default true). |
 
 ---
@@ -118,14 +130,13 @@ tool runs on both ends. Folder→folder legs don't use MediaDevices.dll at all.
 ## Troubleshooting
 
 - **"MTP device not found"** — connect the collector, unlock it, and set the USB mode to
-  **File transfer (MTP)**. Then click **Detect…**; the friendly name may differ from what
-  you typed.
+  **File transfer (MTP)**. Then click **Detect…**; the name may differ from what you typed.
+  (It's fine if the device is also open in a File Explorer window — the tool coexists with it.)
 - **Nothing happens when I double-click the .cmd / "running scripts is disabled"** — the
   launcher already passes `-ExecutionPolicy Bypass`. On a locked-down device (AppLocker /
-  AllSigned), your IT may need to allow the script's location or sign it.
-- **Everything re-copies every time on MTP** — some devices report modified-times in a
-  different clock/zone. Size is the primary check; if a device's clock is badly off you may
-  see extra copies. Adjust the collector's clock, or the behavior is harmless (just slower).
+  AllSigned), IT may need to allow the script's location or sign it.
+- **The device briefly disappears from "This PC"** — MTP devices occasionally drop off for a
+  moment; just run **Sync now** again.
 - **Cloud-backed source (OneDrive/SharePoint "Files On-Demand")** — the first sync may be
   slow while files hydrate from the cloud; this is transparent.
 
@@ -146,8 +157,7 @@ tool runs on both ends. Folder→folder legs don't use MediaDevices.dll at all.
 
 ---
 
-## Credits & license
+## License
 
-- Bundles [**MediaDevices**](https://github.com/Bassman2/MediaDevices) by Ralf Beckmann
-  for MTP/WPD access (MIT License).
-- This project is released under the **MIT License** — see [LICENSE](LICENSE).
+Released under the **MIT License** — see [LICENSE](LICENSE). Uses only built-in Windows
+APIs (Shell namespace + `IFileOperation`); no bundled third-party binaries.

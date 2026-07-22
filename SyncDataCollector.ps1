@@ -6,12 +6,13 @@
     - Copies only .csv / .dxf by default (configurable per profile).
     - Two target types:
         * "folder" : any drive-letter / UNC / local path (USB stick, collector's internal disk).
-        * "mtp"    : an MTP device (over USB), via the bundled MediaDevices WPD library.
+        * "mtp"    : an MTP device (over USB), driven through the Windows Shell namespace
+                     (what Explorer uses) + IFileOperation -- no third-party library.
     - Mirrors the source subfolder tree under the destination.
     - Copies only new or changed files (size differs, or source newer than target).
     - Re-checks the live target every run; it never trusts a cached manifest.
-    - MTP safeguards: atomic temp-upload + rename, per-file watchdog timeout,
-      on-device size verification, and retry-with-reconnect.
+    - Safeguards: on-device size verification, retry, and (folder targets) atomic
+      temp-copy + rename so an interrupted copy never leaves a truncated file.
 
     No build step: PowerShell 5.1 + .NET Framework + WinForms. Launch via
     SyncDataCollector.cmd (sets -STA and bypasses execution policy).
@@ -24,14 +25,13 @@ $ErrorActionPreference = 'Stop'
 # --------------------------------------------------------------------------
 $ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ConfigPath = Join-Path $ScriptDir 'config.json'
-$DllPath    = Join-Path $ScriptDir 'lib\MediaDevices.dll'
 $LogFile    = Join-Path $ScriptDir 'sync-log.txt'
 
 $script:Config          = $null
 $script:CurrentProfile  = $null
 $script:IsSyncing       = $false
 $script:CancelRequested = $false
-$script:MtpLoaded       = $false
+$script:ShellApp        = $null
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -62,9 +62,7 @@ function New-Profile {
 function New-MtpSettings {
     # Safeguards for unreliable MTP transfers. Edit in config.json if needed.
     [pscustomobject]@{
-        retries           = 2       # extra attempts per file after the first (reconnects between tries)
-        fileTimeoutSec    = 90      # base per-file timeout floor (seconds)
-        minBytesPerSec    = 200000  # add (fileSize / this) seconds to the timeout for big files
+        retries           = 2       # extra attempts per file after the first
         verifyAfterUpload = $true   # re-read the file size on the device and confirm it matches
     }
 }
@@ -130,12 +128,10 @@ function Save-Config {
 # --------------------------------------------------------------------------
 # Helpers
 # --------------------------------------------------------------------------
-function ConvertTo-MtpPath {
+function Split-MtpPath {
+    # A logical device path ("Internal shared storage\...\Design") -> clean segments.
     param([string]$Path)
-    $x = ($Path -replace '/', '\')
-    $x = $x -replace '\\+', '\'
-    $x = $x.Trim().Trim('\')
-    return '\' + $x
+    return @(($Path -replace '/', '\') -split '\\' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' })
 }
 
 function Parse-Extensions {
@@ -153,9 +149,11 @@ function Parse-Extensions {
 
 # --------------------------------------------------------------------------
 # Target providers (folder | mtp) -- unified small interface via $ctx
-#   $ctx = @{ Type = 'folder'|'mtp'; Device = <MediaDevice or $null> }
+#   $ctx = @{ Type='folder'|'mtp'; DeviceName=..; Settings=..; FolderCache=@{} }
 # Destination paths passed in are the *logical* path:
-#   folder -> a normal Windows path; mtp -> on-device path (normalised inside).
+#   folder -> a normal Windows path; mtp -> an on-device path under the device.
+# MTP is driven through the Windows Shell (navigate/list/create/size/date) and
+# IFileOperation (copy/overwrite/delete) -- see the MTP provider section below.
 # --------------------------------------------------------------------------
 function Target-EnsureDir {
     param($Ctx, [string]$DirPath)
@@ -165,35 +163,22 @@ function Target-EnsureDir {
         }
     }
     else {
-        $norm = ConvertTo-MtpPath $DirPath
-        if ($Ctx.Device.DirectoryExists($norm)) { return }
-        $parts = $norm.Trim('\') -split '\\'
-        $cur = ''
-        foreach ($seg in $parts) {
-            $cur = $cur + '\' + $seg
-            if (-not $Ctx.Device.DirectoryExists($cur)) { $Ctx.Device.CreateDirectory($cur) }
-        }
+        [void](Resolve-MtpDir $Ctx $DirPath $true)
     }
 }
 
-function Target-FileExists {
-    param($Ctx, [string]$FilePath)
-    if ($Ctx.Type -eq 'folder') {
-        return (Test-Path -LiteralPath $FilePath -PathType Leaf)
-    }
-    return $Ctx.Device.FileExists((ConvertTo-MtpPath $FilePath))
-}
-
+# Returns @{ Length = <long>; Mtime = <datetime|null> }. Length = -1 means the
+# file does not exist on the target (single call = one enumeration for MTP).
 function Target-GetInfo {
     param($Ctx, [string]$FilePath)
     if ($Ctx.Type -eq 'folder') {
+        if (-not (Test-Path -LiteralPath $FilePath -PathType Leaf)) { return @{ Length = -1; Mtime = $null } }
         $i = Get-Item -LiteralPath $FilePath
         return @{ Length = [long]$i.Length; Mtime = [datetime]$i.LastWriteTime }
     }
-    $fi = $Ctx.Device.GetFileInfo((ConvertTo-MtpPath $FilePath))
-    $mt = $null
-    if ($fi.LastWriteTime -ne $null) { $mt = [datetime]$fi.LastWriteTime }
-    return @{ Length = [long]$fi.Length; Mtime = $mt }
+    $info = Get-MtpInfo $Ctx $FilePath
+    if (-not $info) { return @{ Length = -1; Mtime = $null } }
+    return @{ Length = $info.Length; Mtime = $info.Mtime }
 }
 
 $script:TempSuffix = '.partsync'   # marks an in-progress / incomplete transfer
@@ -219,173 +204,210 @@ function Copy-FileFolder {
     [System.IO.File]::Move($tmp, $DestPath)
 }
 
-# One MTP upload, guarded by a watchdog that calls device.Cancel() if it hangs.
-function Invoke-MtpUpload {
-    param($Ctx, [string]$SourceFile, [string]$TempMtpPath, [int]$TimeoutSec)
-    $fs = [System.IO.File]::OpenRead($SourceFile)
-    $wd = New-Object SyncDC.MtpWatchdog($Ctx.Device, [int]($TimeoutSec * 1000))
-    try {
-        $Ctx.Device.UploadFile($fs, $TempMtpPath)
-    }
-    catch {
-        if ($wd.Fired) { throw "transfer timed out after ${TimeoutSec}s (device not responding)" }
-        throw
-    }
-    finally {
-        $wd.Dispose()
-        $fs.Dispose()
-    }
-}
-
-# MTP copy: upload to a temp name, verify the on-device size, delete any existing
-# final file, then rename temp -> final. So a partial/incomplete upload is never
-# mistaken for the finished file; the next run overwrites the stale temp cleanly.
+# MTP copy via IFileOperation: silent, synchronous copy of a local file into the
+# device folder, deleting any existing same-name item first (clean overwrite).
+# IFileOperation blocks until the transfer completes, so no polling/temp/rename.
 function Copy-FileMtp {
-    param($Ctx, [string]$SourceFile, [string]$DestPath, [int]$TimeoutSec, [bool]$Verify)
-    $norm = ConvertTo-MtpPath $DestPath
-    $dir  = Split-Path -Parent $norm
-    $leaf = Split-Path -Leaf $norm
-    Target-EnsureDir $Ctx $dir
-    $tempPath = $dir + '\' + $leaf + $script:TempSuffix
-    if ($Ctx.Device.FileExists($tempPath)) { $Ctx.Device.DeleteFile($tempPath) }
-    Invoke-MtpUpload $Ctx $SourceFile $tempPath $TimeoutSec
+    param($Ctx, [string]$SourceFile, [string]$DestPath, [bool]$Verify)
+    Ensure-MtpInterop
+    $dir  = Split-Path -Parent $DestPath
+    $leaf = Split-Path -Leaf $DestPath
+    $dirItem = Resolve-MtpDir $Ctx $dir $true
+    $destFolder = $dirItem.GetFolder
+    $existing = Find-ShellChild $destFolder $leaf
+    [SyncDC.MtpOp]::Upload($dirItem, $SourceFile, $existing, $leaf)
     if ($Verify) {
         $srcLen = [long](Get-Item -LiteralPath $SourceFile).Length
-        $ti = $Ctx.Device.GetFileInfo($tempPath)
-        if ([long]$ti.Length -ne $srcLen) {
-            try { $Ctx.Device.DeleteFile($tempPath) } catch {}
-            throw "incomplete upload (device $([long]$ti.Length) of $srcLen bytes)"
-        }
+        $it = Find-ShellChild $destFolder $leaf
+        $sz = -1
+        if ($it) { try { $sz = [long][uint64]$it.ExtendedProperty('System.Size') } catch {} }
+        if ($sz -ne $srcLen) { throw "size mismatch after upload (device $sz vs source $srcLen bytes)" }
     }
-    if ($Ctx.Device.FileExists($norm)) { $Ctx.Device.DeleteFile($norm) }
-    # Rename's newName is just the final leaf name (temp lives in the same dir).
-    $Ctx.Device.Rename($tempPath, $leaf)
 }
 
-# Copy one file with retries. Between MTP attempts the device is reconnected,
-# since a timeout/Cancel can leave the session unusable.
+# Copy one file with retries. On an MTP failure the folder cache is dropped so
+# the next attempt re-resolves fresh Shell folder handles.
 function Invoke-CopyWithRetry {
     param($Ctx, [string]$SourceFile, [string]$DestPath, [scriptblock]$OnLog)
-    $s = $Ctx.Settings
-    $maxAttempts = 1 + [int]$s.retries
-    $sizeBytes = [long](Get-Item -LiteralPath $SourceFile).Length
-    $timeoutSec = [int][math]::Ceiling([double]$s.fileTimeoutSec + ($sizeBytes / [double]$s.minBytesPerSec))
+    $maxAttempts = 1 + [int]$Ctx.Settings.retries
+    $verify = [bool]$Ctx.Settings.verifyAfterUpload
     for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
         try {
-            if ($Ctx.Type -eq 'mtp') {
-                Copy-FileMtp $Ctx $SourceFile $DestPath $timeoutSec ([bool]$s.verifyAfterUpload)
-            }
-            else {
-                Copy-FileFolder $SourceFile $DestPath ([bool]$s.verifyAfterUpload)
-            }
+            if ($Ctx.Type -eq 'mtp') { Copy-FileMtp $Ctx $SourceFile $DestPath $verify }
+            else { Copy-FileFolder $SourceFile $DestPath $verify }
             return
         }
         catch {
             if ($attempt -lt $maxAttempts) {
                 & $OnLog ("  attempt $attempt/$maxAttempts failed: $($_.Exception.Message)") 'WARN'
-                Start-Sleep -Milliseconds (500 * $attempt)
-                if ($Ctx.Type -eq 'mtp') {
-                    try { Reset-MtpConnection $Ctx $OnLog } catch {
-                        throw "lost device and could not reconnect: $($_.Exception.Message)"
-                    }
-                }
+                Start-Sleep -Milliseconds (600 * $attempt)
+                if ($Ctx.Type -eq 'mtp') { $Ctx.FolderCache.Clear() }
             }
-            else {
-                throw
-            }
+            else { throw }
         }
     }
 }
 
 # --------------------------------------------------------------------------
-# MTP device enumeration / connection
+# MTP provider (Windows Shell namespace + IFileOperation)
+#
+# Why not a WPD/MTP library: on real devices (e.g. the Trimble TSC5) the raw
+# IPortableDevice.Open hangs indefinitely, while the Windows Shell namespace --
+# exactly what File Explorer uses -- works reliably and coexists with an open
+# Explorer window. So we navigate/list/create/stat via Shell.Application and do
+# the actual copy/overwrite/delete via IFileOperation (silent, synchronous,
+# no confirmation dialogs). No third-party DLL required.
 # --------------------------------------------------------------------------
-function Ensure-MtpLoaded {
-    if ($script:MtpLoaded) { return }
-    if (-not (Test-Path -LiteralPath $DllPath)) {
-        throw "MediaDevices.dll not found next to the app (lib\MediaDevices.dll). MTP targets need it."
-    }
-    Add-Type -Path $DllPath
-    # Watchdog: aborts a hung MTP upload by calling MediaDevice.Cancel() from a
-    # threadpool timer. It must be pure .NET (not a PowerShell scriptblock) so it
-    # can fire while the UI thread is blocked inside UploadFile.
-    if (-not ('SyncDC.MtpWatchdog' -as [type])) {
-        Add-Type -TypeDefinition @'
+function Ensure-MtpInterop {
+    if ('SyncDC.MtpOp' -as [type]) { return }
+    Add-Type -TypeDefinition @'
 using System;
-using System.Reflection;
-using System.Threading;
+using System.Runtime.InteropServices;
+
 namespace SyncDC {
-    public class MtpWatchdog : IDisposable {
-        private Timer _timer;
-        private object _device;
-        public volatile bool Fired = false;
-        public MtpWatchdog(object device, int timeoutMs) {
-            _device = device;
-            _timer = new Timer(OnTick, null, timeoutMs, Timeout.Infinite);
-        }
-        private void OnTick(object state) {
-            Fired = true;
-            try {
-                MethodInfo mi = _device.GetType().GetMethod("Cancel", Type.EmptyTypes);
-                if (mi != null) mi.Invoke(_device, null);
-            } catch { }
-        }
-        public void Dispose() {
-            Timer t = _timer; _timer = null;
-            if (t != null) t.Dispose();
-        }
+  [ComImport, Guid("43826d1e-e718-42ee-bc55-a1e261c37bfe"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+  public interface IShellItem {
+    void BindToHandler(IntPtr pbc, ref Guid bhid, ref Guid riid, out IntPtr ppv);
+    void GetParent(out IShellItem ppsi);
+    void GetDisplayName(uint sigdnName, out IntPtr ppszName);
+    void GetAttributes(uint sfgaoMask, out uint psfgaoAttribs);
+    void Compare(IShellItem psi, uint hint, out int piOrder);
+  }
+  [ComImport, Guid("947aab5f-0a5c-4c13-b4d6-4bf7836fc9f8"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+  public interface IFileOperation {
+    void Advise(IntPtr pfops, out uint pdwCookie);
+    void Unadvise(uint dwCookie);
+    void SetOperationFlags(uint dwOperationFlags);
+    void SetProgressMessage([MarshalAs(UnmanagedType.LPWStr)] string pszMessage);
+    void SetProgressDialog(IntPtr popd);
+    void SetProperties(IntPtr pproparray);
+    void SetOwnerWindow(IntPtr hwndOwner);
+    void ApplyPropertiesToItem(IShellItem psiItem);
+    void ApplyPropertiesToItems(object punkItems);
+    void RenameItem(IShellItem psiItem, [MarshalAs(UnmanagedType.LPWStr)] string pszNewName, IntPtr pfopsItem);
+    void RenameItems(object pUnkItems, [MarshalAs(UnmanagedType.LPWStr)] string pszNewName);
+    void MoveItem(IShellItem psiItem, IShellItem psiDestinationFolder, [MarshalAs(UnmanagedType.LPWStr)] string pszNewName, IntPtr pfopsItem);
+    void MoveItems(object punkItems, IShellItem psiDestinationFolder);
+    void CopyItem(IShellItem psiItem, IShellItem psiDestinationFolder, [MarshalAs(UnmanagedType.LPWStr)] string pszCopyName, IntPtr pfopsItem);
+    void CopyItems(object punkItems, IShellItem psiDestinationFolder);
+    void DeleteItem(IShellItem psiItem, IntPtr pfopsItem);
+    void DeleteItems(object punkItems);
+    void NewItem(IShellItem psiDestinationFolder, uint dwFileAttributes, [MarshalAs(UnmanagedType.LPWStr)] string pszName, [MarshalAs(UnmanagedType.LPWStr)] string pszTemplateName, IntPtr pfopsItem);
+    void PerformOperations();
+    void GetAnyOperationsAborted(out bool pfAnyOperationsAborted);
+  }
+  public static class MtpOp {
+    [DllImport("shell32.dll", CharSet=CharSet.Unicode, PreserveSig=false)]
+    static extern void SHCreateItemFromParsingName(string pszPath, IntPtr pbc, ref Guid riid, [MarshalAs(UnmanagedType.Interface)] out IShellItem ppv);
+    [DllImport("shell32.dll", PreserveSig=false)]
+    static extern void SHGetIDListFromObject([MarshalAs(UnmanagedType.IUnknown)] object punk, out IntPtr ppidl);
+    [DllImport("shell32.dll", PreserveSig=false)]
+    static extern void SHCreateItemFromIDList(IntPtr pidl, ref Guid riid, [MarshalAs(UnmanagedType.Interface)] out IShellItem ppv);
+    [DllImport("ole32.dll")] static extern void CoTaskMemFree(IntPtr pv);
+
+    static Guid IID_IShellItem = new Guid("43826d1e-e718-42ee-bc55-a1e261c37bfe");
+    static Guid CLSID_FileOperation = new Guid("3ad05575-8857-4850-9277-11b85bdb8e09");
+
+    static IShellItem FromPath(string p) { IShellItem si; SHCreateItemFromParsingName(p, IntPtr.Zero, ref IID_IShellItem, out si); return si; }
+    static IShellItem FromCom(object com) {
+      IntPtr pidl; SHGetIDListFromObject(com, out pidl);
+      try { IShellItem si; SHCreateItemFromIDList(pidl, ref IID_IShellItem, out si); return si; }
+      finally { CoTaskMemFree(pidl); }
     }
+    static IFileOperation NewOp() {
+      IFileOperation op = (IFileOperation)Activator.CreateInstance(Type.GetTypeFromCLSID(CLSID_FileOperation));
+      // FOF_SILENT|FOF_NOCONFIRMATION|FOF_NOCONFIRMMKDIR|FOF_NOERRORUI
+      op.SetOperationFlags(0x0004 | 0x0010 | 0x0200 | 0x0400);
+      return op;
+    }
+    // Copy a local file into an MTP folder (Shell FolderItem COM object), deleting
+    // any existing same-name item first, so overwrites are clean and silent.
+    public static void Upload(object destFolderCom, string localPath, object existingComOrNull, string newName) {
+      IShellItem dest = FromCom(destFolderCom);
+      IFileOperation op = NewOp();
+      if (existingComOrNull != null) op.DeleteItem(FromCom(existingComOrNull), IntPtr.Zero);
+      op.CopyItem(FromPath(localPath), dest, newName, IntPtr.Zero);
+      op.PerformOperations();
+      bool aborted; op.GetAnyOperationsAborted(out aborted);
+      if (aborted) throw new Exception("file operation aborted by the shell/device");
+    }
+    public static void Delete(object com) {
+      IFileOperation op = NewOp();
+      op.DeleteItem(FromCom(com), IntPtr.Zero);
+      op.PerformOperations();
+    }
+  }
 }
 '@
-    }
-    $script:MtpLoaded = $true
 }
 
+function Get-ShellApp {
+    if (-not $script:ShellApp) { $script:ShellApp = New-Object -ComObject Shell.Application }
+    return $script:ShellApp
+}
+
+# Find an immediate child FolderItem by name (ParseName does not resolve MTP items).
+function Find-ShellChild {
+    param($Folder, [string]$Name)
+    $items = $Folder.Items()
+    for ($i = 0; $i -lt $items.Count; $i++) {
+        $it = $items.Item($i)
+        if ($it.Name -eq $Name) { return $it }
+    }
+    return $null
+}
+
+# Portable devices appear under "This PC" as folders without a drive-letter path.
 function Get-MtpDeviceNames {
-    Ensure-MtpLoaded
+    $pc = (Get-ShellApp).NameSpace(0x11)
+    $items = $pc.Items()
     $names = @()
-    foreach ($d in [MediaDevices.MediaDevice]::GetDevices()) {
-        $n = $d.FriendlyName
-        if ([string]::IsNullOrWhiteSpace($n)) { $n = $d.Description }
-        if ([string]::IsNullOrWhiteSpace($n)) { $n = $d.Manufacturer }
-        if ($n) { $names += $n }
-        $d.Dispose()
+    for ($i = 0; $i -lt $items.Count; $i++) {
+        $it = $items.Item($i)
+        if ($it.IsFolder -and ($it.Path -notmatch '^[A-Za-z]:\\')) { $names += $it.Name }
     }
     return $names
 }
 
-function Open-MtpDevice {
-    param([string]$Name)
-    Ensure-MtpLoaded
-    $devices = @([MediaDevices.MediaDevice]::GetDevices())
-    $match = $null
-    foreach ($d in $devices) {
-        if ($d.FriendlyName -eq $Name -or $d.Description -eq $Name) { $match = $d; break }
-    }
-    if (-not $match) {
-        foreach ($d in $devices) {
-            if (($d.FriendlyName -and $d.FriendlyName -like "*$Name*") -or
-                ($d.Description  -and $d.Description  -like "*$Name*")) { $match = $d; break }
+# Resolve a logical device dir ("Internal shared storage\...\Design") to its Shell
+# FolderItem, creating missing folders when $Create. Cached per-run in $Ctx.FolderCache.
+function Resolve-MtpDir {
+    param($Ctx, [string]$LogicalDir, [bool]$Create)
+    $key = ($LogicalDir -replace '/', '\').Trim('\')
+    if ($Ctx.FolderCache.ContainsKey($key)) { return $Ctx.FolderCache[$key] }
+    $segs = @($Ctx.DeviceName) + (Split-MtpPath $LogicalDir)
+    $curFolder = (Get-ShellApp).NameSpace(0x11)
+    $curItem = $null
+    foreach ($seg in $segs) {
+        $child = Find-ShellChild $curFolder $seg
+        if (-not $child) {
+            if (-not $Create) { return $null }
+            $curFolder.NewFolder($seg)
+            $deadline = (Get-Date).AddSeconds(10)
+            do { Start-Sleep -Milliseconds 300; $child = Find-ShellChild $curFolder $seg }
+            while (-not $child -and (Get-Date) -lt $deadline)
+            if (-not $child) { throw "could not create MTP folder '$seg'" }
         }
+        $curItem = $child
+        $curFolder = $child.GetFolder
     }
-    foreach ($d in $devices) { if ($d -ne $match) { $d.Dispose() } }
-    if (-not $match) {
-        throw "MTP device '$Name' not found. Is it connected, unlocked, and in File-transfer (MTP) mode?"
-    }
-    # Explicit overload (PS 5.1 won't fill C# optional params). enableCache=$false
-    # so every FileExists/GetFileInfo query hits the device live, never a cache.
-    $match.Connect([MediaDevices.MediaDeviceAccess]::Default, [MediaDevices.MediaDeviceShare]::Default, $false)
-    return $match
+    $Ctx.FolderCache[$key] = $curItem
+    return $curItem
 }
 
-function Reset-MtpConnection {
-    param($Ctx, [scriptblock]$OnLog)
-    try { if ($Ctx.Device -and $Ctx.Device.IsConnected) { $Ctx.Device.Disconnect() } } catch {}
-    try { if ($Ctx.Device) { $Ctx.Device.Dispose() } } catch {}
-    $Ctx.Device = $null
-    Start-Sleep -Milliseconds 400
-    if ($OnLog) { & $OnLog '  reconnecting to device...' 'WARN' }
-    $Ctx.Device = Open-MtpDevice -Name $Ctx.DeviceName
+# @{ Item=<FolderItem>; Length=<long>; Mtime=<datetime|null> } or $null if absent.
+function Get-MtpInfo {
+    param($Ctx, [string]$FilePath)
+    $dir  = Split-Path -Parent $FilePath
+    $leaf = Split-Path -Leaf $FilePath
+    $dirItem = Resolve-MtpDir $Ctx $dir $false
+    if (-not $dirItem) { return $null }
+    $it = Find-ShellChild $dirItem.GetFolder $leaf
+    if (-not $it) { return $null }
+    $len = -1; $md = $null
+    try { $len = [long][uint64]$it.ExtendedProperty('System.Size') } catch {}
+    try { $md  = [datetime]$it.ExtendedProperty('System.DateModified') } catch {}
+    return @{ Item = $it; Length = $len; Mtime = $md }
 }
 
 # --------------------------------------------------------------------------
@@ -416,16 +438,20 @@ function Invoke-Sync {
 
     # Build the target context.
     $ctx = @{
-        Type       = $Profile.targetType
-        Device     = $null
-        DeviceName = $Profile.deviceName
-        Settings   = $script:Config.mtp
+        Type        = $Profile.targetType
+        DeviceName  = $Profile.deviceName
+        Settings    = $script:Config.mtp
+        FolderCache = @{}
     }
     try {
         if ($Profile.targetType -eq 'mtp') {
-            & $OnLog "Connecting to MTP device '$($Profile.deviceName)'..." 'INFO'
-            $ctx.Device = Open-MtpDevice -Name $Profile.deviceName
-            & $OnLog "Connected." 'INFO'
+            Ensure-MtpInterop
+            & $OnLog "Locating MTP device '$($Profile.deviceName)'..." 'INFO'
+            $names = @(Get-MtpDeviceNames)
+            if ($names -notcontains $Profile.deviceName) {
+                throw "MTP device '$($Profile.deviceName)' not found under This PC. Is it connected, unlocked, and set to File transfer (MTP)? Detected: $($names -join ', ')"
+            }
+            & $OnLog 'Device found.' 'INFO'
         }
         elseif ($Profile.targetType -ne 'folder') {
             throw "Unknown target type '$($Profile.targetType)'."
@@ -450,17 +476,17 @@ function Invoke-Sync {
             $dest = $destRoot + '\' + $rel
             try {
                 $need = $false; $reason = ''
-                if (-not (Target-FileExists $ctx $dest)) {
+                $di = Target-GetInfo $ctx $dest        # one live lookup (Length = -1 if absent)
+                # MTP devices report DateModified in UTC; folder targets preserve local mtime.
+                $srcTime = if ($ctx.Type -eq 'mtp') { $f.LastWriteTimeUtc } else { $f.LastWriteTime }
+                if ($di.Length -lt 0) {
                     $need = $true; $reason = 'new'
                 }
-                else {
-                    $di = Target-GetInfo $ctx $dest
-                    if ([long]$f.Length -ne $di.Length) {
-                        $need = $true; $reason = 'size changed'
-                    }
-                    elseif ($di.Mtime -ne $null -and $f.LastWriteTime -gt $di.Mtime.AddSeconds(2)) {
-                        $need = $true; $reason = 'source newer'
-                    }
+                elseif ([long]$f.Length -ne $di.Length) {
+                    $need = $true; $reason = 'size changed'
+                }
+                elseif ($null -ne $di.Mtime -and $srcTime -gt $di.Mtime.AddSeconds(2)) {
+                    $need = $true; $reason = 'source newer'
                 }
 
                 if ($need) {
@@ -483,10 +509,7 @@ function Invoke-Sync {
         return [pscustomobject]@{ Total = $total; Copied = $copied; Skipped = $skipped; Failed = $failed }
     }
     finally {
-        if ($ctx.Device) {
-            try { if ($ctx.Device.IsConnected) { $ctx.Device.Disconnect() } } catch {}
-            try { $ctx.Device.Dispose() } catch {}
-        }
+        $ctx.FolderCache.Clear()
     }
 }
 
