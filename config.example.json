@@ -1,33 +1,49 @@
 {
-  "lastProfile": "Collector over USB (MTP)",
+  "lastProfile": "Push design to collector (MTP)",
   "mtp": {
     "retries": 2,
     "verifyAfterUpload": true
   },
   "profiles": [
     {
-      "name": "Collector over USB (MTP)",
+      "name": "Push design to collector (MTP)",
+      "direction": "push",
       "sourcePath": "C:\\Design",
       "targetType": "mtp",
       "deviceName": "MyCollector",
       "destinationPath": "Internal shared storage\\Projects\\ExampleProject\\Design",
+      "collisionMode": "deviceSubfolder",
       "extensions": [ ".csv", ".dxf", ".xml", ".ttm" ]
     },
     {
-      "name": "Stage to USB stick",
+      "name": "Push design - stage to USB stick",
+      "direction": "push",
       "sourcePath": "C:\\Design",
       "targetType": "folder",
       "deviceName": "",
       "destinationPath": "E:\\Projects\\ExampleProject\\Design",
+      "collisionMode": "deviceSubfolder",
       "extensions": [ ".csv", ".dxf", ".xml", ".ttm" ]
     },
     {
-      "name": "Collector - pull from USB",
-      "sourcePath": "E:\\Projects\\ExampleProject\\Design",
+      "name": "Pull field data - collector (MTP) -> USB/cloud",
+      "direction": "pull",
+      "sourcePath": "Internal shared storage\\Projects\\ExampleProject\\Export",
+      "targetType": "mtp",
+      "deviceName": "MyCollector",
+      "destinationPath": "E:\\FieldData\\{julian}",
+      "collisionMode": "deviceSubfolder",
+      "extensions": [ ".job", ".jxl", ".csv", ".dxf", ".rxl", ".xml" ]
+    },
+    {
+      "name": "Pull field data - run on collector -> USB/cloud",
+      "direction": "pull",
+      "sourcePath": "C:\\Trimble Data\\Projects\\ExampleProject\\Export",
       "targetType": "folder",
-      "deviceName": "",
-      "destinationPath": "C:\\Projects\\ExampleProject\\Design",
-      "extensions": [ ".csv", ".dxf", ".xml", ".ttm" ]
+      "deviceName": "T110-01",
+      "destinationPath": "E:\\FieldData\\{julian}",
+      "collisionMode": "deviceSubfolder",
+      "extensions": [ ".job", ".jxl", ".csv", ".dxf", ".rxl", ".xml" ]
     }
   ]
 }

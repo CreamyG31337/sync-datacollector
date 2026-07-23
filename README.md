@@ -1,8 +1,12 @@
 # Sync DataCollector
 
-A lightweight Windows GUI for **one-way file sync from a PC to survey data collectors** —
-push your design files (`.csv`, `.dxf`, LandXML `.xml`, Trimble `.ttm` surfaces, …) onto a
-field data collector before you head out.
+A lightweight Windows GUI for **one-way file sync between a PC and survey data collectors**,
+in **both directions**:
+
+- **Push** design files (`.csv`, `.dxf`, LandXML `.xml`, Trimble `.ttm` surfaces, …) onto a
+  collector before you head out.
+- **Pull** field-collected data (jobs, scans, exports) *off* a collector onto a USB stick or
+  a cloud-synced folder — keeping each collector's work separate so nothing collides.
 
 It handles the two ways collectors actually connect:
 
@@ -22,14 +26,23 @@ WinForms GUI that runs on stock Windows (PowerShell 5.1 + .NET Framework 4.x).
 
 ## Features
 
-- **Named profiles** — one install drives several jobs (a collector over MTP, staging to
-  a USB stick, pulling from USB on the collector). Pick a profile, press **Sync now**.
+- **Push or pull** per profile (`direction: push | pull`) — same engine, either way.
+- **Named profiles** — one install drives several jobs (push to a collector over MTP, stage
+  to a USB stick, pull field data). Pick a profile, press **Sync now**.
 - **Mirrors your folder tree** under the destination (subfolders preserved).
+- **Total-station scans stay whole** — when a `.jxl` is synced, its companion `<name> Files`
+  folder (point cloud, photos, database — any file type, incl. empty subfolders) travels with it.
+- **Per-collector separation on pull** — pulled files go under a per-device subfolder so two
+  crews exporting the same filename never overwrite each other.
+- **`{julian}` path token** — expands to today's Julian date (`YY-DDD`, e.g. `26-204`) so each
+  day's pull auto-files into a dated folder. The current Julian date is shown in the app.
 - **Copies only new or changed files** — compares size and modified-time; re-syncs are fast.
 - **Live check every run** — it re-reads what's actually on the target each time; it never
   trusts a cached list/manifest.
-- **One-way and additive** — never deletes anything on the collector.
-- **Configurable** source, target, device name, and file types per profile.
+- **One-way and additive** — never deletes at the destination.
+- **Per-machine preferences in the registry** — the app folder (and its shared `config.json`)
+  can live on OneDrive and run from several PCs/collectors; each machine remembers its own
+  last/default profile in `HKCU\Software\SyncDataCollector` instead of churning the shared file.
 - **Reliable MTP** — see below.
 
 ---
@@ -112,21 +125,61 @@ tool runs on both ends.
 
 ---
 
+## Pulling field data off collectors (reverse sync)
+
+Set a profile's **Direction** to `pull`. Now the **collector is the source** and a **USB stick
+or cloud-synced folder is the destination** (there's no NAS needed — any filesystem path works,
+including a OneDrive/Drive/SharePoint local folder the cloud client syncs up). Two ways to run it:
+
+- **On a PC with the collector on USB** → `Collector type = mtp`; pull straight off the device.
+- **On the Windows collector itself** (e.g. a T110) → `Collector type = folder`; pull its local
+  export folder to the USB stick. (TBC only exports into a *folder*, not the drive root — point
+  the source at that export folder.)
+
+Key pull behaviors:
+
+- **Per-device subfolders** (`collisionMode: deviceSubfolder`, the default) — files land under
+  `…\<destination>\<deviceName>\…`. The **Device name** doubles as the folder label, so two
+  collectors that both exported `26-203….jxl` stay separate and nothing is lost.
+- **`{julian}` in the destination** — e.g. `E:\FieldData\{julian}` files today's pull into
+  `E:\FieldData\26-204\<device>\…`, so a whole day's work lands in one dated place.
+- **Scans travel whole** — a total-station scan is a `.jxl` **plus** a `<name> Files` folder
+  holding the point cloud / photos / scan database. Include `.jxl` in the file types and the
+  companion folder is pulled in full (every file, any extension, including nested and empty
+  subfolders) automatically.
+
+Example pull profile:
+```
+Direction:      pull
+Collector type: mtp            (or "folder" when running on the collector)
+Device name:    TSC5           (also the per-device subfolder label)
+Source:         Internal shared storage\Trimble Data\Projects\MyJob\Export
+Destination:    E:\FieldData\{julian}
+File types:     .job, .jxl, .csv, .dxf, .rxl, .xml
+```
+
+---
+
 ## Configuration reference
 
 `config.json` (see `config.example.json`):
 
 | Field | Meaning |
 |---|---|
-| `lastProfile` | Profile selected on launch. |
+| `lastProfile` | Fallback default profile (the per-machine last choice lives in the registry). |
 | `profiles[].name` | Display name in the dropdown. |
-| `profiles[].sourcePath` | Folder to copy **from** (always a normal path). |
-| `profiles[].targetType` | `"folder"` or `"mtp"`. |
-| `profiles[].deviceName` | MTP device name as shown under "This PC" (mtp only). Use **Detect…** if unsure. |
-| `profiles[].destinationPath` | Target folder. For `mtp`, first segment is the device storage, e.g. `Internal shared storage\Projects\...\Design`. |
-| `profiles[].extensions` | File types to sync, e.g. `[".csv", ".dxf", ".xml", ".ttm"]`. `.xml` is content-checked and only synced when it is LandXML. |
+| `profiles[].direction` | `"push"` (PC → collector) or `"pull"` (collector → PC/USB/cloud). Defaults to `push`. |
+| `profiles[].sourcePath` | Copy **from**. Push: a PC path. Pull: the collector path (on-device path for `mtp`). Supports `{julian}`. |
+| `profiles[].targetType` | The **collector-side** type: `"folder"` or `"mtp"`. |
+| `profiles[].deviceName` | MTP device name as shown under "This PC"; also the per-device subfolder label on pull. Use **Detect…** if unsure. |
+| `profiles[].destinationPath` | Copy **to**. For `mtp`, first segment is the device storage. Supports `{julian}`. |
+| `profiles[].collisionMode` | Pull only: `"deviceSubfolder"` (default), `"prefix"` (`<device>_name`), or `"overwrite"`. |
+| `profiles[].extensions` | File types to sync. On push, `.xml` is content-checked and only synced when it is LandXML. Include `.jxl` to pull scans with their `<name> Files` folder. |
 | `mtp.retries` | Extra attempts per file after the first (default 2). |
 | `mtp.verifyAfterUpload` | Re-read the on-device size and confirm it matches (default true). |
+
+Per-machine settings (not in `config.json`) live in `HKCU\Software\SyncDataCollector` —
+currently just `LastProfile`, so a shared copy on OneDrive doesn't fight over the default profile.
 
 ---
 
@@ -150,13 +203,10 @@ tool runs on both ends.
 - **"Out of date" awareness** — track which design files have changed since the last sync
   to a given collector and warn *"collector X needs a re-sync"*. Requires a small
   identity marker on each collector so the app knows which device it's looking at.
-- **Reverse sync (field data → network)** — pull collected data off collectors back to the
-  network. Same engine, opposite direction. Needs **filename-collision handling** (two
-  crews can export the same filename with different contents): options are per-device
-  target subfolders, filename prefixing by device, or auto-rename on collision.
 - **Mirror/prune option** — optionally delete target files that no longer exist in the source.
 - **Scheduling / watch-folder** — auto-sync on a timer or when the source changes.
-- **More file types / per-profile filters** beyond `.csv` / `.dxf`.
+- **Killable background worker** — run the transfer in a separate process the GUI can hard-kill,
+  for a mid-file cancel/timeout on flaky MTP.
 
 ---
 
