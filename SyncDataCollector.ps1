@@ -122,7 +122,7 @@ function ConvertFrom-LegacyProfiles {
 
     $devProject = ''; $name = 'Migrated project'
     if ($push -and $push.destinationPath) {
-        # ...\Projects\1645 - STRATHCONA\02-Design  ->  the project folder is the parent
+        # ...\Projects\2100 - EXAMPLE SITE\02-Design  ->  the project folder is the parent
         $devProject = (Split-Path -Parent ([string]$push.destinationPath))
         $leaf = Split-Path -Leaf $devProject
         if ($leaf) { $name = $leaf }
@@ -602,7 +602,7 @@ function Find-ShellChild {
 # Portable devices appear under "This PC" as folders without a drive-letter path.
 # Their Shell path carries the USB descriptor, which for these collectors holds the
 # hardware serial:
-#     ::{20D04FE0-...}\\\?\usb#vid_099e&pid_0261#jaj214510978#{guid}
+#     ::{20D04FE0-...}\\\?\usb#vid_099e&pid_0261#jaj000000001#{guid}
 #                                                ^^^^^^^^^^^^
 # That serial is the only thing that tells two collectors of the same model apart --
 # they both report the name "TSC5". Unlike our marker file it is known before the
@@ -1045,7 +1045,7 @@ function Set-DeviceFriendlyName {
     $script:Config.devices | Add-Member -NotePropertyName $Serial -NotePropertyValue $Name -Force
 }
 
-# One connected device, as a pickable line: "Crew A - TSC5 (JAJ214510978)".
+# One connected device, as a pickable line: "Crew A - TSC5 (JAJ000000001)".
 function Format-DeviceChoice {
     param($Dev)
     $friendly = Get-DeviceFriendlyName ([string]$Dev.Serial)
@@ -1056,7 +1056,7 @@ function Format-DeviceChoice {
 }
 
 # How a collector reads in the UI and the log. Best available name, qualified by the
-# identifier: "Crew A (JAJ214510978)", else "TSC5 (JAJ214510978)". A fallback GUID (a
+# identifier: "Crew A (JAJ000000001)", else "TSC5 (JAJ000000001)". A fallback GUID (a
 # folder target, which has no serial) is truncated since it means nothing to anyone.
 function Get-DeviceLabel {
     param([string]$DeviceName, [string]$DeviceId)
@@ -1438,7 +1438,7 @@ function New-Project {
         [string]$Name = 'New project',
         [string]$DesignSource = '',        # S:\02-DESIGN
         [string]$ExportRoot = '',          # ...\07-DATALOGGER BACKUP\{year}\{month}
-        [string]$DeviceProjectPath = ''    # Internal shared storage\Trimble Data\Projects\1645 - STRATHCONA
+        [string]$DeviceProjectPath = ''    # Internal shared storage\Trimble Data\Projects\2100 - EXAMPLE SITE
     )
     [pscustomobject]@{
         name              = $Name
@@ -1603,9 +1603,9 @@ function New-LegProfile {
 
     # collector -> OneDrive, additive. Every collector exports into the SAME dated
     # folder, so files must carry which unit they came from or two crews exporting
-    # 1645-25-346.csv collide (and OneDrive makes conflict copies).
-    #   prefix          -> TSC5-01_1645-25-346.csv in one flat month folder
-    #   deviceSubfolder -> TSC5-01\1645-25-346.csv
+    # 2100-25-346.csv collide (and OneDrive makes conflict copies).
+    #   prefix          -> TSC5-01_2100-25-346.csv in one flat month folder
+    #   deviceSubfolder -> TSC5-01\2100-25-346.csv
     # deviceName still has to be the MTP model name so the device can be found; the
     # per-collector label is separate, which is why collisionLabel exists.
     $coll = [string]$Collector.exportCollision

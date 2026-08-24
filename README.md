@@ -47,7 +47,7 @@ WinForms GUI that runs on stock Windows (PowerShell 5.1 + .NET Framework 4.x).
 - **Total-station scans stay whole** — when a `.jxl` is synced, its companion `<name> Files`
   folder (point cloud, photos, database — any file type, incl. empty subfolders) travels with it.
 - **Per-collector separation on pull** — exported files are prefixed with the collector that
-  produced them (`TSC5-01_1645-25-346.csv`), so two crews exporting the same filename into one
+  produced them (`TSC5-01_2100-25-346.csv`), so two crews exporting the same filename into one
   shared folder never collide. A per-collector subfolder is available instead.
 - **Exports are never destroyed** — a pull never overwrites: a clashing name lands beside the
   original as `name (2).ext`, and prune is refused outright on a pull.
@@ -113,7 +113,7 @@ All of this uses only built-in Windows components — nothing to download or ins
    (`config.json` is git-ignored so your real network paths and project names never
    get committed.)
 2. **Run it.** Double-click **`SyncDataCollector.cmd`**.
-3. **Tick "Advanced"** — steps 3 and 4 are one-time setup, and the panels they describe are
+3. **Tick "Advanced"** — steps 4 and 5 are one-time setup, and the panels they describe are
    hidden until you do. Untick it afterwards; day to day nobody needs them.
 4. **Set up the project** (once) — the paths every collector shares:
    - **Design source** — where the drawings live, e.g. `S:\02-DESIGN`.
@@ -121,7 +121,7 @@ All of this uses only built-in Windows components — nothing to download or ins
      `{julian}` `{date}`, so `…\07-DATALOGGER BACKUP\{year}\{month}` files into
      `2026\8-AUG` on its own.
    - **Project on device** — the project folder on the collector, e.g.
-     `Internal shared storage\Trimble Data\Projects\1645 - STRATHCONA`.
+     `Internal shared storage\Trimble Data\Projects\2100 - EXAMPLE SITE`.
 5. **Plug in a collector.** It is detected by serial within a few seconds. The first time a
    controller is seen, press **Detect** and give it a short name — this becomes the export
    filename prefix, so pick it before the first export (already-exported files keep the old
@@ -274,8 +274,8 @@ Every collector exports into the *same* dated folder, so files must say where th
 
 | Mode | Result |
 |---|---|
-| `prefix` (default) | `TSC5-01_1645-25-346.csv` — one flat month folder, provenance in the name. |
-| `deviceSubfolder` | `TSC5-01\1645-25-346.csv` — a folder per collector. |
+| `prefix` (default) | `TSC5-01_2100-25-346.csv` — one flat month folder, provenance in the name. |
+| `deviceSubfolder` | `TSC5-01\2100-25-346.csv` — a folder per collector. |
 | `overwrite` | No separation. Only sensible with a single collector. |
 
 `prefix` deliberately prefixes the **first path segment**, not the filename. For a flat export
@@ -309,7 +309,7 @@ Skip folders:  SUPERSEDED
 ```
 S:\02-DESIGN\9.0 TOWER CRANE\SUPERSEDED\TC-1.dxf          <- skipped
 S:\02-DESIGN\5.0 BRIDGE\MCB\superseded\26-111 MCB FDN.dxf <- skipped (case ignored)
-S:\02-DESIGN\9.0 TOWER CRANE\1645 - TC PLATES.dxf         <- synced
+S:\02-DESIGN\9.0 TOWER CRANE\2100 - TC PLATES.dxf         <- synced
 ```
 
 Names may contain spaces (`OLD DRAWINGS`), so the list splits on **commas/semicolons only**,
@@ -399,7 +399,7 @@ Connect it to be sure" rather than claiming certainty. Changes made within ~2 se
 sync fall inside the timestamp tolerance and aren't flagged.
 
 The collector banner at the top of the window shows the same thing at a glance the moment a
-controller is plugged in (`TSC5-02 (JAJ220110159) - last synced 2026-08-24 14:35`), read from
+controller is plugged in (`TSC5-02 (JAJ000000002) - last synced 2026-08-24 14:35`), read from
 the local record, so it appears instantly — no scanning.
 
 ### Several collectors, one device name
@@ -411,8 +411,8 @@ cannot tell two units apart — which matters the moment you own more than one.
 tool already walks, and the serial is right there:
 
 ```
-::{20D04FE0-...}\\\?\usb#vid_099e&pid_0261#jaj214510978#{6ac27878-...}
-                                           ^^^^^^^^^^^^  -> JAJ214510978
+::{20D04FE0-...}\\\?\usb#vid_099e&pid_0261#jaj000000001#{6ac27878-...}
+                                           ^^^^^^^^^^^^  -> JAJ000000001
 ```
 
 No WMI, no extra dependency, still pure Shell. The serial beats a generated id on every count:
@@ -422,22 +422,22 @@ and it matches the sticker on the machine.
 Records are kept **per profile per serial**, so one profile drives a whole fleet and every
 collector carries its own last-sync record.
 
-**Naming your units.** `TSC5 (JAJ214510978)` is unambiguous but not memorable, so give each
+**Naming your units.** `TSC5 (JAJ000000001)` is unambiguous but not memorable, so give each
 serial a friendly name — press **Detect…** and it offers to name any unit it doesn't know:
 
 ```json
-"devices": { "JAJ214510978": "Crew A", "JAJ220110159": "TSC5-02" }
+"devices": { "JAJ000000001": "Crew A", "JAJ000000002": "TSC5-02" }
 ```
 
 That lives in `config.json` (shared), so every machine calls the same collector the same thing,
-and it shows up everywhere: `Crew A (JAJ214510978)`.
+and it shows up everywhere: `Crew A (JAJ000000001)`.
 
 **Two of the same model connected at once.** The tool resolves the device *item* it was given
 rather than looking one up by name, so it can never drift onto the wrong unit mid-sync. If two
 collectors share the profile's name, it **stops and asks which** — it will not guess:
 
 ```
-More than one 'TSC5' is connected (JAJ214510978, JAJ220110159).
+More than one 'TSC5' is connected (JAJ000000001, JAJ000000002).
 Disconnect all but one, or choose which to use.
 ```
 
@@ -445,7 +445,7 @@ Disconnect all but one, or choose which to use.
 the next sync, and the stale record is retired so one unit never appears twice:
 
 ```
-Device identity upgraded to hardware serial JAJ214510978 (was 6a03f199-36e3-49eb-94db-7a1273d4da8e).
+Device identity upgraded to hardware serial JAJ000000001 (was 6a03f199-36e3-49eb-94db-7a1273d4da8e).
 ```
 
 **Where there is no serial:** a `folder` target (a USB stick) has none, so the marker keeps a
