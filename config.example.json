@@ -10,7 +10,7 @@
     }
   ],
 
-  "_defaults_note": "The baseline every collector starts from. Set it once in the GUI with Save as defaults (Advanced); Restore defaults puts a collector back on it. Editing a collector changes that collector only.",
+  "_defaults_note": "The baseline every collector starts from. Edit it HERE - the GUI deliberately cannot write it, so nobody can turn a one-off tweak into everyone's default by clicking. Reset to defaults (Advanced) puts one collector back on it; collectors already set up keep what they have until you do.",
   "defaults": {
     "designSubPath": "02-Design",
     "exportSubPath": "Exports",

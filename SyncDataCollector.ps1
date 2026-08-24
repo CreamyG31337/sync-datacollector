@@ -1454,7 +1454,9 @@ function New-Project {
 # Every collector is set up the same way in practice, so the shared settings
 # live once in config.json under "defaults" and each new collector is seeded
 # from them. A collector can still be tuned individually, but that stays with
-# that collector: the baseline only ever changes through "Save as defaults".
+# that collector: nothing in the GUI writes the baseline, so changing it means
+# editing config.json by hand. That is on purpose -- the person tweaking a
+# setting to get one controller working is rarely the person setting policy.
 # New-CollectorDefaults holds the factory values -- the fallback when config
 # has no defaults block, and what a fresh config is written with.
 # --------------------------------------------------------------------------
@@ -1991,7 +1993,7 @@ $btnProjDelete.Text = 'Delete'; $btnProjDelete.Location = '555,14'; $btnProjDele
 $form.Controls.Add($btnProjDelete)
 
 $btnSave = New-Object System.Windows.Forms.Button
-$btnSave.Text = 'Save'; $btnSave.Location = '625,14'; $btnSave.Size = '175,26'; $btnSave.Anchor = 'Top,Right'
+$btnSave.Text = 'Save settings'; $btnSave.Location = '625,14'; $btnSave.Size = '175,26'; $btnSave.Anchor = 'Top,Right'
 $form.Controls.Add($btnSave)
 
 # ---- Collector banner -----------------------------------------------------
@@ -2112,16 +2114,12 @@ $chkPrune.Location = '150,163'; $chkPrune.Size = '600,22'
 $chkPrune.ForeColor = [System.Drawing.Color]::FromArgb(160, 0, 0)
 $grpColl.Controls.Add($chkPrune)
 
-$btnRestoreDefaults = New-Object System.Windows.Forms.Button
-$btnRestoreDefaults.Text = 'Restore defaults'; $btnRestoreDefaults.Location = '150,196'; $btnRestoreDefaults.Size = '132,28'
-$grpColl.Controls.Add($btnRestoreDefaults)
-
-$btnSaveDefaults = New-Object System.Windows.Forms.Button
-$btnSaveDefaults.Text = 'Save as defaults'; $btnSaveDefaults.Location = '290,196'; $btnSaveDefaults.Size = '132,28'
-$grpColl.Controls.Add($btnSaveDefaults)
+$btnResetDefaults = New-Object System.Windows.Forms.Button
+$btnResetDefaults.Text = 'Reset to defaults'; $btnResetDefaults.Location = '150,196'; $btnResetDefaults.Size = '150,28'
+$grpColl.Controls.Add($btnResetDefaults)
 
 $lblDefaults = New-Object System.Windows.Forms.Label
-$lblDefaults.Location = '432,202'; $lblDefaults.Size = '340,18'; $lblDefaults.ForeColor = 'Gray'
+$lblDefaults.Location = '312,202'; $lblDefaults.Size = '458,18'; $lblDefaults.ForeColor = 'Gray'
 $grpColl.Controls.Add($lblDefaults)
 
 # ---- Actions --------------------------------------------------------------
@@ -2134,6 +2132,10 @@ $btnCheck = New-Object System.Windows.Forms.Button
 $btnCheck.Text = 'Check'; $btnCheck.Location = '212,512'; $btnCheck.Size = '95,38'
 $tip = New-Object System.Windows.Forms.ToolTip
 $tip.SetToolTip($btnCheck, 'Report what both legs would do. Writes nothing, deletes nothing.')
+$tip.SetToolTip($btnSave, "Write the project paths above and this collector's settings to config.json." + [Environment]::NewLine +
+    'Nothing is saved until you press this.')
+$tip.SetToolTip($btnResetDefaults, 'Put this collector back on the defaults. Affects this collector only -' + [Environment]::NewLine +
+    'the defaults themselves are read-only here, and live in config.json.')
 $form.Controls.Add($btnCheck)
 
 $btnCancel = New-Object System.Windows.Forms.Button
@@ -2253,10 +2255,10 @@ function Commit-UiToProject {
 
 # --- Defaults --------------------------------------------------------------
 # The settings above are shared by every collector, so they live once under
-# "defaults" in config.json. Editing them here changes THIS collector only;
-# the baseline moves only when someone deliberately presses Save as defaults.
-# The panel says which of the two you are looking at, so a one-off tweak made
-# months ago is visible rather than silent.
+# "defaults" in config.json. Editing them here changes THIS collector only --
+# there is no button that writes the baseline back, by design. The panel says
+# which of the two you are looking at, so a one-off tweak made months ago is
+# visible rather than silent.
 function Get-UiSettings {
     New-CollectorDefaults `
         -DesignSubPath ($txtDesignSub.Text.Trim()) -ExportSubPath ($txtExportSub.Text.Trim()) `
@@ -2281,7 +2283,7 @@ function Update-DefaultsIndicator {
     if ($script:Loading) { return }
     if (-not $script:CurrentCollector) { $lblDefaults.Text = ''; return }
     if ((Format-Settings (Get-UiSettings)) -eq (Format-Settings (Get-Defaults))) {
-        $lblDefaults.Text = 'Matches the saved defaults.'
+        $lblDefaults.Text = 'Matches the defaults.'
         $lblDefaults.ForeColor = 'Gray'
     }
     else {
@@ -2313,7 +2315,7 @@ function Load-CollectorToUi {
     $script:CurrentCollector = $C
     $has = ($null -ne $C)
     foreach ($ctl in @($txtDesignSub,$txtExportSub,$txtDesignExt,$txtExportExt,$txtExcl,$cboExportCollision,
-                       $chkPrune,$btnNameDev,$btnRestoreDefaults,$btnSaveDefaults)) {
+                       $chkPrune,$btnNameDev,$btnResetDefaults)) {
         $ctl.Enabled = $has
     }
     $btnSync.Enabled  = $has
@@ -2400,7 +2402,7 @@ function Set-Busy {
     foreach ($c in @($cboProject,$btnProjNew,$btnProjRename,$btnProjDelete,$btnSave,$btnDetect,$btnNameDev,
                      $txtDesignSrc,$btnDesignSrcBrowse,$txtExportRoot,$btnExportRootBrowse,$txtDevProj,
                      $txtDesignSub,$txtExportSub,$txtDesignExt,$txtExportExt,$txtExcl,$cboExportCollision,$chkPrune,
-                     $btnRestoreDefaults,$btnSaveDefaults)) {
+                     $btnResetDefaults)) {
         $c.Enabled = -not $Busy
     }
     $btnSync.Enabled  = (-not $Busy) -and ($null -ne $script:CurrentCollector)
@@ -2634,12 +2636,15 @@ foreach ($ctl in @($txtDesignSub,$txtExportSub,$txtDesignExt,$txtExportExt,$txtE
 $cboExportCollision.Add_SelectedIndexChanged({ Update-DefaultsIndicator })
 $chkPrune.Add_CheckedChanged({ Update-DefaultsIndicator })
 
-$btnRestoreDefaults.Add_Click({
+# Resets THIS collector to the baseline. There is deliberately no button that
+# writes the baseline: it is changed by editing config.json, so no amount of
+# clicking in here can turn one person's experiment into everyone's default.
+$btnResetDefaults.Add_Click({
     if (-not $script:CurrentCollector) { return }
     $d = Get-Defaults
     $mirror = 'off'
     if ($d.prune) { $mirror = 'on - deletes extras' }
-    $msg = "Put $(Get-CollectorLabel $script:CurrentCollector) back on the shared defaults?`r`n`r`n" +
+    $msg = "Reset $(Get-CollectorLabel $script:CurrentCollector) to the defaults?`r`n`r`n" +
            "Design folder:  $($d.designSubPath)`r`n" +
            "Export folder:  $($d.exportSubPath)`r`n" +
            "Design types:   $((@($d.designExtensions)) -join ', ')`r`n" +
@@ -2647,37 +2652,20 @@ $btnRestoreDefaults.Add_Click({
            "Skip folders:   $((@($d.excludeFolders)) -join ', ')`r`n" +
            "Export naming:  $($d.exportCollision)`r`n" +
            "Mirror:         $mirror`r`n`r`n" +
-           "Anything set just for this collector is dropped. Project paths are not touched."
-    if ([System.Windows.Forms.MessageBox]::Show($msg, 'Restore defaults', 'YesNo', 'Question') -ne 'Yes') { return }
+           "Anything set just for this collector is dropped. Other collectors, the " +
+           "defaults themselves and the project paths are all left alone."
+    if ([System.Windows.Forms.MessageBox]::Show($msg, 'Reset to defaults', 'YesNo', 'Question') -ne 'Yes') { return }
     Apply-SettingsToUi $d
     Commit-UiToCollector
     try {
         Save-Config
-        $lblStatus.Text = 'Defaults restored.'
-        Write-Log "Restored $(Get-CollectorLabel $script:CurrentCollector) to the shared defaults."
+        $lblStatus.Text = 'Reset to defaults.'
+        Write-Log "Reset $(Get-CollectorLabel $script:CurrentCollector) to the defaults."
     }
-    catch { [System.Windows.Forms.MessageBox]::Show($_.Exception.Message, 'Restore defaults', 'OK', 'Error') | Out-Null }
+    catch { [System.Windows.Forms.MessageBox]::Show($_.Exception.Message, 'Reset to defaults', 'OK', 'Error') | Out-Null }
     Update-DefaultsIndicator
 })
 
-$btnSaveDefaults.Add_Click({
-    if (-not $script:CurrentCollector) { return }
-    $msg = "Make these settings the defaults for every collector?`r`n`r`n" +
-           "Collectors already set up keep what they have. This is the baseline a new " +
-           "collector starts from, and what Restore defaults goes back to.`r`n`r`n" +
-           "Project paths are per-project and are not part of the defaults."
-    if ([System.Windows.Forms.MessageBox]::Show($msg, 'Save as defaults', 'YesNo', 'Question') -ne 'Yes') { return }
-    $script:Config.defaults = Get-UiSettings
-    Commit-UiToProject
-    Commit-UiToCollector
-    try {
-        Save-Config
-        $lblStatus.Text = 'Defaults saved.'
-        Write-Log 'Saved these settings as the defaults new collectors start from.'
-    }
-    catch { [System.Windows.Forms.MessageBox]::Show($_.Exception.Message, 'Save as defaults', 'OK', 'Error') | Out-Null }
-    Update-DefaultsIndicator
-})
 
 $btnCancel.Add_Click({ $script:CancelRequested = $true; $lblStatus.Text = 'Cancelling...' })
 $btnCheck.Add_Click({ Invoke-CollectorAction $true })

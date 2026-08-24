@@ -36,11 +36,12 @@ WinForms GUI that runs on stock Windows (PowerShell 5.1 + .NET Framework 4.x).
 - **Everyday mode by default** — the window shows the project, which collector is plugged in,
   and **Sync**. Setup (paths, file types, naming, renaming things) sits behind an **Advanced**
   tick-box that starts off and is remembered per machine.
-- **One baseline every collector shares** — the settings a collector uses live once under
-  `defaults`. A newly detected collector is seeded from them, **Restore defaults** puts one
-  back on them, and the panel says whether you are looking at the baseline or a one-off tweak.
-  Editing a collector changes that collector only; the baseline moves solely through
-  **Save as defaults**.
+- **One baseline every collector shares, and nothing in the GUI can rewrite it** — the settings
+  a collector uses live once under `defaults`. A newly detected collector is seeded from them,
+  **Reset to defaults** puts one back on them, and the panel says whether you are looking at the
+  baseline or a one-off tweak. Editing a collector changes that collector only; the baseline is
+  changed by editing `config.json`, so no amount of clicking turns one person's experiment into
+  everyone's default.
 - **Projects are separate from collectors** — one active project supplies the design source,
   the export root and the on-device folder; every collector follows it.
 - **Mirrors your folder tree** under the destination (subfolders preserved).
@@ -135,7 +136,9 @@ All of this uses only built-in Windows components — nothing to download or ins
    - **Skip folders** — folder names ignored at any depth, defaults `SUPERSEDED`.
    - **Export naming** — how files from different collectors are kept apart. See below.
    - **Mirror** — whether the design folder is owned by the tool. See below.
-6. If you changed anything, press **Save as defaults** so the next collector starts the same way.
+6. If you changed anything, press **Save settings** — nothing is written to `config.json` until
+   you do. (To change what *every* collector starts from, edit the `defaults` block in
+   `config.json`; see below.)
 7. Press **Sync this collector**. Both legs run: design down, then exports up.
 
 Press **Check** any time for what both legs *would* do — it writes nothing and deletes nothing.
@@ -252,16 +255,25 @@ under `defaults` rather than being retyped per unit:
 
 - A newly detected collector is **seeded from the defaults**, so setting up a fourth controller
   is a name and nothing else.
-- **Restore defaults** puts a collector back on the baseline, dropping anything set just for it.
-  It shows what it is about to apply and asks first.
-- **Save as defaults** is the *only* thing that moves the baseline. Collectors already set up
-  keep what they have; this is what new ones will start from.
-- The panel says which of the two you are looking at — *Matches the saved defaults* or
-  *Customised — differs from defaults* — updated as you type. A one-off tweak made months ago
-  stays visible instead of quietly becoming the house style.
+- **Reset to defaults** puts a collector back on the baseline, dropping anything set just for
+  it. It shows what it is about to apply and asks first, and touches that collector only —
+  not the other collectors, not the project paths, and not the defaults.
+- The panel says which of the two you are looking at — *Matches the defaults* or *Customised —
+  differs from defaults* — updated as you type, so a one-off tweak made months ago stays
+  visible instead of quietly becoming the house style.
 
-Both buttons are Advanced-only, so ordinary use cannot drift the baseline at all. Project paths
-are per-project by nature and are deliberately **not** part of the defaults.
+**There is deliberately no button that writes the baseline.** The GUI can edit one collector;
+it cannot make those edits everyone's default. Changing the baseline means opening `config.json`
+and editing the `defaults` block — a small speed bump that is the whole point, because the
+person tweaking a setting to get one controller working is rarely the person deciding site
+policy. Note the limit of that: `config.json` is a plain file, usually on a shared drive, so
+this stops an accidental click, not someone determined with Notepad. If you need it genuinely
+locked down, put the app folder somewhere users have read-only NTFS rights.
+
+Changing the defaults does **not** disturb collectors already set up — they keep what they
+have, and adopt the new baseline when you press Reset on them.
+
+Project paths are per-project by nature and are deliberately **not** part of the defaults.
 
 If `config.json` has no `defaults` block, the built-in values are used and written on the next
 save. A partial block is fine — stated keys win, the rest fall back — and a stated empty list
@@ -483,7 +495,7 @@ what's on the target.
 | `projects[].designSource` | Where the drawings live on the PC, e.g. `S:\02-DESIGN`. |
 | `projects[].exportRoot` | Where pulled field data is filed. Supports `{year}` `{month}` `{julian}` `{date}`. |
 | `projects[].deviceProjectPath` | The project folder **on the collector**. For MTP the first segment is the device storage. |
-| `defaults.*` | The baseline new collectors are seeded from, and what **Restore defaults** applies. Same seven fields as `collectors[]` below, minus the identity ones (`serial`, `name`, `model`, `type`). Omit it and the built-in values are used; a partial block falls back key by key. |
+| `defaults.*` | The baseline new collectors are seeded from, and what **Reset to defaults** applies. Same seven fields as `collectors[]` below, minus the identity ones (`serial`, `name`, `model`, `type`). **Edit here only** — the GUI never writes this. Omit it and the built-in values are used; a partial block falls back key by key. |
 | `collectors[].serial` | Hardware serial — the key. Read from the USB descriptor; never guessed. |
 | `collectors[].name` | Short name you assign. **Becomes the export filename prefix**, so settle it before the first export. |
 | `collectors[].model` | MTP model name as shown under "This PC" (e.g. `TSC5`). Several units share this, which is why `serial` is the key. |
