@@ -1,49 +1,45 @@
 {
-  "lastProfile": "Push design to collector (MTP)",
+  "activeProject": "Example project",
+
+  "projects": [
+    {
+      "name": "Example project",
+      "designSource": "S:\\02-DESIGN",
+      "exportRoot": "C:\\Users\\you\\OneDrive - Company\\Teams - Surveying\\07-DATALOGGER BACKUP\\{year}\\{month}",
+      "deviceProjectPath": "Internal shared storage\\Trimble Data\\Projects\\Example project"
+    }
+  ],
+
+  "_defaults_note": "The baseline every collector starts from. Set it once in the GUI with Save as defaults (Advanced); Restore defaults puts a collector back on it. Editing a collector changes that collector only.",
+  "defaults": {
+    "designSubPath": "02-Design",
+    "exportSubPath": "Exports",
+    "designExtensions": [ ".csv", ".dxf", ".xml", ".ttm" ],
+    "exportExtensions": [ ".job", ".jxl", ".csv", ".dxf", ".rxl", ".xml" ],
+    "excludeFolders": [ "SUPERSEDED" ],
+    "prune": true,
+    "exportCollision": "prefix"
+  },
+
+  "_collectors_note": "Do not hand-write these. Plug a collector in and press Detect - the serial is read from the USB descriptor, the name you give becomes the export filename prefix, and these settings are copied from defaults.",
+  "collectors": [
+    {
+      "serial": "JAJ000000000",
+      "name": "TSC5-01",
+      "model": "TSC5",
+      "type": "mtp",
+      "designSubPath": "02-Design",
+      "exportSubPath": "Exports",
+      "designExtensions": [ ".csv", ".dxf", ".xml", ".ttm" ],
+      "exportExtensions": [ ".job", ".jxl", ".csv", ".dxf", ".rxl", ".xml" ],
+      "excludeFolders": [ "SUPERSEDED" ],
+      "prune": true,
+      "exportCollision": "prefix"
+    }
+  ],
+
   "mtp": {
     "retries": 2,
     "verifyAfterUpload": true
-  },
-  "profiles": [
-    {
-      "name": "Push design to collector (MTP)",
-      "direction": "push",
-      "sourcePath": "C:\\Design",
-      "targetType": "mtp",
-      "deviceName": "MyCollector",
-      "destinationPath": "Internal shared storage\\Projects\\ExampleProject\\Design",
-      "collisionMode": "deviceSubfolder",
-      "extensions": [ ".csv", ".dxf", ".xml", ".ttm" ]
-    },
-    {
-      "name": "Push design - stage to USB stick",
-      "direction": "push",
-      "sourcePath": "C:\\Design",
-      "targetType": "folder",
-      "deviceName": "",
-      "destinationPath": "E:\\Projects\\ExampleProject\\Design",
-      "collisionMode": "deviceSubfolder",
-      "extensions": [ ".csv", ".dxf", ".xml", ".ttm" ]
-    },
-    {
-      "name": "Pull field data - collector (MTP) -> USB/cloud",
-      "direction": "pull",
-      "sourcePath": "Internal shared storage\\Projects\\ExampleProject\\Export",
-      "targetType": "mtp",
-      "deviceName": "MyCollector",
-      "destinationPath": "E:\\FieldData\\{julian}",
-      "collisionMode": "deviceSubfolder",
-      "extensions": [ ".job", ".jxl", ".csv", ".dxf", ".rxl", ".xml" ]
-    },
-    {
-      "name": "Pull field data - run on collector -> USB/cloud",
-      "direction": "pull",
-      "sourcePath": "C:\\Trimble Data\\Projects\\ExampleProject\\Export",
-      "targetType": "folder",
-      "deviceName": "T110-01",
-      "destinationPath": "E:\\FieldData\\{julian}",
-      "collisionMode": "deviceSubfolder",
-      "extensions": [ ".job", ".jxl", ".csv", ".dxf", ".rxl", ".xml" ]
-    }
-  ]
+  }
 }

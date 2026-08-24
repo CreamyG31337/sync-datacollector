@@ -26,23 +26,51 @@ WinForms GUI that runs on stock Windows (PowerShell 5.1 + .NET Framework 4.x).
 
 ## Features
 
-- **Push or pull** per profile (`direction: push | pull`) — same engine, either way.
-- **Named profiles** — one install drives several jobs (push to a collector over MTP, stage
-  to a USB stick, pull field data). Pick a profile, press **Sync now**.
+- **Push and pull share one engine** — the same comparison, retry and verification logic drives
+  both legs; only the direction and the safety rules differ.
+- **A collector is the unit of configuration** — plug one in, and the app identifies it by
+  **hardware serial** and locks to that collector's setup. Nothing to pick from a dropdown,
+  and an unrecognised controller is never given another one's settings.
+- **One button, two one-way legs** — *design* mirrors the project's drawings onto the
+  collector; *export* pulls its field data into OneDrive. Not a two-way merge.
+- **Everyday mode by default** — the window shows the project, which collector is plugged in,
+  and **Sync**. Setup (paths, file types, naming, renaming things) sits behind an **Advanced**
+  tick-box that starts off and is remembered per machine.
+- **One baseline every collector shares** — the settings a collector uses live once under
+  `defaults`. A newly detected collector is seeded from them, **Restore defaults** puts one
+  back on them, and the panel says whether you are looking at the baseline or a one-off tweak.
+  Editing a collector changes that collector only; the baseline moves solely through
+  **Save as defaults**.
+- **Projects are separate from collectors** — one active project supplies the design source,
+  the export root and the on-device folder; every collector follows it.
 - **Mirrors your folder tree** under the destination (subfolders preserved).
 - **Total-station scans stay whole** — when a `.jxl` is synced, its companion `<name> Files`
   folder (point cloud, photos, database — any file type, incl. empty subfolders) travels with it.
-- **Per-collector separation on pull** — pulled files go under a per-device subfolder so two
-  crews exporting the same filename never overwrite each other.
-- **`{julian}` path token** — expands to today's Julian date (`YY-DDD`, e.g. `26-204`) so each
-  day's pull auto-files into a dated folder. The current Julian date is shown in the app.
+- **Per-collector separation on pull** — exported files are prefixed with the collector that
+  produced them (`TSC5-01_1645-25-346.csv`), so two crews exporting the same filename into one
+  shared folder never collide. A per-collector subfolder is available instead.
+- **Exports are never destroyed** — a pull never overwrites: a clashing name lands beside the
+  original as `name (2).ext`, and prune is refused outright on a pull.
+- **Knows one collector from another** — units are identified by **hardware serial** read from
+  the USB descriptor, not by the model name they all share, and you can give each a friendly
+  name. Two identical models connected at once makes it ask, never guess.
+- **Dated path tokens** — `{year}` (`2026`), `{month}` (`8-AUG`), `{julian}` (`26-236`) and
+  `{date}` (`2026-08-24`) expand in any path, so `…\BACKUP\{year}\{month}` files each pull into
+  the right dated folder on its own. Today's values are shown in the app.
+- **Superseded designs stay off the collector** — folder names listed in `excludeFolders`
+  (default `SUPERSEDED`) are skipped at any depth, so obsolete drawings never reach the field.
 - **Copies only new or changed files** — compares size and modified-time; re-syncs are fast.
 - **Live check every run** — it re-reads what's actually on the target each time; it never
   trusts a cached list/manifest.
-- **One-way and additive** — never deletes at the destination.
+- **"Out of date" awareness** — a **Check** button says what needs syncing *without copying
+  anything*. With the collector connected the answer is exact; with it unplugged the app
+  falls back to what the last sync recorded and still tells you whether the design folder
+  has moved on since. See below.
+- **Additive by default; mirroring on request** — nothing is deleted unless a collector opts
+  into **prune** on its design leg, which makes the tool *own* that folder. Never on exports.
 - **Per-machine preferences in the registry** — the app folder (and its shared `config.json`)
   can live on OneDrive and run from several PCs/collectors; each machine remembers its own
-  last/default profile in `HKCU\Software\SyncDataCollector` instead of churning the shared file.
+  last project in `HKCU\Software\SyncDataCollector` instead of churning the shared file.
 - **Reliable MTP** — see below.
 
 ---
@@ -85,23 +113,42 @@ All of this uses only built-in Windows components — nothing to download or ins
    (`config.json` is git-ignored so your real network paths and project names never
    get committed.)
 2. **Run it.** Double-click **`SyncDataCollector.cmd`**.
-3. In the GUI, pick or edit a **profile**:
-   - **Source folder** — where your design files live (Browse…).
-   - **Target type** — `folder` (USB / local path) or `mtp` (device over USB).
-   - **Device name** (mtp only) — click **Detect…** to list connected MTP devices and pick yours.
-   - **Destination** — the folder to create/fill on the target. For `mtp`, the first
-     segment is the device storage, e.g. `Internal shared storage\Projects\MyJob\Design`.
-   - **File types** — comma-separated, defaults to `.csv, .dxf, .xml, .ttm`. `.xml`
-     files are only synced if they are actually **LandXML** (root `<LandXML>`), so
-     unrelated project/config XML is skipped automatically.
-4. Click **Save** to persist the profile, then **Sync now**. Watch the log; the status line
-   shows `Copied N, skipped M, failed K`.
+3. **Tick "Advanced"** — steps 3 and 4 are one-time setup, and the panels they describe are
+   hidden until you do. Untick it afterwards; day to day nobody needs them.
+4. **Set up the project** (once) — the paths every collector shares:
+   - **Design source** — where the drawings live, e.g. `S:\02-DESIGN`.
+   - **Export root** — where pulled field data is filed. Supports `{year}` `{month}`
+     `{julian}` `{date}`, so `…\07-DATALOGGER BACKUP\{year}\{month}` files into
+     `2026\8-AUG` on its own.
+   - **Project on device** — the project folder on the collector, e.g.
+     `Internal shared storage\Trimble Data\Projects\1645 - STRATHCONA`.
+5. **Plug in a collector.** It is detected by serial within a few seconds. The first time a
+   controller is seen, press **Detect** and give it a short name — this becomes the export
+   filename prefix, so pick it before the first export (already-exported files keep the old
+   prefix). Its settings are copied from the defaults, so usually there is nothing more to do.
+   What they mean:
+   - **Design folder** / **Export folder** — subfolders under the project folder on the device.
+   - **Design types** — defaults `.csv, .dxf, .xml, .ttm`. `.xml` is only synced when it is
+     really **LandXML** (root `<LandXML>`), so unrelated project XML is skipped.
+   - **Export types** — defaults `.job, .jxl, .csv, .dxf, .rxl, .xml`. Include `.jxl` to pull
+     scans with their `<name> Files` folder.
+   - **Skip folders** — folder names ignored at any depth, defaults `SUPERSEDED`.
+   - **Export naming** — how files from different collectors are kept apart. See below.
+   - **Mirror** — whether the design folder is owned by the tool. See below.
+6. If you changed anything, press **Save as defaults** so the next collector starts the same way.
+7. Press **Sync this collector**. Both legs run: design down, then exports up.
+
+Press **Check** any time for what both legs *would* do — it writes nothing and deletes nothing.
 
 A rolling `sync-log.txt` is written next to the app for later troubleshooting.
 
 ---
 
 ## The two-leg USB workflow (collectors that can't connect to the PC)
+
+> **Note:** this section and the next still describe the older per-profile framing. The engine
+> behaviour is unchanged and correct, but the GUI is now collector-driven &mdash; these two
+> workflows need a rewrite against the new model.
 
 When IT policy stops the collector from talking to the PC directly, sync in two hops using
 the **same app** with two profiles:
@@ -160,26 +207,307 @@ File types:     .job, .jxl, .csv, .dxf, .rxl, .xml
 
 ---
 
+## Projects and collectors
+
+The unit of configuration is a **collector**, keyed by its hardware serial. Plug one in and
+the app locks to that collector's setup — there is no profile to remember to select, and an
+unrecognised serial is **refused rather than matched to something else**, which is what makes
+adding a fourth controller safe.
+
+Orthogonal to that is the **project**: the design source, the export root, and where the
+project lives on the device. One project is active at a time and every collector follows it.
+A site may keep the same project for years, but the two axes are genuinely independent, so
+they are modelled separately.
+
+A run is **two one-way legs, never a merge**:
+
+| Leg | Direction | Behaviour |
+|---|---|---|
+| **design** | project design folder → collector | Mirrored: exclusions apply, and prune deletes anything the source does not have. |
+| **export** | collector export folder → OneDrive | Additive: never prunes, and **never overwrites**. |
+
+A failing leg does not stop the other — getting field data off a device matters more than
+either leg on its own, so the export still runs if the design push fails.
+
+### Everyday mode, and the Advanced tick-box
+
+Almost every run is the same three facts: which project, which collector is plugged in, and
+*go*. That is all the window shows by default — nobody renaming a device or retyping a network
+path is doing the normal thing, and settings that are visible are settings that get changed by
+accident.
+
+**Advanced** reveals the rest: project New/Rename/Delete and Save, the collector Rename button,
+the project paths, and the per-collector settings. It starts off, and each machine remembers
+its own choice in the registry alongside `LastProject`. **Detect** stays visible in both modes,
+because "which controller is this?" is an everyday question and an unrecognised serial has to
+be set up from somewhere.
+
+Nothing is hidden from a sync: the collapsed window runs exactly the same two legs with exactly
+the same settings.
+
+### Defaults
+
+Every collector is set up the same way in practice, so the settings live once in `config.json`
+under `defaults` rather than being retyped per unit:
+
+- A newly detected collector is **seeded from the defaults**, so setting up a fourth controller
+  is a name and nothing else.
+- **Restore defaults** puts a collector back on the baseline, dropping anything set just for it.
+  It shows what it is about to apply and asks first.
+- **Save as defaults** is the *only* thing that moves the baseline. Collectors already set up
+  keep what they have; this is what new ones will start from.
+- The panel says which of the two you are looking at — *Matches the saved defaults* or
+  *Customised — differs from defaults* — updated as you type. A one-off tweak made months ago
+  stays visible instead of quietly becoming the house style.
+
+Both buttons are Advanced-only, so ordinary use cannot drift the baseline at all. Project paths
+are per-project by nature and are deliberately **not** part of the defaults.
+
+If `config.json` has no `defaults` block, the built-in values are used and written on the next
+save. A partial block is fine — stated keys win, the rest fall back — and a stated empty list
+(`"excludeFolders": []`) is honoured as a real choice rather than refilled.
+
+### Keeping exports from different collectors apart
+
+Every collector exports into the *same* dated folder, so files must say where they came from.
+**Export naming** controls how:
+
+| Mode | Result |
+|---|---|
+| `prefix` (default) | `TSC5-01_1645-25-346.csv` — one flat month folder, provenance in the name. |
+| `deviceSubfolder` | `TSC5-01\1645-25-346.csv` — a folder per collector. |
+| `overwrite` | No separation. Only sensible with a single collector. |
+
+`prefix` deliberately prefixes the **first path segment**, not the filename. For a flat export
+folder those are the same thing; for a scan it keeps the pieces together, since `26-069-FE.jxl`
+and `26-069-FE Files\cloud.rcs` both gain the same prefix and Trimble Access still finds the
+companion folder. Prefixing the leaf instead would rename the file and the folder's *contents*
+but not the folder, breaking the link.
+
+### Exports are never destroyed
+
+Field data cannot be re-collected, so a pull will not overwrite. If a name is taken by a
+*different* file, the new one lands beside it as `name (2).ext`. Re-running does not spawn
+`(3)`, `(4)`, … — the next pull recognises its own earlier copy and skips. Prune is refused
+outright on a pull, and logs the refusal.
+
+---
+
+## Keeping superseded designs off the collector
+
+Design folders usually keep a `SUPERSEDED` subfolder of drawings that have been replaced.
+Those must not reach a collector — staking out from an obsolete design is exactly the
+mistake this prevents.
+
+**Skip folders** (`excludeFolders`) is a list of folder *names*, matched **at any depth**
+and **case-insensitively**, so one entry covers every copy of it in the tree:
+
+```
+Skip folders:  SUPERSEDED
+```
+
+```
+S:\02-DESIGN\9.0 TOWER CRANE\SUPERSEDED\TC-1.dxf          <- skipped
+S:\02-DESIGN\5.0 BRIDGE\MCB\superseded\26-111 MCB FDN.dxf <- skipped (case ignored)
+S:\02-DESIGN\9.0 TOWER CRANE\1645 - TC PLATES.dxf         <- synced
+```
+
+Names may contain spaces (`OLD DRAWINGS`), so the list splits on **commas/semicolons only**,
+never on whitespace. An empty list excludes nothing. Exclusions beat everything else,
+including `.jxl` companion folders. Each run logs which folders are excluded and how many
+files that skipped, so it is never silent:
+
+```
+Excluding folder(s): SUPERSEDED
+Found 151 matching file(s) (excluded 10 in excluded folder(s)).
+```
+
+> **Upgrading:** a profile saved before this feature existed has no `excludeFolders` field.
+> That's read as "never chose" and defaults to `SUPERSEDED` rather than inheriting the old
+> behaviour — the safe default matters more here than strict backwards compatibility. Set it
+> to `[]` if you really do want superseded files pushed.
+
+On its own, an exclusion only stops *future* syncs from copying those files — anything already
+on a collector stays there. Turn on **prune** below to have the tool clear it out.
+
+---
+
+## Mirror mode: letting the tool own the destination folder
+
+By default nothing at the destination is ever deleted. Tick **Mirror: DELETE files at the
+destination that are not in the source** (`prune`) and the destination becomes an exact mirror
+of the filtered source: after the copy pass, anything the source does not account for is
+removed, and folders left empty go with it.
+
+This is the one irreversible thing the tool does, so:
+
+- **Off by default**, per profile, and never enabled by an upgrade.
+- **Push only.** On a pull the destination accumulates field data from several collectors and
+  earlier days that no source can account for — pruning it would destroy exactly the work you
+  just collected. A pull profile with `prune` set logs a warning and ignores it.
+- **The marker is never pruned.** Deleting it would strip the collector of its identity.
+- **Excluded folders count as "not claimed"**, so `excludeFolders` + `prune` together is what
+  actually clears superseded designs off a collector that already has them.
+- **Check previews it** — press **Check** and the exact delete list is printed, with nothing
+  removed:
+  ```
+  Up to date - 151 file(s) checked on TSC5 [6a03f199], none out of date.
+  10 extra file(s) on the device would be DELETED by a sync.
+  ```
+- **Every deletion is logged by name** to `sync-log.txt`, and the run banner warns up front:
+  ```
+  Prune ON - files at the destination that the source does not account for will be DELETED.
+  DELETED        9.0 TOWER CRANE\SUPERSEDED\TC-1.dxf
+  DELETED FOLDER 9.0 TOWER CRANE\SUPERSEDED
+  ----- Done. Copied 0, deleted 10, skipped 151, failed 0 (of 151). -----
+  ```
+
+There is deliberately **no extra confirmation dialog** on each sync: the option is opt-in, red
+in the UI, off by default, and previewable with **Check**. A prompt on every run would train
+you to click through it.
+
+---
+
+## Knowing when a collector is out of date
+
+The question "has anyone changed the design files since I last loaded collector X?" gets
+asked with the collector on the bench *and* with it out in the field, so **Check** answers
+it both ways. It never writes anything — not a file, not a folder, not a marker.
+
+**Collector connected** → the exact answer. Check runs the same comparison a sync runs
+(size, then modified-time) against what is really on the device, and lists what differs:
+
+```
+OUT OF DATE (source newer)  GENERAL ARRANGEMENT\260109-RSSSC-LINEWORK.dxf
+OUT OF DATE (new)           UTILITIES\260319TEST_.xml
+----- NEEDS SYNC - 2 of 159 file(s) out of date on TSC5. -----
+```
+
+**Collector not connected** → the useful answer. The app scans the source once and scores
+**every collector it has ever synced under that profile**, so it names which units are behind:
+
+```
+  TSC5 [6a03f199] - NEEDS SYNC (last sync 2026-08-24 13:07 : 3 changed)
+  TSC5 [a41b0e77] - up to date as of 2026-08-24 13:09
+----- NEEDS SYNC - 1 of 2 tracked collector(s) behind:
+      TSC5 [6a03f199] (last sync 2026-08-24 13:07: 3 changed). -----
+```
+
+This is a strong hint, not a guarantee — it describes the *source*, and can't know whether
+someone deleted files on the collector in the meantime. It says "Probably up to date …
+Connect it to be sure" rather than claiming certainty. Changes made within ~2 seconds of a
+sync fall inside the timestamp tolerance and aren't flagged.
+
+The collector banner at the top of the window shows the same thing at a glance the moment a
+controller is plugged in (`TSC5-02 (JAJ220110159) - last synced 2026-08-24 14:35`), read from
+the local record, so it appears instantly — no scanning.
+
+### Several collectors, one device name
+
+MTP reports a **model** name, so every TSC5 in the yard shows up as `TSC5`. The name alone
+cannot tell two units apart — which matters the moment you own more than one.
+
+**The hardware serial does.** Windows puts the USB device descriptor in the Shell path the
+tool already walks, and the serial is right there:
+
+```
+::{20D04FE0-...}\\\?\usb#vid_099e&pid_0261#jaj214510978#{6ac27878-...}
+                                           ^^^^^^^^^^^^  -> JAJ214510978
+```
+
+No WMI, no extra dependency, still pure Shell. The serial beats a generated id on every count:
+it identifies a unit **before it has ever been synced**, it **survives the device being wiped**,
+and it matches the sticker on the machine.
+
+Records are kept **per profile per serial**, so one profile drives a whole fleet and every
+collector carries its own last-sync record.
+
+**Naming your units.** `TSC5 (JAJ214510978)` is unambiguous but not memorable, so give each
+serial a friendly name — press **Detect…** and it offers to name any unit it doesn't know:
+
+```json
+"devices": { "JAJ214510978": "Crew A", "JAJ220110159": "TSC5-02" }
+```
+
+That lives in `config.json` (shared), so every machine calls the same collector the same thing,
+and it shows up everywhere: `Crew A (JAJ214510978)`.
+
+**Two of the same model connected at once.** The tool resolves the device *item* it was given
+rather than looking one up by name, so it can never drift onto the wrong unit mid-sync. If two
+collectors share the profile's name, it **stops and asks which** — it will not guess:
+
+```
+More than one 'TSC5' is connected (JAJ214510978, JAJ220110159).
+Disconnect all but one, or choose which to use.
+```
+
+**Upgrading.** A collector already carrying a GUID-based marker is promoted to its serial on
+the next sync, and the stale record is retired so one unit never appears twice:
+
+```
+Device identity upgraded to hardware serial JAJ214510978 (was 6a03f199-36e3-49eb-94db-7a1273d4da8e).
+```
+
+**Where there is no serial:** a `folder` target (a USB stick) has none, so the marker keeps a
+generated GUID there, shown truncated (`STICK (ee3d7fa8)`). On **pull** the marker lives on the
+USB/cloud destination rather than on the collector — the tool never writes to a collector it is
+pulling field data from — so pull profiles still identify by name.
+
+### What gets written, and where
+
+| File | Where | Purpose |
+|---|---|---|
+| `_SyncDataCollector.json` | destination root, i.e. **on the collector / USB stick** | Identity marker: a stable `deviceId` plus a note of the last sync written to it. |
+| `sync-state.json` | next to the app (git-ignored) | What *this install* last synced, **one record per profile per collector**: when, file counts, newest source timestamp. |
+
+The `deviceId` is a GUID generated once and then preserved across syncs, so a USB stick is
+still recognisable after Windows gives it a different drive letter. The marker is **never
+itself synced** — copying it onward would hand a second device the same identity — so it is
+skipped even if you add `.json` to a profile's file types.
+
+Both records are best-effort: if the marker can't be written (a read-only or full device),
+the sync still succeeds and logs a warning, and offline checks fall back to the local record.
+A cancelled sync deliberately leaves the previous records alone, since it doesn't describe
+what's on the target.
+
+---
+
 ## Configuration reference
 
 `config.json` (see `config.example.json`):
 
 | Field | Meaning |
 |---|---|
-| `lastProfile` | Fallback default profile (the per-machine last choice lives in the registry). |
-| `profiles[].name` | Display name in the dropdown. |
-| `profiles[].direction` | `"push"` (PC → collector) or `"pull"` (collector → PC/USB/cloud). Defaults to `push`. |
-| `profiles[].sourcePath` | Copy **from**. Push: a PC path. Pull: the collector path (on-device path for `mtp`). Supports `{julian}`. |
-| `profiles[].targetType` | The **collector-side** type: `"folder"` or `"mtp"`. |
-| `profiles[].deviceName` | MTP device name as shown under "This PC"; also the per-device subfolder label on pull. Use **Detect…** if unsure. |
-| `profiles[].destinationPath` | Copy **to**. For `mtp`, first segment is the device storage. Supports `{julian}`. |
-| `profiles[].collisionMode` | Pull only: `"deviceSubfolder"` (default), `"prefix"` (`<device>_name`), or `"overwrite"`. |
-| `profiles[].extensions` | File types to sync. On push, `.xml` is content-checked and only synced when it is LandXML. Include `.jxl` to pull scans with their `<name> Files` folder. |
+| `activeProject` | Which project is currently selected. |
+| `projects[].name` | Display name in the dropdown. |
+| `projects[].designSource` | Where the drawings live on the PC, e.g. `S:\02-DESIGN`. |
+| `projects[].exportRoot` | Where pulled field data is filed. Supports `{year}` `{month}` `{julian}` `{date}`. |
+| `projects[].deviceProjectPath` | The project folder **on the collector**. For MTP the first segment is the device storage. |
+| `defaults.*` | The baseline new collectors are seeded from, and what **Restore defaults** applies. Same seven fields as `collectors[]` below, minus the identity ones (`serial`, `name`, `model`, `type`). Omit it and the built-in values are used; a partial block falls back key by key. |
+| `collectors[].serial` | Hardware serial — the key. Read from the USB descriptor; never guessed. |
+| `collectors[].name` | Short name you assign. **Becomes the export filename prefix**, so settle it before the first export. |
+| `collectors[].model` | MTP model name as shown under "This PC" (e.g. `TSC5`). Several units share this, which is why `serial` is the key. |
+| `collectors[].type` | `"mtp"` (over USB) or `"folder"` (a Windows tablet running this app locally). |
+| `collectors[].designSubPath` | Design subfolder under `deviceProjectPath`, e.g. `02-Design`. |
+| `collectors[].exportSubPath` | Export subfolder under `deviceProjectPath`, e.g. `Exports`. |
+| `collectors[].designExtensions` | Types pushed. `.xml` is content-checked and only sent when it is LandXML. |
+| `collectors[].exportExtensions` | Types pulled. Include `.jxl` to bring scans with their `<name> Files` folder. |
+| `collectors[].excludeFolders` | Folder **names** skipped at any depth, case-insensitive. Defaults `[ "SUPERSEDED" ]`; `[]` excludes nothing. |
+| `collectors[].prune` | Design leg only. `true` makes the collector's design folder an exact mirror, deleting what the source lacks. Defaults `true`. |
+| `collectors[].exportCollision` | `"prefix"` (default), `"deviceSubfolder"`, or `"overwrite"`. |
 | `mtp.retries` | Extra attempts per file after the first (default 2). |
 | `mtp.verifyAfterUpload` | Re-read the on-device size and confirm it matches (default true). |
 
+Values under `collectors[]` **override** `defaults` for that collector; they are written out in
+full rather than left blank, so the file always says exactly what a given unit will do.
+
 Per-machine settings (not in `config.json`) live in `HKCU\Software\SyncDataCollector` —
-currently just `LastProfile`, so a shared copy on OneDrive doesn't fight over the default profile.
+`LastProject` and `Advanced`, so a shared copy on OneDrive doesn't fight over either.
+
+> **Upgrading from the old profile-based config:** on first load, `profiles` are read once to
+> derive a project (design source, on-device project folder, export root) and the file gains
+> `projects` / `collectors`. The old `profiles` array is **left in place, ignored** — delete it
+> by hand once you're happy. Collectors are not invented: plug each one in and press **Detect**.
 
 ---
 
@@ -200,10 +528,6 @@ currently just `LastProfile`, so a shared copy on OneDrive doesn't fight over th
 
 ## Roadmap
 
-- **"Out of date" awareness** — track which design files have changed since the last sync
-  to a given collector and warn *"collector X needs a re-sync"*. Requires a small
-  identity marker on each collector so the app knows which device it's looking at.
-- **Mirror/prune option** — optionally delete target files that no longer exist in the source.
 - **Scheduling / watch-folder** — auto-sync on a timer or when the source changes.
 - **Killable background worker** — run the transfer in a separate process the GUI can hard-kill,
   for a mid-file cancel/timeout on flaky MTP.

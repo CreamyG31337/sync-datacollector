@@ -1,9 +1,13 @@
 # Real per-site config with network paths / device names / project folders.
 # Never commit this — copy config.example.json to config.json and edit locally.
 config.json
+config.json.bak*
 
 # Runtime log
 sync-log.txt
+
+# Per-install record of what was last synced per profile (see "out of date" awareness).
+sync-state.json
 
 # Windows / editor noise
 Thumbs.db
