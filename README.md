@@ -44,6 +44,11 @@ WinForms GUI that runs on stock Windows (PowerShell 5.1 + .NET Framework 4.x).
   everyone's default.
 - **Projects are separate from collectors** — one active project supplies the design source,
   the export root and the on-device folder; every collector follows it.
+- **`S:` maps itself** — the design tree lives in OneDrive, but every path calls it `S:`, which
+  is a `subst` that dies with the logon session. The app re-creates it from `driveMap` at
+  startup and before any leg that needs it, resolving `%OneDriveCommercial%` and friends so one
+  shared `config.json` fits every crew member's profile. A letter that already works is never
+  touched, and a letter held by a real disk is never taken over.
 - **Mirrors your folder tree** under the destination (subfolders preserved).
 - **Total-station scans stay whole** — when a `.jxl` is synced, its companion `<name> Files`
   folder (point cloud, photos, database — any file type, incl. empty subfolders) travels with it.
@@ -113,6 +118,9 @@ All of this uses only built-in Windows components — nothing to download or ins
    ```
    (`config.json` is git-ignored so your real network paths and project names never
    get committed.)
+   Then point `driveMap` at your team folder so the app can create `S:` itself, rather than
+   everyone keeping a personal "map S drive" `.bat` — see
+   [The `S:` drive maps itself](#the-s-drive-maps-itself).
 2. **Run it.** Double-click **`SyncDataCollector.cmd`**.
 3. **Tick "Advanced"** — steps 4 and 5 are one-time setup, and the panels they describe are
    hidden until you do. Untick it afterwards; day to day nobody needs them.
@@ -484,6 +492,53 @@ what's on the target.
 
 ---
 
+## The `S:` drive maps itself
+
+Every path in `config.json` calls the team folder `S:`. That letter is not a real disk — it is a
+`subst` onto the OneDrive-synced team folder, which is exactly what keeps the shared config free
+of anybody's `C:\Users\<name>\…`. But a `subst` lives and dies with the **logon session**: after
+a reboot `S:` is simply gone, every run fails with `Source folder not found: 'S:\02-DESIGN'`, and
+somebody has to remember to double-click a per-user `.bat` first.
+
+So the app maps it itself, from `driveMap`:
+
+```json
+"driveMap": [
+  {
+    "letter": "S",
+    "targets": [
+      "%OneDriveCommercial%\\Teams - Surveying",
+      "%USERPROFILE%\\OneDrive - Company\\Teams - Surveying"
+    ]
+  }
+]
+```
+
+- **Targets are tried in order and `%ENVVAR%` is expanded**, so one entry covers the whole crew:
+  `%OneDriveCommercial%` is *that* user's OneDrive root on *that* machine. If none of them exist,
+  the app looks for the same folder **name** under every OneDrive root in the profile — which
+  covers a tenant folder spelled differently on somebody's PC.
+- It runs **at startup**, and again **before any leg** whose path needs the letter, so a drive
+  that disappears mid-session is back by the next **Sync**.
+
+What it will not do:
+
+- **touch a letter that already resolves**, whatever it points at — map `S:` somewhere on
+  purpose and it stays mapped there;
+- **take over a letter held by a real disk or a network drive**, even one that is not ready;
+- **guess** — if no target folder exists it says so in the log and maps nothing.
+
+Only a *stale* `subst` — still mapped, but its folder is gone — is dropped, and only to re-point
+it at a folder that does exist.
+
+One wrinkle worth knowing: `subst` is per logon session **and per elevation level**. A drive
+mapped by a normal process is invisible to an elevated one and vice versa, which is why every run
+re-checks the letter instead of assuming an earlier run set it up (and why mapping `S:` from an
+admin prompt will not help this app). Paths in `config.json` expand `%ENVVAR%` too, so an export
+root can be written `%OneDriveCommercial%\…` where a drive letter is not wanted at all.
+
+---
+
 ## Configuration reference
 
 `config.json` (see `config.example.json`):
@@ -493,8 +548,10 @@ what's on the target.
 | `activeProject` | Which project is currently selected. |
 | `projects[].name` | Display name in the dropdown. |
 | `projects[].designSource` | Where the drawings live on the PC, e.g. `S:\02-DESIGN`. |
-| `projects[].exportRoot` | Where pulled field data is filed. Supports `{year}` `{month}` `{julian}` `{date}`. |
+| `projects[].exportRoot` | Where pulled field data is filed. Supports `{year}` `{month}` `{julian}` `{date}`, and `%ENVVAR%`. |
 | `projects[].deviceProjectPath` | The project folder **on the collector**. For MTP the first segment is the device storage. |
+| `driveMap[].letter` | A drive letter the app creates with `subst` when it is missing, e.g. `S`. Leave `driveMap` out entirely and it never maps anything. |
+| `driveMap[].targets` | Folders that letter may point at, **best first**. `%ENVVAR%` is expanded — prefer `%OneDriveCommercial%\…` to `C:\Users\<name>\…`, or the config only works for whoever wrote it. |
 | `defaults.*` | The baseline new collectors are seeded from, and what **Reset to defaults** applies. Same seven fields as `collectors[]` below, minus the identity ones (`serial`, `name`, `model`, `type`). **Edit here only** — the GUI never writes this. Omit it and the built-in values are used; a partial block falls back key by key. |
 | `collectors[].serial` | Hardware serial — the key. Read from the USB descriptor; never guessed. |
 | `collectors[].name` | Short name you assign. **Becomes the export filename prefix**, so settle it before the first export. |
@@ -531,6 +588,11 @@ Per-machine settings (not in `config.json`) live in `HKCU\Software\SyncDataColle
 - **Nothing happens when I double-click the .cmd / "running scripts is disabled"** — the
   launcher already passes `-ExecutionPolicy Bypass`. On a locked-down device (AppLocker /
   AllSigned), IT may need to allow the script's location or sign it.
+- **"Source folder not found: `S:\02-DESIGN`"** — `S:` is not mapped and the app could not map
+  it either. The log line above says why: no `driveMap` entry for `S`, none of its `targets`
+  exist on this machine (has OneDrive finished setting this profile up?), or the letter is held
+  by something else. Stopgap, in a **normal** (non-admin) prompt — an admin one maps a drive
+  this app cannot see: `subst S: "%OneDriveCommercial%\Teams - …"`.
 - **The device briefly disappears from "This PC"** — MTP devices occasionally drop off for a
   moment; just run **Sync now** again.
 - **Cloud-backed source (OneDrive/SharePoint "Files On-Demand")** — the first sync may be

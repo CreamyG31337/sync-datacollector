@@ -78,6 +78,23 @@ function New-MtpSettings {
     }
 }
 
+# A drive letter the tool may create with `subst` when it is missing, and the
+# folders it is allowed to point at. Several targets because one config.json is
+# shared by the whole crew: the first target that exists on THIS machine wins,
+# so a single entry covers everybody. %ENVVAR% is expanded, which is normally
+# all it takes -- "%OneDriveCommercial%\Teams - Surveying" is right for every
+# user on every machine, where a C:\Users\<name>\... path is right for one.
+function New-DriveMap {
+    param(
+        [string]$Letter = '',
+        [string[]]$Targets = @()
+    )
+    [pscustomobject]@{
+        letter  = (Get-DriveLetter $Letter)
+        targets = $Targets
+    }
+}
+
 function Get-DefaultConfig {
     # Generic starter profiles. Edit these in the GUI (or config.json) for your site.
     [pscustomobject]@{
@@ -89,6 +106,12 @@ function Get-DefaultConfig {
                 -DeviceProjectPath 'Internal shared storage\Trimble Data\Projects\Example project'
         )
         collectors    = @()                 # filled in as collectors are plugged in
+        driveMap      = @(                  # letters the tool re-creates with subst
+            New-DriveMap -Letter 'S' -Targets @(
+                '%OneDriveCommercial%\Teams - Surveying'
+                '%USERPROFILE%\OneDrive - Company\Teams - Surveying'
+            )
+        )
         defaults      = New-CollectorDefaults
         lastProfile = 'Collector over USB (MTP)'
         mtp         = New-MtpSettings
@@ -202,6 +225,15 @@ function Load-Config {
             if (-not $cfg.PSObject.Properties['devices'] -or -not $cfg.devices) {
                 $cfg | Add-Member -NotePropertyName devices -NotePropertyValue ([pscustomobject]@{}) -Force
             }
+            # Drive letters the tool may create with subst. Absent means the
+            # config predates the feature: leave it empty rather than inventing
+            # a mapping, since substituting the wrong folder onto S: would point
+            # every path in the file at the wrong site's design tree.
+            $dm = @()
+            if ($cfg.PSObject.Properties['driveMap']) {
+                $dm = @(@($cfg.driveMap) | ForEach-Object { New-DriveMap -Letter ([string]$_.letter) -Targets @($_.targets) })
+            }
+            $cfg | Add-Member -NotePropertyName driveMap -NotePropertyValue $dm -Force
             # Ensure MTP safeguard settings exist (older config files won't have them).
             $def = New-MtpSettings
             if (-not $cfg.PSObject.Properties['mtp'] -or -not $cfg.mtp) {
@@ -307,16 +339,207 @@ function Get-MonthFolder {
 # Expand path tokens, all case-insensitive:
 #   {julian} -> YY-DDD  (26-236)      {year}  -> 2026
 #   {month}  -> 8-AUG                 {date}  -> 2026-08-24
+#   %ENVVAR%  -> expanded too (%USERPROFILE%, %OneDriveCommercial%, ...)
 function Expand-PathTokens {
     param([string]$Path)
     if ([string]::IsNullOrEmpty($Path)) { return $Path }
     $now = Get-Date
-    $out = $Path
+    # Environment variables first, so one config.json fits every user.
+    $out = Expand-EnvVars $Path
     $out = $out -replace '(?i)\{julian\}', (Get-JulianDate)
     $out = $out -replace '(?i)\{year\}',   $now.ToString('yyyy')
     $out = $out -replace '(?i)\{month\}',  (Get-MonthFolder)
     $out = $out -replace '(?i)\{date\}',   $now.ToString('yyyy-MM-dd')
     return $out
+}
+
+# --------------------------------------------------------------------------
+# Mapped drives (subst)
+#
+# The design tree lives in OneDrive, but every path in config.json calls it S:.
+# That letter is a `subst`, which lives and dies with the logon session -- so
+# after a reboot S: is simply gone and every run fails with "Source folder not
+# found" until somebody remembers to run a per-user .bat. The tool re-creates
+# the mapping itself instead, from config.driveMap: once at startup, and again
+# before any leg whose path needs it, in case it went away mid-session.
+#
+# The rules, in order of how much damage getting them wrong would do:
+#   * a letter that already resolves is NEVER touched, whatever it points at;
+#   * a letter held by a real disk or a network drive is never taken over;
+#   * a stale subst (still mapped, but its folder is gone) is dropped first,
+#     and only to re-point it at a folder that does exist.
+# subst is per logon session AND per elevation level -- a mapping made here is
+# invisible to an elevated process, and vice versa -- which is why every run
+# re-checks instead of trusting that some earlier run set it up.
+# --------------------------------------------------------------------------
+$script:SubstExe = Join-Path $env:SystemRoot 'System32\subst.exe'
+
+# %USERPROFILE%, %OneDriveCommercial%, ... -- what lets one config.json serve
+# the whole crew, since the same folder is C:\Users\<them>\... on each machine.
+function Expand-EnvVars {
+    param([string]$Path)
+    if ([string]::IsNullOrEmpty($Path)) { return $Path }
+    return [System.Environment]::ExpandEnvironmentVariables($Path)
+}
+
+# The drive letter something names: 'S', 's:', 'S:\02-DESIGN' -> 'S'.
+# A UNC path or a relative path names none, and gets ''.
+function Get-DriveLetter {
+    param([string]$Text)
+    if ([string]$Text -match '^\s*([A-Za-z])(:|\s*$)') { return $Matches[1].ToUpperInvariant() }
+    return ''
+}
+
+# Every OneDrive root this user has. The last-resort way to find the team folder
+# when the configured paths were written on a machine that spells it differently.
+function Get-OneDriveRoots {
+    $roots = @()
+    foreach ($v in @($env:OneDriveCommercial, $env:OneDrive, $env:OneDriveConsumer)) {
+        if ($v -and (Test-Path -LiteralPath $v -PathType Container)) { $roots += ([string]$v).TrimEnd('\') }
+    }
+    try {
+        foreach ($d in @(Get-ChildItem -LiteralPath $env:USERPROFILE -Directory -Filter 'OneDrive*' -ErrorAction SilentlyContinue)) {
+            $roots += $d.FullName.TrimEnd('\')
+        }
+    }
+    catch {}
+    return @($roots | Select-Object -Unique)
+}
+
+# The driveMap entry for a letter, or $null if the tool was never told about it.
+function Get-DriveMapEntry {
+    param([string]$Letter)
+    $L = Get-DriveLetter $Letter
+    if (-not $L -or -not $script:Config) { return $null }
+    if (-not $script:Config.PSObject.Properties['driveMap']) { return $null }
+    return (@(@($script:Config.driveMap) | Where-Object { (Get-DriveLetter ([string]$_.letter)) -eq $L }) | Select-Object -First 1)
+}
+
+# Where the letter should point on THIS machine: the first configured target
+# that exists, else the same folder name under any OneDrive root here.
+function Resolve-DriveMapTarget {
+    param($Entry)
+    $targets = @()
+    foreach ($t in @($Entry.targets)) {
+        $p = (Expand-EnvVars ([string]$t)).Trim().TrimEnd('\')
+        if ($p) { $targets += $p }
+    }
+    foreach ($p in $targets) {
+        if (Test-Path -LiteralPath $p -PathType Container) { return $p }
+    }
+    if ($targets.Count) {
+        $leaf = Split-Path -Leaf $targets[0]
+        if ($leaf) {
+            foreach ($root in @(Get-OneDriveRoots)) {
+                $p = Join-Path $root $leaf
+                if (Test-Path -LiteralPath $p -PathType Container) { return $p.TrimEnd('\') }
+            }
+        }
+    }
+    return ''
+}
+
+# What `subst` says this letter points at, '' if it is not a subst at all.
+function Get-SubstTarget {
+    param([string]$Letter)
+    $L = Get-DriveLetter $Letter
+    if (-not $L) { return '' }
+    try {
+        foreach ($line in @(& $script:SubstExe)) {
+            # "S:\: => C:\Users\you\OneDrive - Company\Teams - Surveying"
+            if ([string]$line -match ('^\s*' + $L + ':.*?=>\s*(.+?)\s*$')) { return $Matches[1] }
+        }
+    }
+    catch {}
+    return ''
+}
+
+# Make <Letter>: resolve, creating the subst if it does not already.
+# Returns @{ Ok; Action = ready|mapped|remapped|skipped|failed; Message }.
+function Ensure-MappedDrive {
+    param([string]$Letter)
+    $L = Get-DriveLetter $Letter
+    if (-not $L) { return @{ Ok = $false; Action = 'skipped'; Message = "'$Letter' is not a drive letter." } }
+    $root = $L + ':\'
+
+    # Already there. Never second-guess a letter that works, even if it points
+    # somewhere other than driveMap says -- it may have been mapped on purpose.
+    if (Test-Path -LiteralPath $root) { return @{ Ok = $true; Action = 'ready'; Message = "$L`: is available." } }
+
+    $entry = Get-DriveMapEntry $L
+    if (-not $entry) {
+        return @{ Ok = $false; Action = 'skipped'
+                  Message = "$L`: is not available, and config.json has no driveMap entry for it." }
+    }
+
+    # Not ready, but possibly still taken: an empty card reader, a dropped network
+    # drive, or a subst whose folder went away. Only the last is ours to clear.
+    $stale = Get-SubstTarget $L
+    if (-not $stale) {
+        $held = @([System.IO.DriveInfo]::GetDrives() | Where-Object { (Get-DriveLetter $_.Name) -eq $L })
+        if ($held.Count) {
+            return @{ Ok = $false; Action = 'skipped'
+                      Message = "$L`: is held by a $($held[0].DriveType) drive that is not ready -- leaving it alone." }
+        }
+    }
+
+    $target = Resolve-DriveMapTarget $entry
+    if (-not $target) {
+        $tried = ((@($entry.targets) | ForEach-Object { (Expand-EnvVars ([string]$_)) }) -join '  |  ')
+        return @{ Ok = $false; Action = 'failed'
+                  Message = "Cannot map $L`: -- none of these folders exist here: $tried" }
+    }
+
+    $action = 'mapped'
+    if ($stale) {
+        # Mapped, but at a folder that is gone (OneDrive re-homed it, the profile
+        # was renamed). Drop it so the letter can be pointed at the real one.
+        $action = 'remapped'
+        try { & $script:SubstExe ($L + ':') '/D' | Out-Null } catch {}
+    }
+    try { & $script:SubstExe ($L + ':') $target | Out-Null }
+    catch { return @{ Ok = $false; Action = 'failed'; Message = "subst $L`: failed: $($_.Exception.Message)" } }
+
+    # subst reports failure on stderr, which a windowed process has nowhere to
+    # show, so the drive itself is the only answer worth trusting.
+    if (-not (Test-Path -LiteralPath $root)) {
+        return @{ Ok = $false; Action = 'failed'; Message = "subst $L`: '$target' did not take (exit code $LASTEXITCODE)." }
+    }
+    $verb = if ($action -eq 'remapped') { 'Re-mapped' } else { 'Mapped' }
+    return @{ Ok = $true; Action = $action; Message = "$verb $L`: -> $target" }
+}
+
+# Ensure + log. Silent when the drive was already there (which is every run,
+# normally); it speaks up only when it had to act, or could not.
+function Confirm-MappedDrive {
+    param([string]$Letter, [scriptblock]$OnLog)
+    $r = Ensure-MappedDrive $Letter
+    if ($OnLog -and $r.Action -ne 'ready') {
+        $lvl = if ($r.Ok) { 'INFO' } else { 'WARN' }
+        & $OnLog $r.Message $lvl
+    }
+    return $r
+}
+
+# Every letter driveMap knows about -- the startup pass.
+function Confirm-MappedDrives {
+    param([scriptblock]$OnLog)
+    if (-not $script:Config -or -not $script:Config.PSObject.Properties['driveMap']) { return }
+    foreach ($e in @($script:Config.driveMap)) {
+        $L = Get-DriveLetter ([string]$e.letter)
+        if ($L) { [void](Confirm-MappedDrive $L $OnLog) }
+    }
+}
+
+# The letter a path is rooted on, but only if it is one of ours and missing --
+# the per-run pass, so a drive lost mid-session is back before the leg needs it.
+function Confirm-PathDrive {
+    param([string]$Path, [scriptblock]$OnLog)
+    $L = Get-DriveLetter ((Expand-EnvVars ([string]$Path)).Trim())
+    if (-not $L) { return }
+    if (Test-Path -LiteralPath ($L + ':\')) { return }
+    if (-not (Get-DriveMapEntry $L)) { return }
+    [void](Confirm-MappedDrive $L $OnLog)
 }
 
 # --------------------------------------------------------------------------
@@ -1352,6 +1575,9 @@ function Invoke-SyncCheck {
 
     # Push: the source is on this PC, so we can still say WHICH units have fallen behind.
     $srcPath = (Expand-PathTokens ([string]$Profile.sourcePath)).Trim().TrimEnd('\')
+    # S: may be a subst that died with the logon session -- put it back
+    # before reporting the design folder missing.
+    Confirm-PathDrive $srcPath $OnLog
     if (-not (Test-Path -LiteralPath $srcPath)) {
         return @{ Mode = 'unknown'; OutOfDate = -1; Total = 0
                   Summary = "$($reach.Reason) Source folder not found either: '$srcPath'." }
@@ -1774,6 +2000,11 @@ function Invoke-Sync {
             if ($dev.Serial) { & $OnLog "Device found: $(Get-DeviceLabel $deviceName $dev.Serial)" 'INFO' }
             else             { & $OnLog 'Device found (no hardware serial reported).' 'WARN' }
         }
+        # A subst'd letter (S:) dies with the logon session, so the drive this leg
+        # needs may simply be gone. Put it back before calling the folder missing.
+        if ($srcKind -eq 'fs') { Confirm-PathDrive $srcPath $OnLog }
+        if ($dstKind -eq 'fs') { Confirm-PathDrive $dstPath $OnLog }
+
         # Validate a filesystem source up front (MTP source absence is handled in enumeration).
         if ($srcKind -eq 'fs') {
             if (-not (Test-Path -LiteralPath $srcPath)) { throw "Source folder not found: '$srcPath'" }
@@ -2707,6 +2938,11 @@ $devTimer.Add_Tick({
     catch {}
 })
 $devTimer.Start()
+
+# S: (and anything else in driveMap) is a subst, so it does not survive a logout.
+# Put it back before the first project loads: every path in config.json depends
+# on it, and a crew that has to run a .bat first will eventually forget to.
+Confirm-MappedDrives { param($m, $lvl) Write-Log $m $lvl }
 
 $startProject = [string](Get-Pref 'LastProject' $script:Config.activeProject)
 Refresh-ProjectList -SelectName $startProject

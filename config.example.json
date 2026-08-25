@@ -5,8 +5,19 @@
     {
       "name": "Example project",
       "designSource": "S:\\02-DESIGN",
-      "exportRoot": "C:\\Users\\you\\OneDrive - Company\\Teams - Surveying\\07-DATALOGGER BACKUP\\{year}\\{month}",
+      "exportRoot": "S:\\07-DATALOGGER BACKUP\\{year}\\{month}",
       "deviceProjectPath": "Internal shared storage\\Trimble Data\\Projects\\Example project"
+    }
+  ],
+
+  "_driveMap_note": "Drive letters the tool creates with subst when they are missing, so a fresh login never breaks a sync. S: is the whole team folder, which is what lets every path above be short and identical on every machine. Targets are tried in order and %ENVVAR% is expanded - prefer %OneDriveCommercial% to a C:\\Users\\<name>\\... path, or the config only works for whoever wrote it. A letter that already resolves is never touched.",
+  "driveMap": [
+    {
+      "letter": "S",
+      "targets": [
+        "%OneDriveCommercial%\\Teams - Surveying",
+        "%USERPROFILE%\\OneDrive - Company\\Teams - Surveying"
+      ]
     }
   ],
 

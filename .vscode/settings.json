@@ -1,0 +1,5 @@
+{
+    "chat.mcp.assisted.nuget.enabled": true,
+    "chat.mcp.gallery.enabled": true,
+    "github.copilot.chat.githubMcpServer.enabled": true
+}

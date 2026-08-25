@@ -1,0 +1,38 @@
+{
+  ".claude/settings.json": {
+    "mtime": 1787682759.553112,
+    "seen": 1787682863.2862222,
+    "ast_hash": "1a94fadfe609b886d406c03baed07816",
+    "semantic_hash": "1a94fadfe609b886d406c03baed07816"
+  },
+  ".mcp.json": {
+    "mtime": 1787682776.9438684,
+    "seen": 1787682863.2862277,
+    "ast_hash": "f1ac763f2cd3ce3dd23944ce9a788f97",
+    "semantic_hash": "f1ac763f2cd3ce3dd23944ce9a788f97"
+  },
+  ".vscode/settings.json": {
+    "mtime": 1787680453.303957,
+    "seen": 1787682863.2862303,
+    "ast_hash": "cb6d82866899cce9265346cd8752f5bb",
+    "semantic_hash": "cb6d82866899cce9265346cd8752f5bb"
+  },
+  ".vscode/tasks.json": {
+    "mtime": 1787682845.0226667,
+    "seen": 1787682863.286232,
+    "ast_hash": "ba1d4b0ed4247081496b9ff800980c4d",
+    "semantic_hash": "ba1d4b0ed4247081496b9ff800980c4d"
+  },
+  "SyncDataCollector.ps1": {
+    "mtime": 1787677291.477044,
+    "seen": 1787682863.2862337,
+    "ast_hash": "1559a14c2a68f5e2379d0bdf41f8d677",
+    "semantic_hash": "1559a14c2a68f5e2379d0bdf41f8d677"
+  },
+  "config.example.json": {
+    "mtime": 1787677048.259554,
+    "seen": 1787682863.2862353,
+    "ast_hash": "289c30498b7b63ebf26431384795c50e",
+    "semantic_hash": "289c30498b7b63ebf26431384795c50e"
+  }
+}
