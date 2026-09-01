@@ -943,7 +943,14 @@ function Get-MtpInventory {
         $items = $node.Folder.Items()
         for ($i = 0; $i -lt $items.Count; $i++) {
             $it = $items.Item($i)
-            $rel = if ($node.Rel) { $node.Rel + '\' + $it.Name } else { $it.Name }
+            # The Shell occasionally hands back a half-initialised item whose Name is
+            # empty. Left alone it becomes a record with a trailing-backslash Rel --
+            # a "file" the source can never account for, so prune proposes deleting
+            # it, and the item it carries is really the FOLDER. Dropping it here is
+            # the only safe reading: an entry we cannot name is one we must not act on.
+            $nm = [string]$it.Name
+            if ([string]::IsNullOrWhiteSpace($nm)) { continue }
+            $rel = if ($node.Rel) { $node.Rel + '\' + $nm } else { $nm }
             if ($it.IsFolder) {
                 [void]$out.Dirs.Add($rel)
                 $stack.Push(@{ Folder = $it.GetFolder; Rel = $rel })
@@ -1174,17 +1181,26 @@ function Get-PruneSet {
     }
 
     $inv = Get-TargetInventory $Ctx $DstKind $DstPath
-    $files = @()
+    $files = @(); $malformed = 0
     foreach ($f in $inv.Files) {
+        # Belt and braces behind the Get-MtpInventory guard: a rel that is blank or
+        # ends in a separator names no file we can identify, and deleting something
+        # we cannot name is exactly the mistake prune must never make.
+        $rel = [string]$f.Rel
+        if ([string]::IsNullOrWhiteSpace($rel) -or $rel.EndsWith('\')) { $malformed++; continue }
         # The marker is the tool's own identity record; pruning it would orphan the device.
-        if ((Split-Path -Leaf $f.Rel) -eq $script:MarkerName) { continue }
-        if (-not $want.Contains($f.Rel)) { $files += $f }
+        if ((Split-Path -Leaf $rel) -eq $script:MarkerName) { continue }
+        if (-not $want.Contains($rel)) { $files += $f }
     }
     $dirs = @()
-    foreach ($d in $inv.Dirs) { if (-not $wantDirs.Contains($d)) { $dirs += $d } }
+    foreach ($d in $inv.Dirs) {
+        $dr = [string]$d
+        if ([string]::IsNullOrWhiteSpace($dr)) { continue }
+        if (-not $wantDirs.Contains($dr)) { $dirs += $dr }
+    }
     # Deepest first, so a parent is only removed once its children are gone.
     $dirs = @($dirs | Sort-Object -Property @{ Expression = { ($_ -split '\\').Count } } -Descending)
-    return @{ Files = $files; Dirs = $dirs }
+    return @{ Files = $files; Dirs = $dirs; Malformed = $malformed }
 }
 
 # --------------------------------------------------------------------------
@@ -1500,7 +1516,8 @@ function Invoke-SyncCheck {
         [pscustomobject]$Profile,
         [scriptblock]$OnLog,
         [scriptblock]$OnProgress,
-        [scriptblock]$OnChooseDevice
+        [scriptblock]$OnChooseDevice,
+        [scriptblock]$OnItem
     )
 
     $direction = 'push'
@@ -1544,13 +1561,15 @@ function Invoke-SyncCheck {
             & $OnLog 'This unit reports no serial and carries no marker, so it cannot be told apart from others of the same name.' 'WARN'
         }
 
-        $res = Invoke-Sync -Profile $Profile -OnLog $OnLog -OnProgress $OnProgress -CheckOnly -OnChooseDevice $OnChooseDevice
+        $res = Invoke-Sync -Profile $Profile -OnLog $OnLog -OnProgress $OnProgress -CheckOnly `
+                    -OnChooseDevice $OnChooseDevice -OnItem $OnItem
         $n = @($res.OutOfDate).Count
         if ($n -eq 0) { $summary = "Up to date - $($res.Total) file(s) checked on $label, none out of date." }
         else          { $summary = "NEEDS SYNC - $n of $($res.Total) file(s) out of date on $label." }
         $pc = @($res.PruneCandidates).Count
         if ($pc -gt 0) { $summary += "  $pc extra file(s) on the device would be DELETED by a sync." }
-        return @{ Mode = 'live'; OutOfDate = $n; Total = $res.Total; Summary = $summary; PruneCount = $pc }
+        return @{ Mode = 'live'; OutOfDate = $n; Total = $res.Total; Summary = $summary; PruneCount = $pc
+                  Plan = @($res.Plan); SourceRoot = $res.SourceRoot; DestinationRoot = $res.DestinationRoot }
     }
 
     & $OnLog $reach.Reason 'WARN'
@@ -1856,7 +1875,8 @@ function Invoke-CollectorSync {
     param(
         $Project, $Collector,
         [scriptblock]$OnLog, [scriptblock]$OnProgress,
-        [switch]$CheckOnly, [scriptblock]$OnChooseDevice
+        [switch]$CheckOnly, [scriptblock]$OnChooseDevice,
+        [scriptblock]$OnItem        # param($viewRow) -- one file settled
     )
     $label = Get-CollectorLabel $Collector
     $verb  = if ($CheckOnly) { 'CHECK' } else { 'SYNC' }
@@ -1867,18 +1887,74 @@ function Invoke-CollectorSync {
         @{ Key = 'export'; Title = 'Export  collector -> OneDrive (additive)' }
     )
     $copied = 0; $pruned = 0; $failed = 0; $legErrors = @(); $lines = @()
+    $legPlans = @()
+
+    # One engine row -> one compare-view row. The engine thinks in source and
+    # destination, which flip between the legs; the view is always PC-on-the-left,
+    # collector-on-the-right. On a pull the collector is the source, so sides swap.
+    $toViewRow = {
+        param([string]$LegKey, $Row)
+        $pull = ($LegKey -eq 'export')
+        [pscustomobject]@{
+            Leg       = $LegKey
+            Action    = [string]$Row.Action
+            Reason    = [string]$Row.Reason
+            Status    = [string]$Row.Status
+            ToDevice  = (-not $pull)
+            PcRel     = $(if ($pull) { [string]$Row.DestRel } else { [string]$Row.Rel })
+            PcLength  = $(if ($pull) { [long]$Row.DstLength } else { [long]$Row.SrcLength })
+            PcMtime   = $(if ($pull) { $Row.DstMtime } else { $Row.SrcMtime })
+            DevRel    = $(if ($pull) { [string]$Row.Rel } else { [string]$Row.DestRel })
+            DevLength = $(if ($pull) { [long]$Row.SrcLength } else { [long]$Row.DstLength })
+            DevMtime  = $(if ($pull) { $Row.SrcMtime } else { $Row.DstMtime })
+        }
+    }
+
+    # The whole of one leg's result, mapped the same way, so the final render and
+    # the live ticks cannot disagree about which side a file belongs on.
+    $toLegPlan = {
+        param($Leg, $Result)
+        $pull    = ($Leg.Key -eq 'export')
+        $srcRoot = [string]$Result.SourceRoot
+        $dstRoot = [string]$Result.DestinationRoot
+        $view = @()
+        foreach ($row in @($Result.Plan)) { $view += (& $toViewRow $Leg.Key $row) }
+        return [pscustomobject]@{
+            Key        = $Leg.Key
+            Title      = $Leg.Title
+            PcRoot     = $(if ($pull) { $dstRoot } else { $srcRoot })
+            DeviceRoot = $(if ($pull) { $srcRoot } else { $dstRoot })
+            Rows       = @($view)
+        }
+    }
 
     foreach ($leg in $legs) {
         if ($script:CancelRequested) { & $OnLog 'Cancelled by user.' 'WARN'; break }
         & $OnLog "--- $($leg.Title) ---" 'INFO'
         $p = New-LegProfile $Project $Collector $leg.Key
+        # Engine rows arrive in engine terms; map each one before it reaches the UI.
+        # GetNewClosure, and deliberately different names: Invoke-Sync has its own
+        # $OnItem parameter, so a plain scriptblock would resolve $OnItem dynamically
+        # to ITSELF once called from in there, and recurse until the app hangs.
+        $legOnItem = $null
+        if ($OnItem) {
+            $outerOnItem = $OnItem
+            $mapViewRow  = $toViewRow
+            $thisLegKey  = [string]$leg.Key
+            $legOnItem = { param($row) [void](& $outerOnItem (& $mapViewRow $thisLegKey $row)) }.GetNewClosure()
+        }
         try {
             if ($CheckOnly) {
-                $r = Invoke-SyncCheck -Profile $p -OnLog $OnLog -OnProgress $OnProgress -OnChooseDevice $OnChooseDevice
+                $r = Invoke-SyncCheck -Profile $p -OnLog $OnLog -OnProgress $OnProgress `
+                        -OnChooseDevice $OnChooseDevice -OnItem $legOnItem
                 $lines += ("{0}: {1}" -f $leg.Key, $r.Summary)
+                # An offline check never reached the collector, so it has no rows to show.
+                if ($r.ContainsKey('Plan')) { $legPlans += (& $toLegPlan $leg $r) }
             }
             else {
-                $r = Invoke-Sync -Profile $p -OnLog $OnLog -OnProgress $OnProgress -OnChooseDevice $OnChooseDevice
+                $r = Invoke-Sync -Profile $p -OnLog $OnLog -OnProgress $OnProgress `
+                        -OnChooseDevice $OnChooseDevice -OnItem $legOnItem
+                $legPlans += (& $toLegPlan $leg $r)
                 $copied += [int]$r.Copied; $pruned += [int]$r.Pruned; $failed += [int]$r.Failed
                 $d = ''
                 if ([int]$r.Pruned -gt 0) { $d = ", deleted $($r.Pruned)" }
@@ -1898,6 +1974,7 @@ function Invoke-CollectorSync {
     return [pscustomobject]@{
         Collector = $label; Copied = $copied; Pruned = $pruned; Failed = $failed
         Lines = $lines; Errors = $legErrors; Summary = $summary; CheckOnly = [bool]$CheckOnly
+        LegPlans = @($legPlans)
     }
 }
 
@@ -1934,7 +2011,8 @@ function Invoke-Sync {
         [scriptblock]$OnLog,        # param($msg, $level)
         [scriptblock]$OnProgress,   # param($current, $total)
         [switch]$CheckOnly,         # compare only: no copies, no folders, no marker
-        [scriptblock]$OnChooseDevice # param($candidates) -> one of them, when several match
+        [scriptblock]$OnChooseDevice, # param($candidates) -> one of them, when several match
+        [scriptblock]$OnItem        # param($row) -- one file settled, so the UI can tick it off
     )
 
     $direction     = if ($Profile.PSObject.Properties['direction'] -and $Profile.direction) { [string]$Profile.direction } else { 'push' }
@@ -1999,6 +2077,23 @@ function Invoke-Sync {
             $ctx.DeviceSerial = $dev.Serial
             if ($dev.Serial) { & $OnLog "Device found: $(Get-DeviceLabel $deviceName $dev.Serial)" 'INFO' }
             else             { & $OnLog 'Device found (no hardware serial reported).' 'WARN' }
+
+            # A locked collector -- or one whose USB mode is charging-only -- still
+            # enumerates as a device, with its WPD driver reporting OK, but exposes
+            # no storage objects at all. Taken at face value that reads as "the
+            # device is empty", which is the worst possible answer: a push calls all
+            # 153 files new, and a pull reports the collector up to date having read
+            # nothing off it. Refuse the leg instead, so no sync record is written.
+            $storageCount = 0
+            try {
+                $devFolder = $dev.Item.GetFolder
+                if ($devFolder) { $storageCount = [int]$devFolder.Items().Count }
+            }
+            catch { $storageCount = 0 }
+            if ($storageCount -le 0) {
+                throw ("'$deviceName' is connected but is exposing no storage, so it cannot be read. " +
+                       "Unlock the collector's screen and set its USB connection to file transfer, then try again.")
+            }
         }
         # A subst'd letter (S:) dies with the logon session, so the drive this leg
         # needs may simply be gone. Put it back before calling the folder missing.
@@ -2060,6 +2155,10 @@ function Invoke-Sync {
 
         $copied = 0; $skipped = 0; $failed = 0
         $outOfDate = New-Object System.Collections.ArrayList
+        # Every compared file, in-sync ones included, so the compare view can show
+        # both sides the way GoodSync does. Built here rather than re-derived later:
+        # a second comparison pass could disagree with the one that actually runs.
+        $plan = New-Object System.Collections.ArrayList
         $i = 0
         foreach ($rec in $records) {
             if ($script:CancelRequested) { & $OnLog 'Cancelled by user.' 'WARN'; break }
@@ -2067,12 +2166,20 @@ function Invoke-Sync {
             $rel = $rec.Rel
             $destRel = Get-DestRel $rel $direction $collisionMode $collisionLabel
             $dest = $dstPath + '\' + $destRel
+            # Cleared each pass: a throw before the row is built must not report the
+            # previous file's row as the one that failed.
+            $planRow = $null
             try {
                 $need = $false; $reason = ''
                 $di = Target-GetInfo $ctx $dstKind $dest     # one live lookup (Length = -1 if absent)
                 if ($di.Length -lt 0) { $need = $true; $reason = 'new' }
                 elseif ([long]$rec.Length -ne $di.Length) { $need = $true; $reason = 'size changed' }
                 elseif ($null -ne $di.Mtime -and $null -ne $rec.MtimeUtc -and $rec.MtimeUtc -gt $di.Mtime.AddSeconds(2)) { $need = $true; $reason = 'source newer' }
+
+                # What the compare view shows on the destination side. Tracked
+                # separately from $di because the no-overwrite walk below can move
+                # us to a different "(n)" slot than the one we first looked at.
+                $dstLen = [long]$di.Length; $dstMtime = $di.Mtime
 
                 # Pulled field data is irreplaceable: never write over a different file
                 # that is already there. Land alongside it under a "(n)" name instead.
@@ -2081,15 +2188,33 @@ function Invoke-Sync {
                     if ($alt.Skip) {
                         $need = $false
                         $destRel = $alt.Path.Substring($dstPath.Length).TrimStart('\')
+                        $reason = 'already pulled'
+                        # The slot only counts as "already pulled" when its size matches.
+                        $dstLen = [long]$rec.Length; $dstMtime = $null
                     }
                     elseif ($alt.Path -ne $dest) {
                         $dest = $alt.Path
                         $destRel = $dest.Substring($dstPath.Length).TrimStart('\')
                         $reason = 'kept alongside existing'
+                        $dstLen = -1; $dstMtime = $null      # the chosen slot is free
                     }
                 }
 
                 if ($need) { [void]$outOfDate.Add([pscustomobject]@{ Rel = $destRel; Reason = $reason }) }
+
+                $planRow = [pscustomobject]@{
+                    Direction = $direction
+                    Rel       = $rel
+                    DestRel   = $destRel
+                    SrcLength = [long]$rec.Length
+                    SrcMtime  = $rec.MtimeUtc
+                    DstLength = $dstLen
+                    DstMtime  = $dstMtime
+                    Action    = $(if ($need) { 'copy' } else { 'same' })
+                    Reason    = $reason
+                    Status    = 'pending'
+                }
+                [void]$plan.Add($planRow)
 
                 if ($CheckOnly) {
                     # Report only. Stay quiet about the files that are fine, so what
@@ -2100,15 +2225,28 @@ function Invoke-Sync {
                 elseif ($need) {
                     Invoke-CopyWithRetry $ctx $copyMode $rec.Src $dest ([long]$rec.Length) $OnLog
                     $copied++
+                    $planRow.Status = 'copied'
+                    # The row was built from a comparison made before the write. The
+                    # file is there now, and the copy verifies its size, so record it
+                    # -- otherwise a finished copy still reads as "missing that side".
+                    $planRow.DstLength = [long]$rec.Length
+                    $planRow.DstMtime  = $rec.MtimeUtc
                     & $OnLog ("COPIED  ($reason)  $destRel") 'COPY'
                 }
                 else {
                     $skipped++
+                    $planRow.Status = 'same'
                     & $OnLog ("skip           $destRel") 'SKIP'
                 }
+                if ($OnItem) { [void](& $OnItem $planRow) }
             }
             catch {
                 $failed++
+                if ($planRow) {
+                    $planRow.Status = 'failed'
+                    $planRow.Reason = $_.Exception.Message
+                    if ($OnItem) { [void](& $OnItem $planRow) }
+                }
                 & $OnLog ("FAILED         $rel  ::  $($_.Exception.Message)") 'ERROR'
             }
             & $OnProgress $i $total
@@ -2120,6 +2258,31 @@ function Invoke-Sync {
             & $OnLog 'Scanning the destination for files the source does not account for...' 'INFO'
             $pruneSet = Get-PruneSet $ctx $dstKind $dstPath $records $sel.Dirs $direction $collisionMode $collisionLabel
             $pf = @($pruneSet.Files); $pd = @($pruneSet.Dirs)
+            # Say so rather than swallowing it: a device that enumerates unnamed items
+            # is one whose listing should be treated with suspicion generally.
+            if ([int]$pruneSet.Malformed -gt 0) {
+                & $OnLog ("Ignored $($pruneSet.Malformed) unnamed item(s) the device reported - not deletion candidates.") 'WARN'
+            }
+            # Destination-only rows: nothing on the source side, so the compare view
+            # draws them with an empty left cell and a delete marker.
+            $delRows = @{}
+            foreach ($f in $pf) {
+                $dRow = [pscustomobject]@{
+                    Direction = $direction
+                    Rel       = ''
+                    DestRel   = [string]$f.Rel
+                    SrcLength = [long]-1
+                    SrcMtime  = $null
+                    DstLength = [long]$f.Length
+                    DstMtime  = $null
+                    Action    = 'delete'
+                    Reason    = 'not in source'
+                    Status    = 'pending'
+                }
+                [void]$plan.Add($dRow)
+                $delRows[[string]$f.Rel] = $dRow
+                if ($OnItem) { [void](& $OnItem $dRow) }
+            }
             if ($pf.Count -eq 0 -and $pd.Count -eq 0) {
                 & $OnLog 'Nothing to prune - the destination already matches the source.' 'INFO'
             }
@@ -2129,15 +2292,19 @@ function Invoke-Sync {
             }
             else {
                 foreach ($f in $pf) {
+                    $dRow = $delRows[[string]$f.Rel]
                     try {
                         Target-DeleteFile $ctx $dstKind ($dstPath + '\' + $f.Rel) $f.Item
                         $pruned++
+                        if ($dRow) { $dRow.Status = 'deleted' }
                         & $OnLog ("DELETED        $($f.Rel)") 'COPY'
                     }
                     catch {
                         $failed++
+                        if ($dRow) { $dRow.Status = 'failed'; $dRow.Reason = $_.Exception.Message }
                         & $OnLog ("DELETE FAILED  $($f.Rel)  ::  $($_.Exception.Message)") 'ERROR'
                     }
+                    if ($OnItem -and $dRow) { [void](& $OnItem $dRow) }
                 }
                 # Folders last, deepest first, so emptied ones go too.
                 foreach ($d in $pd) {
@@ -2173,6 +2340,9 @@ function Invoke-Sync {
             SourceNewestUtc = $newest
             Pruned    = $pruned
             PruneCandidates = @($pruneSet.Files)
+            Plan      = @($plan)
+            SourceRoot      = $srcPath
+            DestinationRoot = $dstPath
         }
     }
     finally {
@@ -2191,6 +2361,9 @@ if ($env:SDC_NOGUI -eq '1') { return }
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text = 'Sync Data Collector'
+# Laid out at 830 wide, then widened once every control is in place (see the
+# startup block): the right-hand buttons are anchored, so letting the anchors do
+# the widening keeps them flush without re-coordinating every Location by hand.
 $form.Size = New-Object System.Drawing.Size(830, 915)
 $form.StartPosition = 'CenterScreen'
 $form.MinimumSize = New-Object System.Drawing.Size(740, 755)
@@ -2381,13 +2554,80 @@ $lblStatus = New-Object System.Windows.Forms.Label
 $lblStatus.Text = 'Ready.'; $lblStatus.Location = '15,559'; $lblStatus.Size = '785,20'; $lblStatus.Anchor = 'Top,Left,Right'
 $form.Controls.Add($lblStatus)
 
+# ---- Results: compare grid + log -----------------------------------------
+# Two views of the same run. The grid answers "what is about to happen"; the log
+# answers "what actually happened, and why did that one fail".
+$tabsOut = New-Object System.Windows.Forms.TabControl
+$tabsOut.Location = '15,585'; $tabsOut.Size = '785,270'
+$tabsOut.Anchor = 'Top,Bottom,Left,Right'
+$form.Controls.Add($tabsOut)
+
+$tabCompare = New-Object System.Windows.Forms.TabPage
+$tabCompare.Text = 'Compare'; $tabCompare.BackColor = 'White'
+$tabsOut.TabPages.Add($tabCompare)
+
+$tabLog = New-Object System.Windows.Forms.TabPage
+$tabLog.Text = 'Log'; $tabLog.BackColor = 'White'
+$tabsOut.TabPages.Add($tabLog)
+
+# Header strip: which two folders the columns below are actually comparing.
+# Positioned by Resize-CompareColumns so they stay over the columns they name;
+# the group headers name the folders, these name the two sides.
+$lblPcRoot = New-Object System.Windows.Forms.Label
+$lblPcRoot.Location = '2,2'; $lblPcRoot.Size = '370,16'; $lblPcRoot.Text = 'This PC'
+$lblPcRoot.TextAlign = 'MiddleLeft'; $lblPcRoot.ForeColor = 'DimGray'
+$lblPcRoot.AutoEllipsis = $true
+$tabCompare.Controls.Add($lblPcRoot)
+
+$lblDevRoot = New-Object System.Windows.Forms.Label
+$lblDevRoot.Location = '404,2'; $lblDevRoot.Size = '370,16'; $lblDevRoot.Text = 'Collector'
+$lblDevRoot.TextAlign = 'MiddleLeft'; $lblDevRoot.ForeColor = 'DimGray'
+$lblDevRoot.AutoEllipsis = $true
+$tabCompare.Controls.Add($lblDevRoot)
+
+# One grid, not two lists: the sides have to stay on the same row for the arrow
+# between them to mean anything, and independent scrollbars would never manage it.
+$lvCompare = New-Object System.Windows.Forms.ListView
+$lvCompare.Location = '2,20'; $lvCompare.Size = '777,200'
+$lvCompare.View = 'Details'; $lvCompare.FullRowSelect = $true; $lvCompare.GridLines = $false
+$lvCompare.HideSelection = $false; $lvCompare.MultiSelect = $true
+# Sized by Update-CompareLayout, not anchors: a TabPage is not laid out when its
+# children are added, so anchor margins computed here come out negative.
+$lvCompare.Font = New-Object System.Drawing.Font('Segoe UI', 9)
+# Folder and file are separate columns because a truncated cell loses its TAIL,
+# and the tail of a relative path is the filename -- the one part worth reading.
+# Split, and the clipping lands on the folder, where the start still identifies it.
+[void]$lvCompare.Columns.Add('Folder', 120, 'Left')
+[void]$lvCompare.Columns.Add('File', 165, 'Left')
+[void]$lvCompare.Columns.Add('Size', 62, 'Right')
+[void]$lvCompare.Columns.Add('Modified', 100, 'Left')
+[void]$lvCompare.Columns.Add('', 30, 'Center')          # the action arrow
+[void]$lvCompare.Columns.Add('Folder', 120, 'Left')
+[void]$lvCompare.Columns.Add('File', 165, 'Left')
+[void]$lvCompare.Columns.Add('Size', 62, 'Right')
+[void]$lvCompare.Columns.Add('Modified', 100, 'Left')
+[void]$lvCompare.Columns.Add('What happens', 165, 'Left')
+$tabCompare.Controls.Add($lvCompare)
+
+$lblCompareHint = New-Object System.Windows.Forms.Label
+$lblCompareHint.Location = '2,224'; $lblCompareHint.Size = '550,18'
+$lblCompareHint.ForeColor = 'Gray'
+$lblCompareHint.Text = 'Press Check to compare without writing anything.'
+$tabCompare.Controls.Add($lblCompareHint)
+
+$chkShowSame = New-Object System.Windows.Forms.CheckBox
+$chkShowSame.Text = 'Show files already in sync'; $chkShowSame.Location = '560,222'
+$chkShowSame.Size = '217,20'
+$chkShowSame.ForeColor = 'DimGray'
+$tabCompare.Controls.Add($chkShowSame)
+
 $txtLog = New-Object System.Windows.Forms.TextBox
-$txtLog.Location = '15,585'; $txtLog.Size = '785,270'
+$txtLog.Location = '2,2'; $txtLog.Size = '777,240'
 $txtLog.Multiline = $true; $txtLog.ScrollBars = 'Vertical'; $txtLog.ReadOnly = $true
-$txtLog.BackColor = 'White'
+$txtLog.BackColor = 'White'; $txtLog.BorderStyle = 'None'
 $txtLog.Font = New-Object System.Drawing.Font('Consolas', 9)
-$txtLog.Anchor = 'Top,Bottom,Left,Right'
-$form.Controls.Add($txtLog)
+$txtLog.Dock = 'Fill'
+$tabLog.Controls.Add($txtLog)
 
 # --------------------------------------------------------------------------
 # UI logic
@@ -2397,6 +2637,281 @@ function Write-Log {
     $line = ('[{0}] {1}' -f (Get-Date -Format 'HH:mm:ss'), $Message)
     $txtLog.AppendText($line + "`r`n")
     try { Add-Content -LiteralPath $LogFile -Value $line -Encoding UTF8 } catch {}
+}
+
+# ---- Compare view ---------------------------------------------------------
+# The arrows are built from code points rather than typed as literals: this file
+# carries no BOM and is otherwise pure ASCII, so a literal glyph would be read
+# back through the ANSI codepage and drawn as mojibake.
+$script:GlyphToDevice = [string][char]0x2192    # right arrow
+$script:GlyphToPc     = [string][char]0x2190    # left arrow
+$script:GlyphSame     = [string][char]0x003D    # equals
+$script:GlyphDelete   = [string][char]0x2717    # ballot X
+$script:GlyphDone     = [string][char]0x2713    # check mark - this one is finished
+$script:GlyphFailed   = [string][char]0x26A0    # warning sign
+
+$script:ClrCopy   = [System.Drawing.Color]::FromArgb(0, 90, 170)
+$script:ClrDelete = [System.Drawing.Color]::FromArgb(170, 0, 0)
+$script:ClrSame   = [System.Drawing.Color]::FromArgb(130, 130, 130)
+$script:ClrDone   = [System.Drawing.Color]::FromArgb(0, 130, 60)
+
+$script:LastLegPlans   = @()
+$script:CompareRowKeys = @{}    # row key -> ListViewItem, for updating in place
+$script:CompareGroups  = @{}    # leg key -> ListViewGroup
+
+# Identity of a row across a check and the sync that follows it, so pressing Sync
+# ticks off the rows already on screen instead of appending a second copy.
+function Get-RowKey {
+    param($Row)
+    return ('{0}|{1}|{2}' -f $Row.Leg, $Row.PcRel, $Row.DevRel)
+}
+
+# Glyph, wording and colour for one row -- from its action, and from how far it
+# has actually got. Shared by the initial render and the live updates so a row
+# cannot end up looking like one thing and reading like another.
+function Get-RowLook {
+    param($Row)
+    switch ([string]$Row.Status) {
+        'failed'  { return @{ Glyph = $script:GlyphFailed; What = ('FAILED: ' + [string]$Row.Reason); Color = $script:ClrDelete } }
+        'copied'  { return @{ Glyph = $script:GlyphDone;   What = 'Copied';  Color = $script:ClrDone } }
+        'deleted' { return @{ Glyph = $script:GlyphDone;   What = 'Deleted'; Color = $script:ClrDone } }
+    }
+    if ([string]$Row.Action -eq 'delete') {
+        return @{ Glyph = $script:GlyphDelete; What = 'Delete from collector'; Color = $script:ClrDelete }
+    }
+    if ([string]$Row.Action -eq 'copy') {
+        return @{
+            Glyph = $(if ($Row.ToDevice) { $script:GlyphToDevice } else { $script:GlyphToPc })
+            What  = $(if ($Row.Reason) { 'Copy ({0})' -f $Row.Reason } else { 'Copy' })
+            Color = $script:ClrCopy
+        }
+    }
+    return @{
+        Glyph = $script:GlyphSame
+        What  = $(if ($Row.Reason) { [string]$Row.Reason } else { 'In sync' })
+        Color = $script:ClrSame
+    }
+}
+
+# Split a relative path into its folder and its filename. LastIndexOf rather than
+# Split-Path: this runs per row over a few hundred rows, and Split-Path treats its
+# input as a wildcard pattern, which these paths are not.
+function Split-RelPath {
+    param([string]$Rel)
+    if ([string]::IsNullOrEmpty($Rel)) { return @{ Dir = ''; Leaf = '' } }
+    $i = $Rel.LastIndexOf('\')
+    if ($i -lt 0) { return @{ Dir = ''; Leaf = $Rel } }
+    return @{ Dir = $Rel.Substring(0, $i); Leaf = $Rel.Substring($i + 1) }
+}
+
+function Format-Size {
+    param([long]$Bytes)
+    if ($Bytes -lt 0) { return '' }
+    if ($Bytes -lt 1024) { return ('{0} B' -f $Bytes) }
+    $v = [double]$Bytes / 1024
+    foreach ($unit in @('KB', 'MB', 'GB')) {
+        if ($v -lt 1024) { return ('{0:N1} {1}' -f $v, $unit) }
+        $v = $v / 1024
+    }
+    return ('{0:N1} TB' -f $v)
+}
+
+# Format-Local takes a [datetime], so an absent stamp has to be caught here --
+# $null would arrive as DateTime.MinValue and print as the year 1.
+function Format-RowTime {
+    param($Utc)
+    if ($null -eq $Utc) { return '' }
+    try { return (Format-Local ([datetime]$Utc)) } catch { return '' }
+}
+
+# The two name columns absorb whatever width the window has spare; everything
+# else is sized to its content and stays put. Also slides the two side captions
+# so each still sits over the columns it names.
+# Place the compare tab's children from the page's own client size. Anchors are
+# no use here: a TabPage has not been laid out at the moment its children are
+# added, so the margins they capture are wrong (and stretch the grid past the
+# page). Driven from the page's Resize instead, which fires whenever it matters.
+function Update-CompareLayout {
+    $w = $tabCompare.ClientSize.Width
+    $h = $tabCompare.ClientSize.Height
+    if ($w -le 40 -or $h -le 60) { return }
+    $lblPcRoot.SetBounds(2, 2, [Math]::Max(80, [int]($w / 2)), 16)
+    $lvCompare.SetBounds(2, 20, ($w - 4), [Math]::Max(60, $h - 46))
+    $lblCompareHint.SetBounds(2, ($h - 21), [Math]::Max(80, $w - 232), 18)
+    $chkShowSame.SetBounds(($w - 223), ($h - 23), 217, 20)
+    Resize-CompareColumns
+}
+
+function Resize-CompareColumns {
+    $w = $lvCompare.ClientSize.Width
+    if ($w -le 0) { return }
+    $fixed = 62 + 100 + 30 + 62 + 100 + 165          # sizes, dates, arrow, what-happens
+    $spare = $w - $fixed
+    if ($spare -lt 340) { $spare = 340 }
+    # The filename gets the larger share of the slack: a clipped folder still shows
+    # where it starts, while a clipped filename is the thing you were trying to read.
+    $folder = [int]($spare / 4.8)
+    if ($folder -lt 70) { $folder = 70 }
+    $file = [int]($spare / 2) - $folder
+    if ($file -lt 110) { $file = 110 }
+    $lvCompare.Columns[0].Width = $folder
+    $lvCompare.Columns[1].Width = $file
+    $lvCompare.Columns[5].Width = $folder
+    $lvCompare.Columns[6].Width = $file
+    $side = $folder + $file + 62 + 100
+    $lblPcRoot.Width = $side
+    $lblDevRoot.Left = $lvCompare.Left + $side + 30
+    $lblDevRoot.Width = [Math]::Max(80, $side)
+}
+
+# Paint one leg's rows into the grid. Left column is always this PC and right is
+# always the collector, whichever way the leg happens to run.
+function Show-ComparePlan {
+    param($LegPlans, [string]$DeviceLabel)
+
+    # An empty array collapses to $null on the way out of a function, and @($null)
+    # is a one-element array holding $null -- which would draw a phantom group with
+    # no rows. Drop the nulls before anything counts or iterates.
+    $plans = @(@($LegPlans) | Where-Object { $null -ne $_ })
+    $script:LastLegPlans = $plans
+    if ($DeviceLabel) { $lblDevRoot.Text = $DeviceLabel }
+    $showSame = $chkShowSame.Checked
+    $toCopy = 0; $toDelete = 0; $same = 0; $done = 0; $failedRows = 0
+
+    $lvCompare.BeginUpdate()
+    try {
+        $lvCompare.Items.Clear()
+        $lvCompare.Groups.Clear()
+        $script:CompareRowKeys = @{}
+        $script:CompareGroups  = @{}
+
+        foreach ($lp in $plans) {
+            # The two legs have different endpoints, so the folder pair belongs in
+            # the group header -- one pair of column headers cannot name both.
+            $head = '{0}      {1}  {2}  {3}' -f $lp.Title, $lp.PcRoot, $script:GlyphToDevice, $lp.DeviceRoot
+            if ($lp.Key -eq 'export') {
+                $head = '{0}      {1}  {2}  {3}' -f $lp.Title, $lp.PcRoot, $script:GlyphToPc, $lp.DeviceRoot
+            }
+            $g = New-Object System.Windows.Forms.ListViewGroup($head)
+            [void]$lvCompare.Groups.Add($g)
+            $script:CompareGroups[[string]$lp.Key] = $g
+
+            foreach ($r in @($lp.Rows)) {
+                $act = [string]$r.Action
+                switch ($act) {
+                    'copy'   { $toCopy++ }
+                    'delete' { $toDelete++ }
+                    default  { $same++ }
+                }
+                switch ([string]$r.Status) {
+                    'copied'  { $done++ }
+                    'deleted' { $done++ }
+                    'failed'  { $failedRows++ }
+                }
+                if ($act -eq 'same' -and -not $showSame) { continue }
+
+                # A side with no file shows an empty cell -- that blank is what makes
+                # "new here, missing there" readable at a glance.
+                $pcHas  = ([long]$r.PcLength  -ge 0)
+                $devHas = ([long]$r.DevLength -ge 0)
+
+                # The arrow already says which way a file is going, so the text
+                # spends its width on WHY instead of repeating the direction.
+                $look  = Get-RowLook $r
+                $glyph = $look.Glyph; $what = $look.What; $clr = $look.Color
+
+                $pcP  = Split-RelPath ([string]$r.PcRel)
+                $devP = Split-RelPath ([string]$r.DevRel)
+                $it = New-Object System.Windows.Forms.ListViewItem($(if ($pcHas) { $pcP.Dir } else { '' }))
+                [void]$it.SubItems.Add($(if ($pcHas) { $pcP.Leaf } else { '' }))
+                [void]$it.SubItems.Add($(if ($pcHas) { Format-Size ([long]$r.PcLength) } else { '' }))
+                [void]$it.SubItems.Add($(if ($pcHas) { Format-RowTime $r.PcMtime } else { '' }))
+                [void]$it.SubItems.Add($glyph)
+                [void]$it.SubItems.Add($(if ($devHas) { $devP.Dir } else { '' }))
+                [void]$it.SubItems.Add($(if ($devHas) { $devP.Leaf } else { '' }))
+                [void]$it.SubItems.Add($(if ($devHas) { Format-Size ([long]$r.DevLength) } else { '' }))
+                [void]$it.SubItems.Add($(if ($devHas) { Format-RowTime $r.DevMtime } else { '' }))
+                [void]$it.SubItems.Add($what)
+                $it.ForeColor = $clr
+                $it.Group = $g
+                # The name is the one cell worth reading in full when it is clipped.
+                $it.ToolTipText = $(if ($pcHas) { [string]$r.PcRel } else { [string]$r.DevRel })
+                [void]$lvCompare.Items.Add($it)
+                $script:CompareRowKeys[(Get-RowKey $r)] = $it
+            }
+        }
+    }
+    finally { $lvCompare.EndUpdate() }
+
+    $lvCompare.ShowItemToolTips = $true
+    Resize-CompareColumns
+
+    if ($plans.Count -eq 0) {
+        $lblCompareHint.Text = 'Nothing compared yet. Press Check to compare without writing anything.'
+        return
+    }
+    $tail = if ($showSame) { "$same in sync" } else { "$same in sync (hidden)" }
+    $bits = @()
+    if ($done -gt 0 -or $failedRows -gt 0) {
+        # A run has happened, so report what it did rather than what it intended.
+        if ($done -gt 0)       { $bits += "$done done" }
+        if ($failedRows -gt 0) { $bits += "$failedRows FAILED" }
+    }
+    else {
+        if ($toCopy -gt 0)   { $bits += "$toCopy to copy" }
+        if ($toDelete -gt 0) { $bits += "$toDelete to DELETE" }
+        if ($bits.Count -eq 0) { $bits += 'nothing to do' }
+    }
+    $lblCompareHint.Text = ($bits -join ', ') + ",  $tail"
+}
+
+# One file has been settled mid-run: tick it off in place. If a check already put
+# the row on screen we update that row, so pressing Sync walks the list you are
+# looking at rather than building a second one underneath it.
+function Update-CompareRow {
+    param($Row)
+    if ($null -eq $Row) { return }
+    $key  = Get-RowKey $Row
+    $look = Get-RowLook $Row
+    $it = $null
+    if ($script:CompareRowKeys.ContainsKey($key)) { $it = $script:CompareRowKeys[$key] }
+
+    if ($null -eq $it) {
+        # Nothing on screen for this file -- a cold Sync, or a file that only turned
+        # up on this pass. In-sync rows still obey the filter; anything that is
+        # actually happening is always shown.
+        if ([string]$Row.Action -eq 'same' -and -not $chkShowSame.Checked) { return }
+        $g = $null
+        if ($script:CompareGroups.ContainsKey([string]$Row.Leg)) { $g = $script:CompareGroups[[string]$Row.Leg] }
+        if ($null -eq $g) {
+            $g = New-Object System.Windows.Forms.ListViewGroup([string]$Row.Leg)
+            [void]$lvCompare.Groups.Add($g)
+            $script:CompareGroups[[string]$Row.Leg] = $g
+        }
+        $pcHas  = ([long]$Row.PcLength  -ge 0)
+        $devHas = ([long]$Row.DevLength -ge 0)
+        $pcP  = Split-RelPath ([string]$Row.PcRel)
+        $devP = Split-RelPath ([string]$Row.DevRel)
+        $it = New-Object System.Windows.Forms.ListViewItem($(if ($pcHas) { $pcP.Dir } else { '' }))
+        [void]$it.SubItems.Add($(if ($pcHas) { $pcP.Leaf } else { '' }))
+        [void]$it.SubItems.Add($(if ($pcHas) { Format-Size ([long]$Row.PcLength) } else { '' }))
+        [void]$it.SubItems.Add($(if ($pcHas) { Format-RowTime $Row.PcMtime } else { '' }))
+        [void]$it.SubItems.Add('')
+        [void]$it.SubItems.Add($(if ($devHas) { $devP.Dir } else { '' }))
+        [void]$it.SubItems.Add($(if ($devHas) { $devP.Leaf } else { '' }))
+        [void]$it.SubItems.Add($(if ($devHas) { Format-Size ([long]$Row.DevLength) } else { '' }))
+        [void]$it.SubItems.Add($(if ($devHas) { Format-RowTime $Row.DevMtime } else { '' }))
+        [void]$it.SubItems.Add('')
+        $it.ToolTipText = $(if ($pcHas) { [string]$Row.PcRel } else { [string]$Row.DevRel })
+        $it.Group = $g
+        [void]$lvCompare.Items.Add($it)
+        $script:CompareRowKeys[$key] = $it
+    }
+
+    $it.SubItems[4].Text = $look.Glyph
+    $it.SubItems[9].Text = $look.What
+    $it.ForeColor = $look.Color
+    try { $it.EnsureVisible() } catch {}
 }
 
 function Prompt-Text {
@@ -2633,7 +3148,7 @@ function Set-Busy {
     foreach ($c in @($cboProject,$btnProjNew,$btnProjRename,$btnProjDelete,$btnSave,$btnDetect,$btnNameDev,
                      $txtDesignSrc,$btnDesignSrcBrowse,$txtExportRoot,$btnExportRootBrowse,$txtDevProj,
                      $txtDesignSub,$txtExportSub,$txtDesignExt,$txtExportExt,$txtExcl,$cboExportCollision,$chkPrune,
-                     $btnResetDefaults)) {
+                     $btnResetDefaults,$chkShowSame)) {
         $c.Enabled = -not $Busy
     }
     $btnSync.Enabled  = (-not $Busy) -and ($null -ne $script:CurrentCollector)
@@ -2653,6 +3168,13 @@ function Invoke-CollectorAction {
     $progress.Value = 0
     $verb = if ($CheckOnly) { 'Checking' } else { 'Syncing' }
     $lblStatus.Text = "$verb..."
+    # A check rebuilds the plan from scratch, so start from an empty grid -- a stale
+    # grid under a fresh error message is worse than no grid. A sync instead ticks
+    # off the rows a check has already put on screen, so those are left in place.
+    if ($CheckOnly) { Show-ComparePlan @() '' }
+    $lblCompareHint.Text = "$verb..."
+    # Switch now, not at the end: the point is to watch it happen.
+    $tabsOut.SelectedTab = $tabCompare
     $onLog = {
         param($m,$lvl)
         Write-Log $m $lvl
@@ -2666,18 +3188,32 @@ function Invoke-CollectorAction {
         }
         [System.Windows.Forms.Application]::DoEvents()
     }
+    # Rows tick over as the run reaches them, rather than the whole grid landing
+    # at the end -- on a 150-file push over MTP that is minutes of nothing.
+    $onItem = {
+        param($row)
+        Update-CompareRow $row
+        [System.Windows.Forms.Application]::DoEvents()
+    }
     try {
         $r = if ($CheckOnly) {
             Invoke-CollectorSync -Project $script:CurrentProject -Collector $script:CurrentCollector `
-                -OnLog $onLog -OnProgress $onProg -CheckOnly -OnChooseDevice ${function:Choose-DeviceDialog}
+                -OnLog $onLog -OnProgress $onProg -CheckOnly -OnChooseDevice ${function:Choose-DeviceDialog} `
+                -OnItem $onItem
         } else {
             Invoke-CollectorSync -Project $script:CurrentProject -Collector $script:CurrentCollector `
-                -OnLog $onLog -OnProgress $onProg -OnChooseDevice ${function:Choose-DeviceDialog}
+                -OnLog $onLog -OnProgress $onProg -OnChooseDevice ${function:Choose-DeviceDialog} `
+                -OnItem $onItem
         }
         $msg = [string]$r.Summary
         if ($script:CancelRequested) { $msg = 'Cancelled. ' + $msg }
         $lblStatus.Text = $msg
         Write-Log ('----- ' + $msg + ' -----')
+        # Both a check and a real sync produce a plan; after a sync it reads as a
+        # record of what was done, which is the same grid either way.
+        # Rebuild from the finished plan: the live ticks were per-file, this is the
+        # authoritative record, and it re-sorts everything back into leg order.
+        Show-ComparePlan @($r.LegPlans) (Get-CollectorLabel $script:CurrentCollector)
     }
     catch {
         $lblStatus.Text = 'Error: ' + $_.Exception.Message
@@ -2712,8 +3248,8 @@ function Set-AdvancedMode {
         $d = $script:AdvShift
         if ($wantCollapsed) { $d = -$script:AdvShift }
         $form.SuspendLayout()
-        $txtLog.Anchor = 'Top,Left,Right'
-        foreach ($c in @($btnSync,$btnCheck,$btnCancel,$progress,$lblStatus,$txtLog)) { $c.Top = $c.Top + $d }
+        $tabsOut.Anchor = 'Top,Left,Right'
+        foreach ($c in @($btnSync,$btnCheck,$btnCancel,$progress,$lblStatus,$tabsOut)) { $c.Top = $c.Top + $d }
         $minH = $form.MinimumSize.Height + $d
         $newH = $form.Height + $d
         if ($d -lt 0) {
@@ -2723,12 +3259,19 @@ function Set-AdvancedMode {
             $form.Height = $newH
             $form.MinimumSize = New-Object System.Drawing.Size($form.MinimumSize.Width, $minH)
         }
-        $txtLog.Anchor = 'Top,Bottom,Left,Right'
+        $tabsOut.Anchor = 'Top,Bottom,Left,Right'
         $form.ResumeLayout()
         $script:AdvCollapsed = $wantCollapsed
     }
 }
 # ---- Event handlers -------------------------------------------------------
+$chkShowSame.Add_CheckedChanged({
+    if ($script:IsSyncing) { return }
+    Show-ComparePlan $script:LastLegPlans ''
+})
+
+$tabCompare.Add_Resize({ Update-CompareLayout })
+
 $cboProject.Add_SelectedIndexChanged({
     if ($script:IsSyncing) { return }
     $name = [string]$cboProject.SelectedItem
@@ -2949,6 +3492,13 @@ Refresh-ProjectList -SelectName $startProject
 Write-Log 'Sync Data Collector ready.'
 try { $script:LastSeenSerials = ((@(Get-MtpDevices) | ForEach-Object { $_.Serial }) -join '|') } catch {}
 Update-DetectedCollector $true
+# Now that every control is placed and anchored, widen the window to fit the
+# compare grid. Doing it here rather than at construction means the anchors
+# reposition the right-hand buttons for us.
+$form.MinimumSize = New-Object System.Drawing.Size(960, $form.MinimumSize.Height)
+$form.Width = 1120
+Update-CompareLayout
+
 $chkAdvanced.Checked = ([string](Get-Pref 'Advanced' '0') -eq '1')
 Set-AdvancedMode ([bool]$chkAdvanced.Checked)
 [void]$form.ShowDialog()

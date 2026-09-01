@@ -24,15 +24,33 @@
     "semantic_hash": "ba1d4b0ed4247081496b9ff800980c4d"
   },
   "SyncDataCollector.ps1": {
-    "mtime": 1787677291.477044,
-    "seen": 1787682863.2862337,
-    "ast_hash": "1559a14c2a68f5e2379d0bdf41f8d677",
-    "semantic_hash": "1559a14c2a68f5e2379d0bdf41f8d677"
+    "mtime": 1788222215.1707551,
+    "seen": 1788222219.195331,
+    "ast_hash": "0c736318e0591af641b6191b4885bcc6",
+    "semantic_hash": ""
   },
   "config.example.json": {
     "mtime": 1787677048.259554,
     "seen": 1787682863.2862353,
     "ast_hash": "289c30498b7b63ebf26431384795c50e",
     "semantic_hash": "289c30498b7b63ebf26431384795c50e"
+  },
+  ".github/copilot-instructions.md": {
+    "mtime": 1787682759.314366,
+    "seen": 1787865373.7702518,
+    "ast_hash": "2b23503628bf2ec71d067a85ca8948ab",
+    "semantic_hash": ""
+  },
+  "CLAUDE.md": {
+    "mtime": 1787682759.5478086,
+    "seen": 1787865373.7702549,
+    "ast_hash": "8a6643a420fdad6bfb583523bc6cef16",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1788222294.7710185,
+    "seen": 1788222301.3293793,
+    "ast_hash": "fff34a4e1985379a5b34da42de30e0c4",
+    "semantic_hash": ""
   }
 }

@@ -31,6 +31,10 @@ WinForms GUI that runs on stock Windows (PowerShell 5.1 + .NET Framework 4.x).
 - **A collector is the unit of configuration** — plug one in, and the app identifies it by
   **hardware serial** and locks to that collector's setup. Nothing to pick from a dropdown,
   and an unrecognised controller is never given another one's settings.
+- **See what will happen before it happens** — **Check** fills a side-by-side compare grid:
+  this PC on the left, the collector on the right, an arrow per file showing which way it
+  moves and why. Both legs share the grid, so one glance covers the whole run. Preview and
+  run are built from the same comparison pass, so they cannot disagree.
 - **One button, two one-way legs** — *design* mirrors the project's drawings onto the
   collector; *export* pulls its field data into OneDrive. Not a two-way merge.
 - **Everyday mode by default** — the window shows the project, which collector is plugged in,
@@ -421,6 +425,51 @@ sync fall inside the timestamp tolerance and aren't flagged.
 The collector banner at the top of the window shows the same thing at a glance the moment a
 controller is plugged in (`TSC5-02 (JAJ000000002) - last synced 2026-08-24 14:35`), read from
 the local record, so it appears instantly — no scanning.
+
+### The compare view
+
+Check and Sync both fill the **Compare** tab: one row per file, this PC on the left, the
+collector on the right, and the arrow between them showing which way it is about to move.
+Folder and filename are separate columns, because a truncated cell loses its tail and the
+tail of a path is the filename -- split, and the clipping lands on the folder instead.
+
+```
+This PC                                              TSC5-01 (JAJ000000001)
+Folder          File            Size   Modified        Folder      File          What happens
+  Design  PC -> collector (mirrored)    S:\02-DESIGN  ->  \2100 - EXAMPLE SITE\02-Design
+Hoist House(HH) 26-243 HH.dxf   240 KB 08-31 17:22 ->                            Copy (new)
+6.0 UTILITIES   Pull Boxes.dxf   85 KB 08-31 17:22 ->  6.0 UTIL..  Pull Boxes    Copy (source newer)
+5.0 BRIDGE...   Boundary.dxf    1.4 MB 08-31 17:22  =  5.0 BRI..   Boundary.dxf  In sync
+                                                    X  Hoist Ho..  26-111 HH.dxf Delete from collector
+  Export  collector -> OneDrive (additive)    ...\07-DATALOGGER BACKUP\2026\08  <-  \...\Exports
+                                                   <-  Exports     2100-25-346   Copy (new)
+```
+
+Both legs share the one grid, grouped by leg, because they run in opposite directions:
+design files travel out to the collector (`->`) and field data comes back (`<-`). An empty
+cell means the file is not on that side yet, which is what makes "new here, missing there"
+readable without reading a word of it.
+
+The export rows repay a second look. The collector holds `2100-25-346.csv`, but it lands on
+the PC as `TSC5-01_2100-25-346.csv`. Each side is shown under the name it actually has, so
+[collision naming](#keeping-exports-from-different-collectors-apart) is something you can
+see rather than something you work out afterwards.
+
+Files already in sync are hidden by default -- tick **Show files already in sync** to see
+them. The summary line under the grid counts them either way.
+
+**Rows tick over as the sync reaches them.** A file that has been written turns green with a
+check mark and reads `Copied`; a pruned one reads `Deleted`; a failure turns red and carries
+the reason. On a 150-file push over MTP that is the difference between watching progress and
+watching nothing. Run Check first and Sync ticks off the rows already on screen rather than
+building a second list underneath them.
+
+The grid is a report, not a picker: **Sync this collector** always runs the whole plan. What
+it does guarantee is that the preview and the run agree, because both are built from the
+same comparison pass rather than from two passes that could drift apart.
+
+The **Log** tab keeps the full commentary -- every `COPIED`, `DELETED` and `FAILED` line with
+its reason -- and still writes to `sync-log.txt` next to the app.
 
 ### Several collectors, one device name
 
