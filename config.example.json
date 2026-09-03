@@ -25,14 +25,14 @@
   "defaults": {
     "designSubPath": "02-Design",
     "exportSubPath": "Exports",
-    "designExtensions": [ ".csv", ".dxf", ".xml", ".ttm" ],
+    "designExtensions": [ ".csv", ".dxf", ".xml", ".ttm", ".rxl" ],
     "exportExtensions": [ ".job", ".jxl", ".csv", ".dxf", ".rxl", ".xml" ],
     "excludeFolders": [ "SUPERSEDED" ],
     "prune": true,
     "exportCollision": "prefix"
   },
 
-  "_collectors_note": "Do not hand-write these. Plug a collector in and press Detect - the serial is read from the USB descriptor, the name you give becomes the export filename prefix, and these settings are copied from defaults.",
+  "_collectors_note": "Do not hand-write these. Plug a collector in and press Detect - the serial is read from the USB descriptor (or, for a USB stick, from the volume), the name you give becomes the export filename prefix, and these settings are copied from defaults.",
   "collectors": [
     {
       "serial": "JAJ000000000",
@@ -41,7 +41,21 @@
       "type": "mtp",
       "designSubPath": "02-Design",
       "exportSubPath": "Exports",
-      "designExtensions": [ ".csv", ".dxf", ".xml", ".ttm" ],
+      "designExtensions": [ ".csv", ".dxf", ".xml", ".ttm", ".rxl" ],
+      "exportExtensions": [ ".job", ".jxl", ".csv", ".dxf", ".rxl", ".xml" ],
+      "excludeFolders": [ "SUPERSEDED" ],
+      "prune": true,
+      "exportCollision": "prefix"
+    },
+    {
+      "_note": "A USB stick as a collector. serial is VOL- plus the volume serial, so it is found wherever Windows mounts it; model is the volume label.",
+      "serial": "VOL-00000000",
+      "name": "USB-01",
+      "model": "External",
+      "type": "folder",
+      "designSubPath": "02-Design",
+      "exportSubPath": "Exports",
+      "designExtensions": [ ".csv", ".dxf", ".xml", ".ttm", ".rxl" ],
       "exportExtensions": [ ".job", ".jxl", ".csv", ".dxf", ".rxl", ".xml" ],
       "excludeFolders": [ "SUPERSEDED" ],
       "prune": true,

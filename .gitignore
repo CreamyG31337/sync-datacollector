@@ -25,3 +25,6 @@ graphify-out/.graphify_root
 graphify-out/.graphify_*.json.sig
 graphify-out/graph.html
 graphify-out/20*/
+
+# Graphify staleness marker, rewritten on every run.
+graphify-out/needs_update

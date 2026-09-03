@@ -3,8 +3,8 @@
 A lightweight Windows GUI for **one-way file sync between a PC and survey data collectors**,
 in **both directions**:
 
-- **Push** design files (`.csv`, `.dxf`, LandXML `.xml`, Trimble `.ttm` surfaces, …) onto a
-  collector before you head out.
+- **Push** design files (`.csv`, `.dxf`, LandXML `.xml`, Trimble `.ttm` surfaces, `.rxl`
+  alignments, …) onto a collector before you head out.
 - **Pull** field-collected data (jobs, scans, exports) *off* a collector onto a USB stick or
   a cloud-synced folder — keeping each collector's work separate so nothing collides.
 
@@ -141,7 +141,7 @@ All of this uses only built-in Windows components — nothing to download or ins
    prefix). Its settings are copied from the defaults, so usually there is nothing more to do.
    What they mean:
    - **Design folder** / **Export folder** — subfolders under the project folder on the device.
-   - **Design types** — defaults `.csv, .dxf, .xml, .ttm`. `.xml` is only synced when it is
+   - **Design types** — defaults `.csv, .dxf, .xml, .ttm, .rxl`. `.xml` is only synced when it is
      really **LandXML** (root `<LandXML>`), so unrelated project XML is skipped.
    - **Export types** — defaults `.job, .jxl, .csv, .dxf, .rxl, .xml`. Include `.jxl` to pull
      scans with their `<name> Files` folder.
@@ -159,31 +159,62 @@ A rolling `sync-log.txt` is written next to the app for later troubleshooting.
 
 ---
 
-## The two-leg USB workflow (collectors that can't connect to the PC)
+## The stick round trip (devices that can't do MTP)
 
-> **Note:** this section and the next still describe the older per-profile framing. The engine
-> behaviour is unchanged and correct, but the GUI is now collector-driven &mdash; these two
-> workflows need a rewrite against the new model.
+Some devices can't be MTP collectors at all. A Windows tablet is the usual case: MTP is a
+*peripheral-side* protocol, and Windows only ships the host half — there is no responder to
+turn on, and adding one would mean a USB gadget-mode driver. The answer is not to fight that,
+but to let a **USB stick carry everything**, in a four-leg round trip:
 
-When IT policy stops the collector from talking to the PC directly, sync in two hops using
-the **same app** with two profiles:
+| | Runs on | Source → Destination |
+|---|---|---|
+| 1. design out | office PC | `S:\02-DESIGN` → stick |
+| 2. design in | tablet | stick → `C:\Trimble Data\…` |
+| 3. exports out | tablet | `C:\Trimble Data\…\Exports` → stick |
+| 4. exports in | office PC | stick → `S:\07-DATALOGGER BACKUP\{year}\{month}` |
 
-**Leg A — on the office PC** (`folder` target → the USB stick):
-```
-Source:      S:\Design\...            (your network design folder)
-Target type: folder
-Destination: E:\...\Design            (the USB stick's drive letter)
-```
+Legs 1 and 4 are one press of **Sync** against the stick's collector entry on the office PC.
+Legs 2 and 3 are one press on the tablet. **On the tablet the stick simply plays the part `S:`
+plays in the office** — linework comes off it, field data goes back onto it — and the tablet's
+own disk is the collector.
 
-**Leg B — on the collector** (`folder` target → the collector's internal disk):
-```
-Source:      E:\...\Design            (the USB stick)
-Target type: folder
-Destination: C:\...\Design            (a folder on the collector)
-```
+### The stick is a self-contained kit
 
-Copy this whole app folder onto the USB stick (or install it on the collector) so the same
-tool runs on both ends.
+Nobody sets the tablet up by hand. Every sync to a USB target also writes, to the volume root:
+
+- **the app itself** (`SyncDataCollector.ps1`, `SyncDataCollector.cmd`), so the tablet always
+  runs the current version rather than whatever shipped months ago;
+- **a generated `config.json`** for the tablet, derived from this PC's project and the stick's
+  own settings.
+
+The surveyor plugs the stick in, double-clicks `SyncDataCollector.cmd`, and presses **Sync**.
+
+That generated config is **derived, never a copy of ours**. Its stick-side paths use
+`{apphome}`, so the tablet can mount the stick as any drive letter; its collector is the
+tablet's local `C:\Trimble Data\…`; and it carries no network paths, no OneDrive, and no
+hardware serials. This matters when the surveyor is a third party: nothing about the company's
+storage layout travels, and the tablet never signs in to anything. Editing it on the tablet is
+pointless — the next sync from the office overwrites it — but the collector's generated id is
+preserved across regenerations, so sync-state and the device marker keep matching.
+
+### Telling tablets apart
+
+One stick can serve several tablets, so the thing that has to be identifiable in an export
+filename is the **tablet**, not the stick — the stick is the same for everyone. The generated
+config therefore names the collector `%COMPUTERNAME%`, which each tablet resolves to itself:
+one config file, a distinct export prefix per machine, and nothing to type on a device with no
+real keyboard. Exports reach the stick already prefixed, e.g. `T110-A_26-245.jxl`.
+
+The office PC consequently does **not** prefix again on leg 4 — the stick's collector is set to
+`exportCollision: "overwrite"` — or every file would read `USB-01_T110-A_26-245.jxl`. Despite
+the name, `overwrite` only means "do not disambiguate by device"; a pull still never destroys
+field data, landing a genuine clash as `name (2).ext`.
+
+Two limits worth knowing. The prefix is whatever Windows calls the tablet, so a machine named
+`DESKTOP-A1B2C3` produces exactly that in your export folder — rename the tablet if the name
+should mean something. And because the generated config carries one collector id, tablets
+sharing a stick share that id: each tablet keeps its own local marker, but the `sync-state.json`
+on the stick records only the most recent tablet, so "last synced" is per-stick, not per-tablet.
 
 ---
 
@@ -224,10 +255,10 @@ File types:     .job, .jxl, .csv, .dxf, .rxl, .xml
 
 ## Projects and collectors
 
-The unit of configuration is a **collector**, keyed by its hardware serial. Plug one in and
-the app locks to that collector's setup — there is no profile to remember to select, and an
-unrecognised serial is **refused rather than matched to something else**, which is what makes
-adding a fourth controller safe.
+The unit of configuration is a **collector**, keyed by its hardware serial — or, for a USB
+stick, its volume serial. Plug one in and the app locks to that collector's setup — there is no
+profile to remember to select, and an unrecognised serial is **refused rather than matched to
+something else**, which is what makes adding a fourth controller safe.
 
 Orthogonal to that is the **project**: the design source, the export root, and where the
 project lives on the device. One project is active at a time and every collector follows it.
@@ -243,6 +274,49 @@ A run is **two one-way legs, never a merge**:
 
 A failing leg does not stop the other — getting field data off a device matters more than
 either leg on its own, so the export still runs if the design push fails.
+
+### USB sticks as collectors
+
+A USB stick can be a collector in its own right (`type: "folder"`). Both legs work exactly as
+they do for a controller — design pushed onto it, exports pulled off it, same file types, same
+skip folders, same export naming — but over plain filesystem copies rather than MTP, which is
+considerably faster.
+
+Insert the stick and press **Detect**; it is offered alongside any connected controllers as
+`<volume label> [USB D:]`. Name it as you would a controller, since that name still becomes the
+export filename prefix.
+
+The stick is keyed on its **volume serial, not its drive letter**. Windows hands removable
+media whatever letter happens to be free, so today's `D:` really can be tomorrow's `E:` — and a
+mirrored design push aimed at "whatever is on `D:`" is exactly the accident worth engineering
+out. Each sync locates the volume by serial and uses wherever it is mounted right now; if that
+volume is not present the run is refused outright rather than falling back to a letter. A
+**Check** still works with the stick unplugged, answering from the last sync recorded on this
+PC, which is the point of that fallback.
+
+Two consequences worth knowing: re-formatting a stick changes its volume serial, so it has to
+be added again; and a stick with no volume serial at all is not offered, because there would be
+nothing stable to lock onto.
+
+#### The app rides along
+
+Every sync to a USB target also copies **the app itself** to the volume root —
+`SyncDataCollector.ps1` and `SyncDataCollector.cmd`, and only when they differ from what is
+already there. The stick is how the tool reaches a tablet in the first place, so a stick
+carrying current designs alongside a months-old app is a trap: whoever runs it in the field
+gets whatever version travelled with it.
+
+The root is the right place for them because `SyncDataCollector.cmd` resolves its own folder
+with `%~dp0`, and the app reads `config.json` and writes its log next to itself. So the stick
+ends up self-contained: app at the root, data under `Trimble Data\`, double-click and go.
+
+`config.json` is **deliberately not copied**. It holds this site's network paths and collector
+serials, and a tablet needs its own anyway — its design source is the stick, not `S:`. Copying
+ours would both hand out the site layout and point the tablet at drives it cannot reach.
+
+This applies to USB targets only. MTP controllers do not run this app, so nothing is copied to
+them. A **Check** reports what would be updated without writing, and a stick that is full or
+write-protected logs a warning rather than failing the run — design files matter more.
 
 ### Everyday mode, and the Advanced tick-box
 
@@ -302,11 +376,24 @@ Every collector exports into the *same* dated folder, so files must say where th
 | `deviceSubfolder` | `TSC5-01\2100-25-346.csv` — a folder per collector. |
 | `overwrite` | No separation. Only sensible with a single collector. |
 
-`prefix` deliberately prefixes the **first path segment**, not the filename. For a flat export
-folder those are the same thing; for a scan it keeps the pieces together, since `26-069-FE.jxl`
-and `26-069-FE Files\cloud.rcs` both gain the same prefix and Trimble Access still finds the
-companion folder. Prefixing the leaf instead would rename the file and the folder's *contents*
-but not the folder, breaking the link.
+`prefix` prefixes the **first path segment**, not the filename — for a flat export folder those
+are the same thing.
+
+> **`prefix` is not safe for scans.** A `.jxl` records its companion folder name **explicitly
+> inside the file** — e.g. `2100-25-CONTROL Files/AR-01.JPG`. Renaming that folder to
+> `TSC5-02_2100-25-CONTROL Files` breaks the link: the point cloud and photos are on disk, but
+> the job can no longer find them, and nothing about the copy looks wrong. Prefixing the `.jxl`
+> itself is harmless, since the stored path is relative to whatever folder the `.jxl` sits in —
+> it is the **folder** that must keep its name.
+>
+> Use `deviceSubfolder` on any collector that exports scans. It separates crews by folder and
+> leaves every name untouched, which is why it is the default. A run that combines `prefix`
+> with `.jxl` in the export types logs a warning.
+
+There is a second, independent limit: a companion folder is matched **by name**, as
+`<jxl basename> Files`. A `.jxl` that references a folder named after something else — an
+aggregate "dumpall" export is the usual case — will not have that folder pulled, because
+nothing pairs them. The media simply does not travel, silently.
 
 ### Exports are never destroyed
 
@@ -596,16 +683,16 @@ root can be written `%OneDriveCommercial%\…` where a drive letter is not wante
 |---|---|
 | `activeProject` | Which project is currently selected. |
 | `projects[].name` | Display name in the dropdown. |
-| `projects[].designSource` | Where the drawings live on the PC, e.g. `S:\02-DESIGN`. |
-| `projects[].exportRoot` | Where pulled field data is filed. Supports `{year}` `{month}` `{julian}` `{date}`, and `%ENVVAR%`. |
-| `projects[].deviceProjectPath` | The project folder **on the collector**. For MTP the first segment is the device storage. |
+| `projects[].designSource` | Where the drawings live on the PC, e.g. `S:\02-DESIGN`. Supports the same tokens as `exportRoot`. |
+| `projects[].exportRoot` | Where pulled field data is filed. Supports `{year}` `{month}` `{julian}` `{date}` `{apphome}`, and `%ENVVAR%`. `{apphome}` is the folder the app is running from — use it when the app runs off a USB stick, so no drive letter is baked in. |
+| `projects[].deviceProjectPath` | The project folder **on the collector**. For MTP the first segment is the device storage. For a `"folder"` collector that first segment is replaced by wherever the volume is currently mounted, so one project path serves both kinds. |
 | `driveMap[].letter` | A drive letter the app creates with `subst` when it is missing, e.g. `S`. Leave `driveMap` out entirely and it never maps anything. |
 | `driveMap[].targets` | Folders that letter may point at, **best first**. `%ENVVAR%` is expanded — prefer `%OneDriveCommercial%\…` to `C:\Users\<name>\…`, or the config only works for whoever wrote it. |
 | `defaults.*` | The baseline new collectors are seeded from, and what **Reset to defaults** applies. Same seven fields as `collectors[]` below, minus the identity ones (`serial`, `name`, `model`, `type`). **Edit here only** — the GUI never writes this. Omit it and the built-in values are used; a partial block falls back key by key. |
-| `collectors[].serial` | Hardware serial — the key. Read from the USB descriptor; never guessed. |
+| `collectors[].serial` | Hardware serial — the key. Read from the USB descriptor; never guessed. For a `"folder"` USB target it is `VOL-<volume serial>` (e.g. `VOL-00000000`), read from the volume itself. |
 | `collectors[].name` | Short name you assign. **Becomes the export filename prefix**, so settle it before the first export. |
-| `collectors[].model` | MTP model name as shown under "This PC" (e.g. `TSC5`). Several units share this, which is why `serial` is the key. |
-| `collectors[].type` | `"mtp"` (over USB) or `"folder"` (a Windows tablet running this app locally). |
+| `collectors[].model` | MTP model name as shown under "This PC" (e.g. `TSC5`). Several units share this, which is why `serial` is the key. For a USB target it is the volume label. |
+| `collectors[].type` | `"mtp"` (over USB), or `"folder"` for a plain filesystem target — a USB stick, or a Windows tablet running this app locally. |
 | `collectors[].designSubPath` | Design subfolder under `deviceProjectPath`, e.g. `02-Design`. |
 | `collectors[].exportSubPath` | Export subfolder under `deviceProjectPath`, e.g. `Exports`. |
 | `collectors[].designExtensions` | Types pushed. `.xml` is content-checked and only sent when it is LandXML. |

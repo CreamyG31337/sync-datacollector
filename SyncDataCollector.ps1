@@ -49,7 +49,7 @@ function New-Profile {
         [string]$DeviceName = '',                    # mtp device name; also the per-device subfolder label on pull
         [string]$DestinationPath = '',
         [string]$CollisionMode = 'deviceSubfolder',  # pull only: deviceSubfolder | prefix | overwrite
-        [string[]]$Extensions = @('.csv', '.dxf', '.xml', '.ttm'),
+        [string[]]$Extensions = @('.csv', '.dxf', '.xml', '.ttm', '.rxl'),
         [string[]]$ExcludeFolders = @('SUPERSEDED'), # folder names skipped at any depth
         [bool]$Prune = $false                        # push only: delete extras at the destination
     )
@@ -337,15 +337,23 @@ function Get-MonthFolder {
 }
 
 # Expand path tokens, all case-insensitive:
-#   {julian} -> YY-DDD  (26-236)      {year}  -> 2026
-#   {month}  -> 8-AUG                 {date}  -> 2026-08-24
+#   {julian}  -> YY-DDD  (26-236)     {year}  -> 2026
+#   {month}   -> 8-AUG                {date}  -> 2026-08-24
+#   {apphome} -> the folder this app is running from
 #   %ENVVAR%  -> expanded too (%USERPROFILE%, %OneDriveCommercial%, ...)
+#
+# {apphome} exists for the USB workflow: the app runs from the stick, so the stick's
+# own design and export folders can be named without knowing its drive letter. The
+# tablet may mount it as D: today and E: tomorrow, and a config that hard-codes a
+# letter breaks the moment it does. Emitted without a trailing backslash so a root-
+# mounted app ("D:\") still composes as "{apphome}\Trimble Data" -> "D:\Trimble Data".
 function Expand-PathTokens {
     param([string]$Path)
     if ([string]::IsNullOrEmpty($Path)) { return $Path }
     $now = Get-Date
     # Environment variables first, so one config.json fits every user.
     $out = Expand-EnvVars $Path
+    $out = $out -replace '(?i)\{apphome\}', ([string]$ScriptDir).TrimEnd('\')
     $out = $out -replace '(?i)\{julian\}', (Get-JulianDate)
     $out = $out -replace '(?i)\{year\}',   $now.ToString('yyyy')
     $out = $out -replace '(?i)\{month\}',  (Get-MonthFolder)
@@ -840,9 +848,60 @@ function Get-MtpDevices {
         if ($it.Path -match '^[A-Za-z]:\\') { continue }
         $serial = ''
         if ($it.Path -match '#(?:vid_[0-9a-f]{4}&pid_[0-9a-f]{4})#([^#]+)#') { $serial = $Matches[1].ToUpperInvariant() }
-        $out += @{ Name = $it.Name; Serial = $serial; Path = $it.Path; Item = $it }
+        $out += @{ Name = $it.Name; Serial = $serial; Path = $it.Path; Item = $it; Kind = 'mtp'; Root = '' }
     }
     return $out
+}
+
+# Removable volumes (USB sticks), shaped like Get-MtpDevices so one list can carry
+# both kinds. Identity is the VOLUME SERIAL, never the drive letter: Windows hands a
+# stick whatever letter happens to be free, so today's D: is tomorrow's E: -- and
+# pushing a mirrored design folder onto "whatever is on D:" is exactly the accident
+# worth engineering out. "VOL-" prefixes it so a volume id can never be mistaken for
+# an MTP hardware serial. A volume with no serial is skipped: nothing to lock to.
+function Get-VolumeDevices {
+    $out = @()
+    $vols = @()
+    try { $vols = @(Get-CimInstance -ClassName Win32_LogicalDisk -Filter 'DriveType = 2' -ErrorAction Stop) }
+    catch { return $out }
+    foreach ($v in $vols) {
+        $vs = ([string]$v.VolumeSerialNumber).Trim().ToUpperInvariant()
+        if (-not $vs) { continue }
+        $name = ([string]$v.VolumeName).Trim()
+        if (-not $name) { $name = 'USB volume' }
+        $root = ([string]$v.DeviceID).TrimEnd('\') + '\'
+        $out += @{ Name = $name; Serial = ('VOL-' + $vs); Path = $root; Item = $null; Kind = 'folder'; Root = $root }
+    }
+    return $out
+}
+
+# The bare volume serial behind a folder collector's id ("VOL-00000000" -> "00000000").
+function Get-VolumeSerial {
+    param([string]$Serial)
+    return (([string]$Serial) -replace '^VOL-', '').Trim().ToUpperInvariant()
+}
+
+# Is this collector pinned to a removable volume, as opposed to being a plain folder
+# target? Both are type "folder", and they behave differently: a volume-pinned target
+# is found by serial wherever it is mounted, while a plain folder target -- a Windows
+# tablet running this app against its own disk -- is just the path in the config. Only
+# the "VOL-" id says which, so that is what decides it.
+function Test-VolumeCollector {
+    param($Collector)
+    if ([string]$Collector.type -ne 'folder') { return $false }
+    return (([string]$Collector.serial) -match '^VOL-')
+}
+
+# Where Windows has mounted the volume this folder collector is pinned to, right now.
+# '' when it is not plugged in -- callers treat that as "not connected" rather than
+# falling back to a letter, which is the whole point of pinning to the serial.
+function Resolve-VolumeRoot {
+    param([string]$Serial)
+    $want = Get-VolumeSerial $Serial
+    if (-not $want) { return '' }
+    $m = @(@(Get-VolumeDevices) | Where-Object { (Get-VolumeSerial $_.Serial) -eq $want })
+    if ($m.Count -ge 1) { return [string]$m[0].Root }
+    return ''
 }
 
 function Get-MtpDeviceNames {
@@ -1013,10 +1072,19 @@ function Test-LandXml {
 # $DeviceName here is the collector LABEL, not the MTP model name -- several units
 # share a model, so labelling by model would defeat the whole point.
 #
-# 'prefix' deliberately prefixes the FIRST path segment rather than the filename.
-# For a flat export folder those are the same thing, and for a scan it keeps the
-# pieces together: "26-069-FE.jxl" and "26-069-FE Files\cloud.rcs" both gain the
-# same prefix on their first segment, so the .jxl still finds its companion folder.
+# 'prefix' prefixes the FIRST path segment rather than the filename. For a flat
+# export folder those are the same thing.
+#
+# WARNING -- 'prefix' IS NOT SAFE FOR SCANS. A .jxl stores the companion folder name
+# EXPLICITLY inside the file (e.g. "2100-25-CONTROL Files/AR-01.JPG"), so renaming
+# that folder to "TSC5-02_2100-25-CONTROL Files" breaks the link: the media is on
+# disk but the job can no longer find it, and nothing about the copy looks wrong.
+# Prefixing the .jxl itself is harmless -- the stored path is relative to whatever
+# folder the .jxl sits in -- but the FOLDER must keep its name.
+#
+# So a collector that exports scans wants 'deviceSubfolder', which separates crews
+# by folder and leaves every name untouched. Invoke-Sync warns when 'prefix' is
+# combined with .jxl in the export types.
 # Prefixing the leaf instead would rename the file and the folder's contents but not
 # the folder, breaking the association.
 function Get-DestRel {
@@ -1290,8 +1358,14 @@ function Format-DeviceChoice {
     $friendly = Get-DeviceFriendlyName ([string]$Dev.Serial)
     $s = [string]$Dev.Serial
     if (-not $s) { $s = 'no serial' }
-    if ($friendly) { return ('{0} - {1} ({2})' -f $friendly, $Dev.Name, $s) }
-    return ('{0} ({1})' -f $Dev.Name, $s)
+    # A USB stick reads by where it is mounted -- "External (D:)" is what the user can
+    # actually see in Explorer; the volume serial is what the tool matches on.
+    $name = [string]$Dev.Name
+    if ([string]$Dev['Kind'] -eq 'folder' -and $Dev['Root']) {
+        $name = ('{0} [USB {1}]' -f $name, ([string]$Dev.Root).TrimEnd('\'))
+    }
+    if ($friendly) { return ('{0} - {1} ({2})' -f $friendly, $name, $s) }
+    return ('{0} ({1})' -f $name, $s)
 }
 
 # How a collector reads in the UI and the log. Best available name, qualified by the
@@ -1486,6 +1560,16 @@ function Test-CollectorReachable {
             return @{ Ok = $false; Reason = "MTP device '$dev' is not connected." }
         }
         catch { return @{ Ok = $false; Reason = "MTP devices could not be listed: $($_.Exception.Message)" } }
+    }
+
+    # A volume-pinned folder target answers on identity, before any path is touched.
+    # Asking "does the path exist?" is not the same question: with the stick out, a
+    # different stick on the same letter would answer yes and get mirrored over.
+    if ($Profile.PSObject.Properties['volumeSerial'] -and $Profile.volumeSerial) {
+        $vs = Get-VolumeSerial ([string]$Profile.volumeSerial)
+        if (-not (Resolve-VolumeRoot ([string]$Profile.volumeSerial))) {
+            return @{ Ok = $false; Reason = "USB target (volume $vs) is not plugged in." }
+        }
     }
 
     if ($direction -eq 'pull') {
@@ -1709,7 +1793,7 @@ function New-CollectorDefaults {
     param(
         [string]$DesignSubPath = '02-Design',
         [string]$ExportSubPath = 'Exports',
-        [string[]]$DesignExtensions = @('.csv', '.dxf', '.xml', '.ttm'),
+        [string[]]$DesignExtensions = @('.csv', '.dxf', '.xml', '.ttm', '.rxl'),
         [string[]]$ExportExtensions = @('.job', '.jxl', '.csv', '.dxf', '.rxl', '.xml'),
         [string[]]$ExcludeFolders = @('SUPERSEDED'),
         [bool]$Prune = $true,                # the design folder is owned by the tool
@@ -1811,16 +1895,19 @@ function Get-CollectorBySerial {
 # How a collector reads in the UI and the log.
 function Get-CollectorLabel {
     param($Collector)
-    $n = [string]$Collector.name
+    $n = Expand-EnvVars ([string]$Collector.name)
     if ($n) { return ('{0} ({1})' -f $n, [string]$Collector.serial) }
     return (Get-DeviceLabel ([string]$Collector.model) ([string]$Collector.serial))
 }
 
 # Folder-safe name for the per-collector export subfolder. Two crews exporting the
 # same filename must never land on each other, so this has to be stable and unique.
+# Environment variables are expanded here so ONE generated config can serve several
+# tablets sharing a stick: a name of "%COMPUTERNAME%" resolves per machine, giving each
+# tablet its own export prefix with nothing to type on a device that has no keyboard.
 function Get-CollectorFolderName {
     param($Collector)
-    $n = [string]$Collector.name
+    $n = Expand-EnvVars ([string]$Collector.name)
     if (-not $n) { $n = [string]$Collector.serial }
     if (-not $n) { $n = [string]$Collector.model }
     return (($n -replace '[\\/:*?"<>|]', '-').Trim())
@@ -1829,23 +1916,64 @@ function Get-CollectorFolderName {
 # Build a profile the sync engine already understands, for one leg of a run. This
 # is the ONLY place the collector model touches the engine -- the engine, and every
 # test around it, stays exactly as it was.
+# The project's deviceProjectPath is written MTP-shaped: its first segment is the
+# device's storage root ("Internal shared storage"), and the rest is the tree the job
+# lives in ("Trimble Data\Projects\2100 - EXAMPLE"). A folder collector has a real
+# drive root instead, so swap that first segment for wherever the volume is mounted
+# now and the rest of the tree carries over unchanged -- one project path serves both
+# kinds. Returns '' when a folder collector's volume is not plugged in; callers treat
+# that as "not connected" rather than guessing a drive letter.
+# deviceProjectPath minus its leading storage segment -- "Trimble Data\Projects\2100
+# - EXAMPLE". This is the part of the tree that is the same wherever it is rooted, so
+# both the volume rooting below and the generated tablet config work from it.
+function Get-DeviceProjectSubPath {
+    param($Project)
+    $segs = @(Split-MtpPath (([string]$Project.deviceProjectPath).Trim().TrimEnd('\')))
+    if ($segs.Count -gt 1) { return (@($segs[1..($segs.Count - 1)]) -join '\') }
+    return ''
+}
+
+function Get-CollectorDeviceRoot {
+    param($Project, $Collector)
+    $devRoot = ([string]$Project.deviceProjectPath).Trim().TrimEnd('\')
+    # A plain folder target keeps deviceProjectPath as the real path it already is;
+    # only a volume-pinned one gets its root swapped for the current mount point.
+    if (-not (Test-VolumeCollector $Collector)) { return $devRoot }
+    $vol = Resolve-VolumeRoot ([string]$Collector.serial)
+    if (-not $vol) { return '' }
+    return ($vol.TrimEnd('\') + '\' + (Get-DeviceProjectSubPath $Project)).TrimEnd('\')
+}
+
 function New-LegProfile {
     param($Project, $Collector, [string]$Leg)
 
-    $devRoot = ([string]$Project.deviceProjectPath).Trim().TrimEnd('\')
+    $devRoot = Get-CollectorDeviceRoot $Project $Collector
     $model   = [string]$Collector.model
     $type    = [string]$Collector.type
     $label   = Get-CollectorLabel $Collector
 
+    # A folder collector is pinned to a volume serial, and $devRoot was resolved from
+    # it above. Carry the serial on the profile so reachability can ask "is THAT stick
+    # mounted?" rather than "does this path exist?" -- with the stick unplugged the
+    # path either does not resolve or, worse, resolves onto a different stick.
+    $isVol = Test-VolumeCollector $Collector
+    $stamp = {
+        param($P)
+        if ($isVol) {
+            $P | Add-Member -NotePropertyName volumeSerial -NotePropertyValue ([string]$Collector.serial) -Force
+        }
+        return $P
+    }
+
     if ($Leg -eq 'design') {
         # PC -> collector, mirrored: the tool owns this folder.
-        return New-Profile -Name ("$label - design") -Direction 'push' `
+        return (& $stamp (New-Profile -Name ("$label - design") -Direction 'push' `
             -SourcePath ([string]$Project.designSource) `
             -TargetType $type -DeviceName $model `
             -DestinationPath ($devRoot + '\' + ([string]$Collector.designSubPath).Trim('\')) `
             -Extensions @($Collector.designExtensions) `
             -ExcludeFolders @($Collector.excludeFolders) `
-            -Prune ([bool]$Collector.prune)
+            -Prune ([bool]$Collector.prune)))
     }
 
     # collector -> OneDrive, additive. Every collector exports into the SAME dated
@@ -1865,7 +1993,155 @@ function New-LegProfile {
         -Extensions @($Collector.exportExtensions) `
         -ExcludeFolders @() -Prune $false
     $p | Add-Member -NotePropertyName collisionLabel -NotePropertyValue (Get-CollectorFolderName $Collector) -Force
-    return $p
+    return (& $stamp $p)
+}
+
+# The stick is how the app itself reaches the tablet, so a stick carrying current
+# designs but a stale app is a trap: the surveyor runs whatever version travelled with
+# it. Keeping the two in step is therefore part of the sync, not a separate chore.
+#
+# Copied to the volume ROOT, alongside "Trimble Data", because SyncDataCollector.cmd
+# resolves its own folder with %~dp0 and the app reads config.json / writes its log
+# next to itself -- so the root is both the obvious place to double-click and the
+# place those paths already point.
+#
+# config.json is deliberately NOT copied. It holds this site's network paths and
+# collector serials, and the tablet needs its own anyway (its source is the stick,
+# not S:). Shipping ours would both leak the layout and point the tablet at drives
+# it cannot see.
+$script:AppFiles = @('SyncDataCollector.ps1', 'SyncDataCollector.cmd')
+
+function Copy-AppToVolume {
+    param([string]$VolumeRoot, [scriptblock]$OnLog, [bool]$CheckOnly)
+    $updated = 0; $current = 0
+    foreach ($name in $script:AppFiles) {
+        $src = Join-Path $ScriptDir $name
+        if (-not (Test-Path -LiteralPath $src -PathType Leaf)) {
+            & $OnLog "App file missing here, not copied: $name" 'WARN'
+            continue
+        }
+        $dst = Join-Path $VolumeRoot $name
+        $s = Get-Item -LiteralPath $src
+        $d = $null
+        if (Test-Path -LiteralPath $dst -PathType Leaf) { $d = Get-Item -LiteralPath $dst }
+        # Same "is it already there" rule the file sync uses: matching size, and the
+        # copy on the stick not older than this one.
+        if ($d -and ([long]$d.Length -eq [long]$s.Length) -and ($s.LastWriteTimeUtc -le $d.LastWriteTimeUtc.AddSeconds(2))) {
+            $current++
+            continue
+        }
+        if ($CheckOnly) {
+            $why = if ($d) { 'out of date' } else { 'not on the stick' }
+            & $OnLog "App would be updated ($why): $name" 'INFO'
+            $updated++
+            continue
+        }
+        # A stick that is full, write-protected or yanked must not cost the crew their
+        # design files -- warn and carry on, the same way a failed leg does.
+        try {
+            Copy-FileFolder $src $dst $true
+            & $OnLog "App updated on the stick: $name" 'INFO'
+            $updated++
+        }
+        catch {
+            & $OnLog "Could not copy $name to the stick :: $($_.Exception.Message)" 'WARN'
+        }
+    }
+    return @{ Updated = $updated; Current = $current }
+}
+
+# The tablet's config, written BY this PC onto the stick, so the surveyor configures
+# nothing: plug in, double-click, press Sync.
+#
+# It is DERIVED, never a copy of ours. On the tablet the stick plays the part S: plays
+# here -- linework comes off it, exports go back onto it -- and the tablet's own disk
+# is the collector. So the two sides swap round:
+#
+#            this PC                          the tablet
+#   design   S:\02-DESIGN    -> stick         stick -> C:\Trimble Data\...\02-Design
+#   export   stick           -> S:\07-...     C:\Trimble Data\...\Exports -> stick
+#
+# Every stick-side path uses {apphome}, so the tablet can mount it as any letter.
+# Nothing site-specific travels: no network paths, no OneDrive, no hardware serials.
+#
+# The stick is shared between tablets, so the TABLET is what has to be identifiable in
+# an export name -- not the stick, which is the same for everyone. The name is written
+# as "%COMPUTERNAME%" and resolved on each tablet, so one generated config gives every
+# machine its own prefix with nothing typed on a device that has no real keyboard.
+# This PC therefore does NOT prefix again on the way into OneDrive (the stick's own
+# collector is set to "overwrite"), or every file would read USB-01_T110-A_...
+function New-TabletConfig {
+    param($Project, $Collector, $Existing)
+
+    $sub      = Get-DeviceProjectSubPath $Project
+    $stickJob = if ($sub) { '{apphome}\' + $sub } else { '{apphome}' }
+    $design   = ([string]$Collector.designSubPath).Trim('\')
+    $export   = ([string]$Collector.exportSubPath).Trim('\')
+
+    # Identity has to survive a regeneration or the tablet's sync-state and device
+    # marker stop matching, and every file looks new again. Settings are ours to
+    # overwrite; the id is not.
+    $serial = ''
+    if ($Existing) {
+        $prior = @(@($Existing.collectors) | Where-Object { [string]$_.type -eq 'folder' }) | Select-Object -First 1
+        if ($prior) { $serial = [string]$prior.serial }
+    }
+    if (-not $serial) { $serial = [guid]::NewGuid().ToString() }
+
+    $tabletProject = New-Project -Name ([string]$Project.name) `
+        -DesignSource ($stickJob + '\' + $design) `
+        -ExportRoot   ($stickJob + '\' + $export) `
+        -DeviceProjectPath ('C:\' + $sub)
+
+    $tabletCollector = New-Collector -Serial $serial -Name '%COMPUTERNAME%' `
+        -Model 'Tablet' -Type 'folder' `
+        -DesignSubPath $design -ExportSubPath $export `
+        -DesignExtensions @($Collector.designExtensions) `
+        -ExportExtensions @($Collector.exportExtensions) `
+        -ExcludeFolders @($Collector.excludeFolders) `
+        -Prune ([bool]$Collector.prune) `
+        -ExportCollision 'prefix'
+
+    return [pscustomobject]@{
+        _note         = 'Generated by Sync DataCollector on the office PC. Edits here are overwritten on the next sync to this stick.'
+        activeProject = [string]$Project.name
+        projects      = @($tabletProject)
+        collectors    = @($tabletCollector)
+        devices       = [pscustomobject]@{}
+        mtp           = New-MtpSettings
+    }
+}
+
+# Write it only when it actually differs, so a stick that is already correct is not
+# rewritten on every sync (and the surveyor's file timestamp stays meaningful).
+function Copy-TabletConfigToVolume {
+    param([string]$VolumeRoot, $Project, $Collector, [scriptblock]$OnLog, [bool]$CheckOnly)
+    $dst = Join-Path $VolumeRoot 'config.json'
+    $existing = $null
+    if (Test-Path -LiteralPath $dst -PathType Leaf) {
+        try { $existing = Get-Content -LiteralPath $dst -Raw -Encoding UTF8 | ConvertFrom-Json } catch { }
+    }
+    $want = (New-TabletConfig $Project $Collector $existing | ConvertTo-Json -Depth 6)
+    $have = ''
+    if ($existing) { try { $have = ($existing | ConvertTo-Json -Depth 6) } catch { } }
+    if ($have -eq $want) {
+        & $OnLog 'Tablet config on the stick is already current.' 'INFO'
+        return $false
+    }
+    if ($CheckOnly) {
+        $why = if ($existing) { 'out of date' } else { 'not on the stick' }
+        & $OnLog "Tablet config would be written ($why): config.json" 'INFO'
+        return $true
+    }
+    try {
+        $want | Set-Content -LiteralPath $dst -Encoding UTF8
+        & $OnLog 'Tablet config written to the stick (config.json).' 'INFO'
+        return $true
+    }
+    catch {
+        & $OnLog "Could not write the tablet config to the stick :: $($_.Exception.Message)" 'WARN'
+        return $false
+    }
 }
 
 # One collector, both legs. Design first so a crew heading out has current drawings;
@@ -1881,6 +2157,25 @@ function Invoke-CollectorSync {
     $label = Get-CollectorLabel $Collector
     $verb  = if ($CheckOnly) { 'CHECK' } else { 'SYNC' }
     & $OnLog "===== $verb $label  (project: $($Project.name)) =====" 'INFO'
+
+    # A folder collector with its volume absent has no device root, so every leg path
+    # would come out drive-less ("\02-Design") and land on whatever drive is current.
+    # Refuse the write outright. A CHECK is still allowed through: with the stick out
+    # it falls back to the last sync recorded here, which is the point of that path.
+    if (Test-VolumeCollector $Collector) {
+        $volRoot = Resolve-VolumeRoot ([string]$Collector.serial)
+        if ($volRoot) { & $OnLog "USB target mounted at $volRoot (volume $(Get-VolumeSerial $Collector.serial))." 'INFO' }
+        elseif ($CheckOnly) { & $OnLog "USB target (volume $(Get-VolumeSerial $Collector.serial)) is not plugged in - checking against the last sync recorded here." 'WARN' }
+        else { throw ("$label is not plugged in: no volume with serial $(Get-VolumeSerial $Collector.serial) is mounted.") }
+
+        # The app and its tablet-side config travel with the data, so the stick is a
+        # complete, current kit. USB only: an MTP controller does not run this tool.
+        if ($volRoot) {
+            $app = Copy-AppToVolume $volRoot $OnLog ([bool]$CheckOnly)
+            if ($app.Updated -eq 0) { & $OnLog "App on the stick is already current ($($app.Current) file(s))." 'INFO' }
+            [void](Copy-TabletConfigToVolume $volRoot $Project $Collector $OnLog ([bool]$CheckOnly))
+        }
+    }
 
     $legs = @(
         @{ Key = 'design'; Title = 'Design  PC -> collector (mirrored)' }
@@ -1982,12 +2277,29 @@ function Invoke-CollectorSync {
 # serial is never matched to an existing collector -- that is the whole safety story
 # for adding controllers later.
 function Get-ConnectedCollectors {
-    $devs = @(Get-MtpDevices | Where-Object { $_.Serial })
+    # MTP controllers and mounted USB sticks are both offerable targets, so both
+    # kinds go in one list and everything downstream stays kind-agnostic.
+    $devs = @()
+    $devs += @(Get-MtpDevices)
+    $devs += @(Get-VolumeDevices)
+    $devs = @($devs | Where-Object { $_.Serial })
     $known = @(); $unknown = @()
     foreach ($d in $devs) {
         $c = Get-CollectorBySerial $d.Serial
         if ($c) { $known += [pscustomobject]@{ Device = $d; Collector = $c } }
         else    { $unknown += $d }
+    }
+    # A plain folder collector IS this machine -- a tablet running the app against its
+    # own disk. There is nothing to plug in and nothing to enumerate, so it is always
+    # present. Without this the tablet finds only the stick, fails to match it to the
+    # generated collector, and reports "no collector connected" with Sync greyed out.
+    foreach ($c in @($script:Config.collectors)) {
+        if ([string]$c.type -ne 'folder') { continue }
+        if (Test-VolumeCollector $c) { continue }
+        $local = @{ Name = [string]$c.model; Serial = [string]$c.serial
+                    Path = ''; Item = $null; Kind = 'folder'; Root = '' }
+        $known += [pscustomobject]@{ Device = $local; Collector = $c }
+        $devs  += $local
     }
     return @{ Known = @($known); Unknown = @($unknown); All = @($devs) }
 }
@@ -1996,8 +2308,11 @@ function Get-ConnectedCollectors {
 # active project's shape so it is usable immediately.
 function Register-Collector {
     param($Device, [string]$FriendlyName)
+    # A missing Kind means an MTP controller -- that is all this used to enumerate.
+    $kind = [string]$Device['Kind']
+    if (-not $kind) { $kind = 'mtp' }
     $c = New-Collector -Serial ([string]$Device.Serial) -Name $FriendlyName `
-            -Model ([string]$Device.Name) -Type 'mtp'
+            -Model ([string]$Device.Name) -Type $kind
     $script:Config.collectors = @(@($script:Config.collectors) + $c)
     return $c
 }
@@ -2109,6 +2424,14 @@ function Invoke-Sync {
         # Per-device subfolder / prefix (pull only) needs a device name / label.
         if ($direction -eq 'pull' -and $collisionMode -in @('deviceSubfolder', 'prefix') -and [string]::IsNullOrWhiteSpace($collisionLabel)) {
             throw "Collision mode '$collisionMode' needs a device name / label (used to keep each collector's files separate)."
+        }
+
+        # A .jxl stores its companion folder name inside itself, so prefixing that
+        # folder silently severs the job from its point cloud and photos. Warned, not
+        # refused: the pull still gets the data across, and losing the run would be
+        # worse than a renamed folder someone can put right.
+        if ($direction -eq 'pull' -and $collisionMode -eq 'prefix' -and ($exts -contains '.jxl')) {
+            & $OnLog "Export naming is 'prefix' and .jxl is in the types: a scan's '<name> Files' folder gets renamed, but the .jxl records that folder name internally, so the job will not find its point cloud/photos. Use 'deviceSubfolder' for collectors that export scans." 'WARN'
         }
 
         if ($CheckOnly) {
@@ -3108,7 +3431,7 @@ function Update-DetectedCollector {
     $known = @($cc.Known); $unknown = @($cc.Unknown)
 
     if ($known.Count -eq 0 -and $unknown.Count -eq 0) {
-        $lblCollector.Text = 'No collector connected.  Plug one in over USB (File transfer / MTP).'
+        $lblCollector.Text = 'No collector connected.  Plug one in over USB (File transfer / MTP), or insert a USB stick target.'
         $lblCollector.ForeColor = 'DimGray'
         Load-CollectorToUi $null
         return
@@ -3305,7 +3628,7 @@ $btnDetect.Add_Click({
         $all = @($cc.All)
         if ($all.Count -eq 0) {
             [System.Windows.Forms.MessageBox]::Show(
-                'No collectors found. Connect one over USB, unlock it, and set USB mode to File transfer (MTP).',
+                "No collectors found.`r`n`r`nFor a controller: connect it over USB, unlock it, and set USB mode to File transfer (MTP).`r`nFor a USB stick: insert it and make sure Windows has given it a drive letter.",
                 'Detect', 'OK', 'Information') | Out-Null
             Update-DetectedCollector $false
             return
@@ -3323,12 +3646,25 @@ $btnDetect.Add_Click({
             return
         }
         # Unknown serial: set it up deliberately, never inherit another collector's config.
-        $r = [System.Windows.Forms.MessageBox]::Show(
-            "This collector is not set up yet.`r`n`r`nModel:  $($pick.Name)`r`nSerial: $($pick.Serial)`r`n`r`nAdd it now?",
-            'New collector', 'YesNo', 'Question')
-        if ($r -ne 'Yes') { return }
-        $nm = Prompt-Text -Title 'Name this collector' `
-                -Message "Short name (used as the export filename prefix, e.g. TSC5-03):" -Default ''
+        if ([string]$pick['Kind'] -eq 'folder') {
+            $mount = ([string]$pick.Root).TrimEnd('\')
+            $r = [System.Windows.Forms.MessageBox]::Show(
+                ("This USB stick is not set up yet.`r`n`r`nVolume: $($pick.Name)  ($mount)`r`nSerial: $(Get-VolumeSerial $pick.Serial)`r`n`r`n" +
+                 "It will be treated as a collector: design files pushed onto it, exports pulled off it.`r`n" +
+                 "The tool locks to the volume serial, not the drive letter, so it still works if Windows mounts it elsewhere.`r`n`r`nAdd it now?"),
+                'New USB target', 'YesNo', 'Question')
+            if ($r -ne 'Yes') { return }
+            $nm = Prompt-Text -Title 'Name this USB target' `
+                    -Message "Short name (used as the export filename prefix, e.g. USB-01):" -Default ([string]$pick.Name)
+        }
+        else {
+            $r = [System.Windows.Forms.MessageBox]::Show(
+                "This collector is not set up yet.`r`n`r`nModel:  $($pick.Name)`r`nSerial: $($pick.Serial)`r`n`r`nAdd it now?",
+                'New collector', 'YesNo', 'Question')
+            if ($r -ne 'Yes') { return }
+            $nm = Prompt-Text -Title 'Name this collector' `
+                    -Message "Short name (used as the export filename prefix, e.g. TSC5-03):" -Default ''
+        }
         if (-not $nm) { return }
         $c = Register-Collector $pick $nm
         try { Save-Config } catch {}
@@ -3472,7 +3808,9 @@ $devTimer.Interval = 4000
 $devTimer.Add_Tick({
     if ($script:IsSyncing) { return }
     try {
-        $sig = ((@(Get-MtpDevices) | ForEach-Object { $_.Serial }) -join '|')
+        # Volumes count too, or inserting a USB target would go unnoticed until the
+        # next restart -- Get-ConnectedCollectors offers both kinds, so both are polled.
+        $sig = ((@(@(Get-MtpDevices) + @(Get-VolumeDevices)) | ForEach-Object { $_.Serial }) -join '|')
         if ($sig -ne $script:LastSeenSerials) {
             $script:LastSeenSerials = $sig
             Update-DetectedCollector $true
