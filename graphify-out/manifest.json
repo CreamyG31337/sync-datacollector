@@ -1,15 +1,9 @@
 {
   ".claude/settings.json": {
-    "mtime": 1787682759.553112,
-    "seen": 1787682863.2862222,
-    "ast_hash": "1a94fadfe609b886d406c03baed07816",
-    "semantic_hash": "1a94fadfe609b886d406c03baed07816"
-  },
-  ".mcp.json": {
-    "mtime": 1787682776.9438684,
-    "seen": 1787682863.2862277,
-    "ast_hash": "f1ac763f2cd3ce3dd23944ce9a788f97",
-    "semantic_hash": "f1ac763f2cd3ce3dd23944ce9a788f97"
+    "mtime": 1788484414.7078648,
+    "seen": 1788484416.7054317,
+    "ast_hash": "c8e7bbc3071b4d79b4bdc1b70329f02f",
+    "semantic_hash": ""
   },
   ".vscode/settings.json": {
     "mtime": 1787680453.303957,
@@ -17,22 +11,16 @@
     "ast_hash": "cb6d82866899cce9265346cd8752f5bb",
     "semantic_hash": "cb6d82866899cce9265346cd8752f5bb"
   },
-  ".vscode/tasks.json": {
-    "mtime": 1787682845.0226667,
-    "seen": 1787682863.286232,
-    "ast_hash": "ba1d4b0ed4247081496b9ff800980c4d",
-    "semantic_hash": "ba1d4b0ed4247081496b9ff800980c4d"
-  },
   "SyncDataCollector.ps1": {
-    "mtime": 1788388901.1288123,
-    "seen": 1788388905.224483,
-    "ast_hash": "a807a1e6e4feda37a5512885192b1caf",
+    "mtime": 1788484227.0836616,
+    "seen": 1788484231.2394364,
+    "ast_hash": "dc17534c4afae7cda6fef1198e946b14",
     "semantic_hash": ""
   },
   "config.example.json": {
-    "mtime": 1788384725.229948,
-    "seen": 1788384728.7823699,
-    "ast_hash": "46278bdfb257078002600a1eb23a93d0",
+    "mtime": 1788484227.1916976,
+    "seen": 1788484231.2394383,
+    "ast_hash": "1c5d73eef7c0cd714f5fce5518a2326e",
     "semantic_hash": ""
   },
   ".github/copilot-instructions.md": {
@@ -48,9 +36,9 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1788388884.460902,
-    "seen": 1788388905.2244883,
-    "ast_hash": "d7487048e95eb411bcdc4268221139c6",
+    "mtime": 1788484226.9413633,
+    "seen": 1788484231.2394454,
+    "ast_hash": "df7e7dc4c54017447e16e09783f134fd",
     "semantic_hash": ""
   }
 }
