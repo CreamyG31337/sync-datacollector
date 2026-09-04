@@ -8,6 +8,7 @@ sync-log.txt
 
 # Per-install record of what was last synced per profile (see "out of date" awareness).
 sync-state.json
+sync-state.json.bak*
 
 # Windows / editor noise
 Thumbs.db
@@ -28,3 +29,9 @@ graphify-out/20*/
 
 # Graphify staleness marker, rewritten on every run.
 graphify-out/needs_update
+
+# Per-machine dev tooling: these carry absolute paths into one person's
+# home directory and uv tool env, so they are useless to anyone else.
+# Keep them locally; do not publish them.
+.mcp.json
+.vscode/tasks.json
