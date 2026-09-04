@@ -19,12 +19,14 @@
           "dateFrom": "file"
         },
         {
+          "_supersede_note": "A .job is a live database the crew adds to all day, so a newer copy replaces the backup instead of landing beside it. Without this, every sync of a job still being worked in leaves one more copy. Leave it off (the default) for exported files: two .csv sharing a name are two different surveys and both must be kept.",
           "name": "Job files",
           "from": "root",
           "extensions": [ ".job" ],
           "root": "S:\\07-DATALOGGER BACKUP\\{year}\\{month}",
           "collision": "prefix",
-          "dateFrom": "file"
+          "dateFrom": "file",
+          "supersede": true
         }
       ]
     }

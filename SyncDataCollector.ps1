@@ -200,9 +200,10 @@ function Load-Config {
                             $rf = if ($r.PSObject.Properties['from']      -and $r.from)      { [string]$r.from }      else { 'export' }
                             $rc = if ($r.PSObject.Properties['collision'] -and $r.collision) { [string]$r.collision } else { 'prefix' }
                             $rd = if ($r.PSObject.Properties['dateFrom']  -and $r.dateFrom)  { [string]$r.dateFrom }  else { 'run' }
+                            $rs = if ($r.PSObject.Properties['supersede']) { [bool]$r.supersede } else { $false }
                             $rts += New-ExportRoute -Name ([string]$r.name) -From $rf `
                                         -Extensions @($r.extensions) -Root ([string]$r.root) `
-                                        -Collision $rc -DateFrom $rd
+                                        -Collision $rc -DateFrom $rd -Supersede $rs
                         }
                     }
                     New-Project -Name $prj.name -DesignSource $prj.designSource `
@@ -2061,7 +2062,16 @@ function New-ExportRoute {
         [string]$Collision = 'prefix',
         # 'run'  - date folders come from when the sync runs (the original behaviour)
         # 'file' - from the julian date in the filename, or the file's own timestamp
-        [string]$DateFrom = 'run'
+        [string]$DateFrom = 'run',
+        # Does a newer copy of the SAME file replace the backup, or land beside it?
+        # Off by default: an exported .csv is a finished artefact, and two of them
+        # sharing a name are two different surveys, so both must be kept. Turn it on
+        # for a route backing up files that are still being worked in -- a .job is a
+        # live database the crew adds to all day, and keeping every intermediate
+        # version would add one more copy on every single sync.
+        # NOT the same thing as collision 'overwrite', which only decides whether the
+        # filename carries the collector's name.
+        [bool]$Supersede = $false
     )
     [pscustomobject]@{
         name       = $Name
@@ -2070,6 +2080,7 @@ function New-ExportRoute {
         root       = $Root
         collision  = $Collision
         dateFrom   = $DateFrom
+        supersede  = $Supersede
     }
 }
 
@@ -2337,6 +2348,11 @@ function New-LegProfile {
     $df = [string]$Route.dateFrom
     if (-not $df) { $df = 'run' }
     $p | Add-Member -NotePropertyName dateFrom -NotePropertyValue $df -Force
+    # The engine's rule is "a pull never overwrites"; a superseding route is the one
+    # documented exception, and says so here rather than reaching into the engine.
+    $sup = $false
+    if ($Route.PSObject.Properties['supersede']) { $sup = [bool]$Route.supersede }
+    $p | Add-Member -NotePropertyName neverOverwrite -NotePropertyValue (-not $sup) -Force
     return (& $stamp $p)
 }
 

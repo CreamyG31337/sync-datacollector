@@ -1,16 +1,16 @@
-# Graph Report - sync datacollector  (2026-09-03)
+# Graph Report - sync datacollector  (2026-09-04)
 
 ## Corpus Check
-- 7 files · ~39,403 words
+- 7 files · ~39,928 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 177 nodes · 412 edges · 10 communities (8 shown, 2 thin omitted)
+- 178 nodes · 413 edges · 10 communities (8 shown, 2 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `c205bcaf`
+- Built from commit: `6ec197a5`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -19,7 +19,7 @@
 - Expand-EnvVars
 - Load-Config
 - Get-UiSettings
-- Invoke-SyncCheck
+- Invoke-CollectorSync
 - SyncDataCollector.ps1
 - Sync DataCollector
 - CLAUDE.md
@@ -43,12 +43,12 @@
   SyncDataCollector.ps1 → SyncDataCollector.ps1  _Bridges community 2 → community 4_
 - `New-DriveMap()` --calls--> `Get-DriveLetter()`  [EXTRACTED]
   SyncDataCollector.ps1 → SyncDataCollector.ps1  _Bridges community 2 → community 1_
-- `Resolve-MtpDir()` --calls--> `Split-MtpPath()`  [EXTRACTED]
-  SyncDataCollector.ps1 → SyncDataCollector.ps1  _Bridges community 2 → community 0_
 - `Expand-PathTokens()` --calls--> `Expand-EnvVars()`  [EXTRACTED]
   SyncDataCollector.ps1 → SyncDataCollector.ps1  _Bridges community 4 → community 1_
 - `Get-JobCleanupPlan()` --calls--> `Expand-PathTokens()`  [EXTRACTED]
   SyncDataCollector.ps1 → SyncDataCollector.ps1  _Bridges community 4 → community 0_
+- `Invoke-SyncCheck()` --calls--> `Expand-PathTokens()`  [EXTRACTED]
+  SyncDataCollector.ps1 → SyncDataCollector.ps1  _Bridges community 4 → community 5_
 
 ## Import Cycles
 - None detected.
@@ -56,36 +56,36 @@
 ## Communities (10 total, 2 thin omitted)
 
 ### Community 0 - "Invoke-Sync"
-Cohesion: 0.13
-Nodes (27): Copy-AppToVolume(), Copy-FileFolder(), Copy-FileMtp(), Copy-FileMtpDownload(), Ensure-MtpInterop(), Find-ShellChild(), Get-DestRel(), Get-FsInventory() (+19 more)
+Cohesion: 0.12
+Nodes (29): Copy-AppToVolume(), Copy-FileFolder(), Copy-FileMtp(), Copy-FileMtpDownload(), Ensure-MtpInterop(), Find-ShellChild(), Get-DestRel(), Get-DeviceProjectSubPath() (+21 more)
 
 ### Community 1 - "Expand-EnvVars"
-Cohesion: 0.31
-Nodes (11): Confirm-MappedDrive(), Confirm-MappedDrives(), Confirm-PathDrive(), Ensure-MappedDrive(), Expand-EnvVars(), Get-CollectorFolderName(), Get-DriveLetter(), Get-DriveMapEntry() (+3 more)
+Cohesion: 0.36
+Nodes (10): Confirm-MappedDrive(), Confirm-MappedDrives(), Confirm-PathDrive(), Ensure-MappedDrive(), Expand-EnvVars(), Get-DriveLetter(), Get-DriveMapEntry(), Get-OneDriveRoots() (+2 more)
 
 ### Community 2 - "Load-Config"
-Cohesion: 0.20
-Nodes (16): ConvertFrom-LegacyProfiles(), Get-DefaultConfig(), Get-Defaults(), Get-DeviceProjectSubPath(), Get-JobRetentionDays(), Load-Config(), New-Collector(), New-CollectorDefaults() (+8 more)
+Cohesion: 0.24
+Nodes (14): ConvertFrom-LegacyProfiles(), Get-DefaultConfig(), Get-Defaults(), Get-JobRetentionDays(), Load-Config(), New-Collector(), New-CollectorDefaults(), New-DriveMap() (+6 more)
 
 ### Community 3 - "Get-UiSettings"
 Cohesion: 0.43
 Nodes (7): Apply-SettingsToUi(), Commit-UiToCollector(), Format-Settings(), Get-UiSettings(), Parse-Extensions(), Parse-FolderList(), Update-DefaultsIndicator()
 
-### Community 4 - "Invoke-SyncCheck"
-Cohesion: 0.18
-Nodes (19): Copy-TabletConfigToVolume(), Expand-PathTokens(), Get-CollectorDeviceRoot(), Get-CollectorLabel(), Get-DeviceLabel(), Get-ExportRoutes(), Get-JulianDate(), Get-MonthFolder() (+11 more)
+### Community 4 - "Invoke-CollectorSync"
+Cohesion: 0.21
+Nodes (15): Copy-TabletConfigToVolume(), Expand-PathTokens(), Get-CollectorDeviceRoot(), Get-CollectorFolderName(), Get-ExportRoutes(), Get-JulianDate(), Get-MonthFolder(), Get-VolumeSerial() (+7 more)
 
 ### Community 5 - "SyncDataCollector.ps1"
-Cohesion: 0.10
-Nodes (26): Choose-DeviceDialog(), Format-DeviceChoice(), Format-Utc(), Get-CollectorBySerial(), Get-CompareColumnWidths(), Get-ConnectedCollectors(), Get-DeviceFriendlyName(), Get-MtpDeviceNames() (+18 more)
+Cohesion: 0.09
+Nodes (31): Choose-DeviceDialog(), Format-DeviceChoice(), Format-Utc(), Get-CollectorBySerial(), Get-CompareColumnWidths(), Get-ConnectedCollectors(), Get-DeviceFriendlyName(), Get-DeviceLabel() (+23 more)
 
 ### Community 8 - "Sync DataCollector"
 Cohesion: 0.06
-Nodes (34): Check is required before Sync, Configuration reference, Defaults, Everyday mode, and the Advanced tick-box, Export routes: filing different file types in different places, Exports are never destroyed, Features, Filing by when the work was done, not when you pulled it (+26 more)
+Nodes (35): Check is required before Sync, Configuration reference, Defaults, Everyday mode, and the Advanced tick-box, Export routes: filing different file types in different places, Exports are never destroyed, Features, Filing by when the work was done, not when you pulled it (+27 more)
 
 ### Community 13 - "Invoke-CollectorAction"
-Cohesion: 0.14
-Nodes (23): Commit-UiToProject(), Format-Local(), Format-RowTime(), Format-Size(), Get-RowKey(), Get-RowLook(), Get-RowTip(), Invoke-CollectorAction() (+15 more)
+Cohesion: 0.15
+Nodes (23): Commit-UiToProject(), Format-Local(), Format-RowTime(), Format-Size(), Get-CollectorLabel(), Get-RowKey(), Get-RowLook(), Get-RowTip() (+15 more)
 
 ## Knowledge Gaps
 - **29 isolated node(s):** `graphify`, `graphify`, `Features`, `How MTP works here (and why it's reliable)`, `Requirements` (+24 more)
@@ -98,10 +98,10 @@ _Questions this graph is uniquely positioned to answer:_
 - **What connects `graphify`, `graphify`, `Features` to the rest of the system?**
   _29 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Invoke-Sync` be split into smaller, more focused modules?**
-  _Cohesion score 0.13105413105413105 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.11822660098522167 - nodes in this community are weakly interconnected._
 - **Should `SyncDataCollector.ps1` be split into smaller, more focused modules?**
-  _Cohesion score 0.0957983193277311 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09230769230769231 - nodes in this community are weakly interconnected._
 - **Should `Sync DataCollector` be split into smaller, more focused modules?**
-  _Cohesion score 0.05714285714285714 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05555555555555555 - nodes in this community are weakly interconnected._
 - **Should `Invoke-CollectorAction` be split into smaller, more focused modules?**
-  _Cohesion score 0.1422924901185771 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.14624505928853754 - nodes in this community are weakly interconnected._

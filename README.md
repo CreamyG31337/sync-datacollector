@@ -583,6 +583,35 @@ should clobber the other. A third version would be `name (ORIG 2).ext`.
 Re-running does not spawn more of them — the next pull recognises its own earlier copy and
 skips. Prune is refused outright on a pull, and logs the refusal.
 
+#### The exception: files that are still being worked in
+
+That rule is right for an *export* — a finished artefact, where two files sharing a name are
+two different surveys. It is wrong for a **backup of a live file**. A `.job` is a database the
+crew adds to all day: sync at noon and again at five and the afternoon's version is not a
+clash, it is the same job with more in it. Keeping both would add one more copy on every
+single sync, for as long as the job stays open.
+
+Set `"supersede": true` on a route and a newer copy of the same file **replaces** the backup
+instead of landing beside it:
+
+```
+without supersede          with supersede
+  26-245-TOPO.job            26-245-TOPO.job     <- always the latest
+  26-245-TOPO (ORIG).job
+  26-245-TOPO (ORIG 2).job
+  26-245-TOPO (ORIG 3).job
+```
+
+It defaults to **off**, so nothing changes for a route that does not ask for it. Turn it on
+only for routes carrying working files — `.job` — and never for exports.
+
+> The trade-off, stated plainly: the backup tracks the collector, so if someone deletes points
+> from a job, the next sync's backup no longer has them. That is the right behaviour for a
+> backup whose purpose is letting you clear the controller, but it is not version history.
+
+This is **not** the same thing as `collision: "overwrite"`, which only decides whether the
+filename carries the collector's name and never destroys anything.
+
 ### Recognising a file the office has since moved
 
 Matching only the exact target path is not enough once people file things. A month's folder
@@ -964,6 +993,7 @@ root can be written `%OneDriveCommercial%\…` where a drive letter is not wante
 | `projects[].exportRoot` | Where pulled field data is filed when no routes are set. Supports `{year}` `{month}` `{julian}` `{date}` `{apphome}`, and `%ENVVAR%`. `{apphome}` is the folder the app is running from — use it when the app runs off a USB stick, so no drive letter is baked in. `{month}` is zero-padded (`08-AUG`) so a year's folders sort in calendar order. |
 | `projects[].exportRoutes` | Optional list. Empty means "everything under `exportRoot`". Each route is one pull leg: `name`, `from` (`export` = the collector's `exportSubPath`, `root` = the project folder on the device), `extensions`, `root` (same tokens as `exportRoot`), `collision` (`prefix` / `deviceSubfolder` / `overwrite`) and `dateFrom`. |
 | `collectors[].jobRetentionDays` | Days of recent jobs **Tidy jobs…** never touches (default 7). It only removes a `.job` that is older than this *and* carries a date in its filename *and* has a verified backup copy. A value below 1 falls back to the default. |
+| `projects[].exportRoutes[].supersede` | `false` (default) keeps a differing same-named file beside the original as `name (ORIG).ext`. `true` lets a newer copy replace the backup — for routes carrying files still being worked in, such as `.job`. Never set it on a route carrying exports. |
 | `projects[].exportRoutes[].dateFrom` | `run` (default) dates the destination folder from when the sync runs. `file` dates it from the julian in each filename, falling back to that file's modified time — so exports pulled months later still land in the month they were surveyed. |
 | `projects[].deviceProjectPath` | The project folder **on the collector**. For MTP the first segment is the device storage. For a `"folder"` collector that first segment is replaced by wherever the volume is currently mounted, so one project path serves both kinds. |
 | `driveMap[].letter` | A drive letter the app creates with `subst` when it is missing, e.g. `S`. Leave `driveMap` out entirely and it never maps anything. |
