@@ -190,8 +190,24 @@ function Load-Config {
             }
             else {
                 $cfg.projects = @(@($cfg.projects) | ForEach-Object {
-                    New-Project -Name $_.name -DesignSource $_.designSource `
-                        -ExportRoot $_.exportRoot -DeviceProjectPath $_.deviceProjectPath
+                    # $prj, not $_: the route loop below rebinds $_ and would
+                    # otherwise read the route's fields as the project's.
+                    $prj = $_
+                    $rts = @()
+                    if ($prj.PSObject.Properties['exportRoutes']) {
+                        foreach ($r in @($prj.exportRoutes)) {
+                            if (-not $r) { continue }
+                            $rf = if ($r.PSObject.Properties['from']      -and $r.from)      { [string]$r.from }      else { 'export' }
+                            $rc = if ($r.PSObject.Properties['collision'] -and $r.collision) { [string]$r.collision } else { 'prefix' }
+                            $rd = if ($r.PSObject.Properties['dateFrom']  -and $r.dateFrom)  { [string]$r.dateFrom }  else { 'run' }
+                            $rts += New-ExportRoute -Name ([string]$r.name) -From $rf `
+                                        -Extensions @($r.extensions) -Root ([string]$r.root) `
+                                        -Collision $rc -DateFrom $rd
+                        }
+                    }
+                    New-Project -Name $prj.name -DesignSource $prj.designSource `
+                        -ExportRoot $prj.exportRoot -DeviceProjectPath $prj.deviceProjectPath `
+                        -ExportRoutes $rts
                 })
             }
             if (-not $cfg.PSObject.Properties['collectors']) {
@@ -203,10 +219,11 @@ function Load-Config {
                     if ($_.PSObject.Properties['excludeFolders']) { $ec = [string[]]@($_.excludeFolders) }
                     $pr = if ($_.PSObject.Properties['prune']) { [bool]$_.prune } else { $true }
                     $xc = if ($_.PSObject.Properties['exportCollision'] -and $_.exportCollision) { [string]$_.exportCollision } else { 'prefix' }
+                    $jr = if ($_.PSObject.Properties['jobRetentionDays']) { [int]$_.jobRetentionDays } else { (Get-Defaults).jobRetentionDays }
                     New-Collector -Serial $_.serial -Name $_.name -Model $_.model -Type $_.type `
                         -DesignSubPath $_.designSubPath -ExportSubPath $_.exportSubPath `
                         -DesignExtensions @($_.designExtensions) -ExportExtensions @($_.exportExtensions) `
-                        -ExcludeFolders $ec -Prune $pr -ExportCollision $xc
+                        -ExcludeFolders $ec -Prune $pr -ExportCollision $xc -JobRetentionDays $jr
                 })
             }
             # Shared baseline for collector settings. Always normalised to a
@@ -258,7 +275,9 @@ function Load-Config {
 }
 
 function Save-Config {
-    $script:Config | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $ConfigPath -Encoding UTF8
+    # Depth 8: projects -> exportRoutes -> a route -> its extensions array bottoms
+    # out at 6, so 6 left no margin for the next nested thing anyone adds.
+    $script:Config | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $ConfigPath -Encoding UTF8
 }
 
 # --------------------------------------------------------------------------
@@ -325,15 +344,58 @@ function Parse-FolderList {
 
 # Today's Julian date as YY-DDD (e.g. 2026-07-23 -> "26-204").
 function Get-JulianDate {
-    $now = Get-Date
+    param($When = $null)
+    $now = if ($When) { [datetime]$When } else { Get-Date }
     return ('{0}-{1:D3}' -f $now.ToString('yy'), $now.DayOfYear)
+}
+
+# The julian stamp crews put in export filenames: YY-DDD, so 26-219 is day 219 of
+# 2026. Deliberately strict -- exactly two digits, a dash, exactly three digits,
+# with no digit either side. That is what keeps a project number (2100-...), a
+# two-digit day (2100-26-06-ABC) and an MMDDYYYY stamp (11182025) from being read
+# as a date. Anything it is not sure about, it returns nothing for, and the caller
+# falls back to the file's own timestamp.
+function Get-JulianFromName {
+    param([string]$Name)
+    $m = [regex]::Match([string]$Name, '(?<![0-9])([0-9]{2})-([0-9]{3})(?![0-9])')
+    if (-not $m.Success) { return $null }
+    $dd = [int]$m.Groups[2].Value
+    if ($dd -lt 1 -or $dd -gt 366) { return $null }
+    $year = 2000 + [int]$m.Groups[1].Value
+    try { $d = (New-Object datetime $year, 1, 1).AddDays($dd - 1) } catch { return $null }
+    # Day 366 of a common year rolls into January of the next one -- not a date
+    # this filename can have meant.
+    if ($d.Year -ne $year) { return $null }
+    return $d
+}
+
+# Where a pulled file is filed can depend on the FILE rather than the run: an
+# export made in March belongs in March's folder even when it is pulled in
+# September. Split a destination template at its first dated segment so the part
+# before it is a fixed root, and the part after can be resolved per file.
+function Split-DatedRoot {
+    param([string]$Template)
+    $t = ([string]$Template).Trim().TrimEnd('\')
+    $segs = @($t -split '\\')
+    $idx = -1
+    for ($i = 0; $i -lt $segs.Count; $i++) {
+        if ($segs[$i] -match '(?i)\{(julian|year|month|date)\}') { $idx = $i; break }
+    }
+    if ($idx -lt 0) { return @{ Base = $t; Tail = '' } }
+    $base = ''
+    if ($idx -gt 0) { $base = (@($segs[0..($idx - 1)]) -join '\') }
+    return @{ Base = $base; Tail = (@($segs[$idx..($segs.Count - 1)]) -join '\') }
 }
 
 # Month folder in the shape the datalogger-backup tree already uses: "8-AUG", "10-OCT"
 # -- unpadded month number, hyphen, three-letter month upper-cased.
 function Get-MonthFolder {
-    $now = Get-Date
-    return ('{0}-{1}' -f $now.Month, $now.ToString('MMM', [System.Globalization.CultureInfo]::InvariantCulture).ToUpperInvariant())
+    # Zero-padded, so a year's folders sort in calendar order. Unpadded they do not:
+    # 10-OCT, 11-NOV and 12-DEC sort above 2-FEB, which puts the end of the year at
+    # the top of the list for the rest of it.
+    param($When = $null)
+    $now = if ($When) { [datetime]$When } else { Get-Date }
+    return ('{0:D2}-{1}' -f $now.Month, $now.ToString('MMM', [System.Globalization.CultureInfo]::InvariantCulture).ToUpperInvariant())
 }
 
 # Expand path tokens, all case-insensitive:
@@ -348,15 +410,17 @@ function Get-MonthFolder {
 # letter breaks the moment it does. Emitted without a trailing backslash so a root-
 # mounted app ("D:\") still composes as "{apphome}\Trimble Data" -> "D:\Trimble Data".
 function Expand-PathTokens {
-    param([string]$Path)
+    # $When dates the path from something other than right now -- the date read off
+    # a file being pulled, so it lands in the folder for when it was surveyed.
+    param([string]$Path, $When = $null)
     if ([string]::IsNullOrEmpty($Path)) { return $Path }
-    $now = Get-Date
+    $now = if ($When) { [datetime]$When } else { Get-Date }
     # Environment variables first, so one config.json fits every user.
     $out = Expand-EnvVars $Path
     $out = $out -replace '(?i)\{apphome\}', ([string]$ScriptDir).TrimEnd('\')
-    $out = $out -replace '(?i)\{julian\}', (Get-JulianDate)
+    $out = $out -replace '(?i)\{julian\}', (Get-JulianDate $now)
     $out = $out -replace '(?i)\{year\}',   $now.ToString('yyyy')
-    $out = $out -replace '(?i)\{month\}',  (Get-MonthFolder)
+    $out = $out -replace '(?i)\{month\}',  (Get-MonthFolder $now)
     $out = $out -replace '(?i)\{date\}',   $now.ToString('yyyy-MM-dd')
     return $out
 }
@@ -593,7 +657,7 @@ $script:TempSuffix = '.partsync'   # marks an in-progress / incomplete transfer
 # Checking the variants is what stops repeated pulls from growing "(2)", "(3)", ...
 # forever: the second run recognises its own earlier copy and skips.
 function Resolve-NoOverwriteDest {
-    param($Ctx, [string]$Kind, [string]$Path, [long]$SrcLen, $SrcMtimeUtc)
+    param($Ctx, [string]$Kind, [string]$Path, [long]$SrcLen, $SrcMtimeUtc, [string]$AltLabel = 'ORIG')
     $dir  = Split-Path -Parent $Path
     $leaf = Split-Path -Leaf $Path
     $base = [System.IO.Path]::GetFileNameWithoutExtension($leaf)
@@ -601,7 +665,12 @@ function Resolve-NoOverwriteDest {
     for ($i = 1; $i -lt 200; $i++) {
         $cand = $Path
         if ($i -gt 1) {
-            $n = ('{0} ({1}){2}' -f $base, $i, $ext)
+            # The first alternate says WHY it is there rather than just numbering it:
+            # it is the collector's original, kept beside a copy the office has since
+            # edited -- normally check shots deleted during review. Later ones number
+            # off that, which only happens if a third version turns up.
+            $tag = if ($i -eq 2) { $AltLabel } else { '{0} {1}' -f $AltLabel, ($i - 1) }
+            $n = ('{0} ({1}){2}' -f $base, $tag, $ext)
             $cand = if ($dir) { "$dir\$n" } else { $n }
         }
         $info = Target-GetInfo $Ctx $Kind $cand
@@ -1223,6 +1292,198 @@ function Target-DeleteDir {
     if ($it) { [SyncDC.MtpOp]::Delete($it) }
 }
 
+# Has this file already been pulled, but filed somewhere other than where we would
+# put it? The office files by company subfolder, and moves things between them; the
+# exact-path check alone would pull such a file again on every sync for ever. Match
+# on name AND size, within one month's folder only -- that is a narrow enough scope
+# that the same name and the same byte count really is the same file.
+function Test-AlreadyFiled {
+    param($Ctx, [string]$Kind, [string]$ScopeDir, [string]$Leaf, [long]$Length)
+    if ($Kind -ne 'fs' -or -not $ScopeDir -or $Length -lt 0) { return '' }
+    if (-not (Test-Path -LiteralPath $ScopeDir)) { return '' }
+    if (-not $Ctx.ContainsKey('FiledIndex')) { $Ctx.FiledIndex = @{} }
+    $key = $ScopeDir.ToLowerInvariant()
+    if (-not $Ctx.FiledIndex.ContainsKey($key)) {
+        # Built once per month folder and cached: a sync touches the same handful of
+        # months over and over, and these folders hold tens of files, not thousands.
+        $idx = @{}
+        foreach ($f in @(Get-ChildItem -LiteralPath $ScopeDir -Recurse -File -Force -ErrorAction SilentlyContinue)) {
+            $k = $f.Name.ToLowerInvariant() + '|' + $f.Length
+            if (-not $idx.ContainsKey($k)) { $idx[$k] = $f.FullName }
+        }
+        $Ctx.FiledIndex[$key] = $idx
+    }
+    $probe = ([string]$Leaf).ToLowerInvariant() + '|' + $Length
+    if ($Ctx.FiledIndex[$key].ContainsKey($probe)) { return [string]$Ctx.FiledIndex[$key][$probe] }
+    return ''
+}
+
+# --------------------------------------------------------------------------
+# Job tidy-up
+#
+# A controller accumulates .job files until it runs out of room. Old ones are
+# clutter; recent ones are the crew's working set, and a job nobody can replace
+# is the worst thing this tool could destroy. So removal answers to three
+# separate conditions, and every one of them must say yes.
+# --------------------------------------------------------------------------
+
+# Pure decision, deliberately: this is the one place in the app that decides to
+# destroy field data, so it takes plain values and can be exercised without a
+# device. $Now is injectable for the same reason.
+function Test-JobRemovable {
+    param(
+        [string]$Leaf,
+        $MtimeUtc,
+        [int]$RetentionDays,
+        [string]$BackupPath,        # '' when no verified copy was found
+        $Now = $null
+    )
+    $now = if ($Now) { ([datetime]$Now).ToUniversalTime() } else { (Get-Date).ToUniversalTime() }
+    $cut = $now.AddDays(-$RetentionDays)
+
+    # 1. There has to be a copy somewhere else. No backup, no deletion, ever --
+    #    this is the condition that makes the whole feature safe rather than clever.
+    if (-not $BackupPath) { return @{ Remove = $false; Why = 'no backup copy found' } }
+
+    # 2. A date in the name is what marks a job as one day's work. A generic name
+    #    (2100-25-CONTROL) is a job the crew reopens, and age says nothing about it.
+    $named = Get-JulianFromName $Leaf
+    if (-not $named) { return @{ Remove = $false; Why = 'no date in the name - a job that gets reused' } }
+
+    # 3. Both clocks must agree it is old. The julian says when the work was done,
+    #    the timestamp says when the file was last touched; either one being inside
+    #    the window keeps the file. An old survey reopened yesterday is in use.
+    if ($null -eq $MtimeUtc) { return @{ Remove = $false; Why = 'no timestamp to judge its age by' } }
+    $m = ([datetime]$MtimeUtc).ToUniversalTime()
+    $days = [int][Math]::Floor(($now - $m).TotalDays)
+    if ($m -gt $cut) { return @{ Remove = $false; Why = "modified $days day(s) ago" } }
+    if ($named.ToUniversalTime() -gt $cut) { return @{ Remove = $false; Why = 'the date in its name is inside the window' } }
+
+    return @{ Remove = $true; Why = "$days day(s) old, backed up" }
+}
+
+# Work out what a tidy-up would do, without doing any of it. Returns one row per
+# .job on the collector -- kept ones included, with the reason -- so the dialog can
+# show the whole picture rather than only the casualties.
+function Get-JobCleanupPlan {
+    param($Ctx, $Project, $Collector, [int]$RetentionDays, [scriptblock]$OnLog)
+
+    $route = @(@(Get-ExportRoutes $Project $Collector) | Where-Object { @($_.extensions) -contains '.job' })[0]
+    if (-not $route) {
+        throw ('Nothing backs up .job files for this collector, so none can be confirmed safe to delete. ' +
+               'Add an export route that carries .job before tidying.')
+    }
+    $devRoot = Get-CollectorDeviceRoot $Project $Collector
+    if (-not $devRoot) { throw 'The collector is not connected.' }
+
+    # Jobs live where the .job route reads from -- the project folder, normally.
+    $src = $devRoot
+    if ([string]$route.from -ne 'root') {
+        $sub = ([string]$Collector.exportSubPath).Trim('\')
+        if ($sub) { $src = $devRoot + '\' + $sub }
+    }
+    $kind = if ([string]$Collector.type -eq 'mtp') { 'mtp' } else { 'fs' }
+
+    & $OnLog "Reading jobs from $src ..." 'INFO'
+    $files = @()
+    if ($kind -eq 'mtp') {
+        # A locked or charging-only controller still enumerates, but exposes no
+        # storage -- which reads as "no jobs here". Harmless for a delete (nothing
+        # would go), but it would report a clean tidy on a device never actually
+        # read. Say what happened instead.
+        $storage = 0
+        try {
+            $f = $Ctx.DeviceItem.GetFolder
+            if ($f) { $storage = [int]$f.Items().Count }
+        }
+        catch { $storage = 0 }
+        if ($storage -le 0) {
+            throw ("The collector is connected but exposing no storage, so its jobs cannot be read. " +
+                   "Unlock the screen and set the USB connection to file transfer, then try again.")
+        }
+        $inv = Get-MtpInventory $Ctx $src
+        foreach ($m in $inv.Files) { $files += @{ Rel = $m.Rel; Length = $m.Length; MtimeUtc = $m.MtimeUtc; Item = $m.Item } }
+    }
+    else {
+        $inv = Get-FsInventory $src
+        foreach ($m in $inv.Files) { $files += @{ Rel = $m.Rel; Length = $m.Length; MtimeUtc = $m.MtimeUtc; Item = $null } }
+    }
+    # Top-level only. A .job nested under a scan folder or inside 02-Design is
+    # something else's business, and tidying is not the place to find out whose.
+    $jobs = @($files | Where-Object {
+        ([System.IO.Path]::GetExtension([string]$_.Rel)).ToLowerInvariant() -eq '.job' -and
+        ([string]$_.Rel).IndexOf('\') -lt 0
+    })
+
+    # Index the whole backup tree by name and size, so a file counts as saved
+    # wherever it was filed -- by month, or moved by hand afterwards.
+    $base = (Split-DatedRoot (Expand-EnvVars ([string]$route.root))).Base
+    $base = (Expand-PathTokens $base).Trim().TrimEnd('\')
+    Confirm-PathDrive $base $OnLog
+    $have = @{}
+    if (Test-Path -LiteralPath $base) {
+        foreach ($f in @(Get-ChildItem -LiteralPath $base -Recurse -File -Force -ErrorAction SilentlyContinue)) {
+            $have[$f.Name.ToLowerInvariant() + '|' + $f.Length] = $f.FullName
+        }
+    }
+    & $OnLog "Backup index: $($have.Count) file(s) under $base." 'INFO'
+
+    $label = Get-CollectorFolderName $Collector
+    $coll  = [string]$route.collision
+    if (-not $coll) { $coll = 'prefix' }
+
+    $rows = @()
+    foreach ($j in $jobs) {
+        # Two names to try. The backup carries whatever name the pull gave it, and
+        # that has not always been today's: earlier runs filed under deviceSubfolder,
+        # which leaves the filename bare. Accept either form -- the size has to match
+        # regardless, and that is what makes a name match mean something.
+        $destRel = Get-DestRel ([string]$j.Rel) 'pull' $coll $label
+        $li = $destRel.LastIndexOf('\')
+        $leaf = if ($li -ge 0) { $destRel.Substring($li + 1) } else { $destRel }
+        $bare = [System.IO.Path]::GetFileName([string]$j.Rel)
+        $backup = ''
+        foreach ($n in @($leaf, $bare)) {
+            $key = $n.ToLowerInvariant() + '|' + [long]$j.Length
+            if ($have.ContainsKey($key)) { $backup = [string]$have[$key]; break }
+        }
+        $d = Test-JobRemovable ([string]$j.Rel) $j.MtimeUtc $RetentionDays $backup
+        $rows += [pscustomobject]@{
+            Rel = [string]$j.Rel; Length = [long]$j.Length; MtimeUtc = $j.MtimeUtc
+            Item = $j.Item; Backup = $backup; Remove = [bool]$d.Remove; Why = [string]$d.Why
+            Path = $src + '\' + [string]$j.Rel
+        }
+    }
+    return @{ Rows = @($rows); Source = $src; BackupRoot = $base; Kind = $kind }
+}
+
+# Carry out a plan that has already been shown and agreed to. Re-checks the backup
+# immediately before each delete: the plan may have been on screen for a while, and
+# nothing here is worth a race.
+function Invoke-JobCleanup {
+    param($Ctx, $Plan, [scriptblock]$OnLog)
+    $done = 0; $failed = 0
+    foreach ($row in @($Plan.Rows | Where-Object { $_.Remove })) {
+        try {
+            if (-not $row.Backup -or -not (Test-Path -LiteralPath $row.Backup)) {
+                throw 'its backup copy is no longer there'
+            }
+            $b = Get-Item -LiteralPath $row.Backup
+            if ([long]$b.Length -ne [long]$row.Length) {
+                throw ("the backup is a different size now ($($b.Length) vs $($row.Length))")
+            }
+            Target-DeleteFile $Ctx $Plan.Kind $row.Path $row.Item
+            $done++
+            & $OnLog ("REMOVED  $($row.Rel)   (saved at $($row.Backup))") 'COPY'
+        }
+        catch {
+            $failed++
+            & $OnLog ("KEPT     $($row.Rel)  ::  $($_.Exception.Message)") 'ERROR'
+        }
+    }
+    return @{ Removed = $done; Failed = $failed }
+}
+
 # What is at the destination that the source does not account for.
 # $Records = the selected source files; $CompanionDirs = scan subfolders to keep.
 function Get-PruneSet {
@@ -1601,7 +1862,8 @@ function Invoke-SyncCheck {
         [scriptblock]$OnLog,
         [scriptblock]$OnProgress,
         [scriptblock]$OnChooseDevice,
-        [scriptblock]$OnItem
+        [scriptblock]$OnItem,
+        [string[]]$Rescue = @()
     )
 
     $direction = 'push'
@@ -1646,12 +1908,15 @@ function Invoke-SyncCheck {
         }
 
         $res = Invoke-Sync -Profile $Profile -OnLog $OnLog -OnProgress $OnProgress -CheckOnly `
-                    -OnChooseDevice $OnChooseDevice -OnItem $OnItem
+                    -OnChooseDevice $OnChooseDevice -OnItem $OnItem -Rescue $Rescue
         $n = @($res.OutOfDate).Count
         if ($n -eq 0) { $summary = "Up to date - $($res.Total) file(s) checked on $label, none out of date." }
         else          { $summary = "NEEDS SYNC - $n of $($res.Total) file(s) out of date on $label." }
         $pc = @($res.PruneCandidates).Count
         if ($pc -gt 0) { $summary += "  $pc extra file(s) on the device would be DELETED by a sync." }
+        if ([int]$res.Kept -gt 0 -or @($Rescue).Count -gt 0) {
+            $summary += "  $(@($Rescue).Count) marked to keep would be copied back instead."
+        }
         return @{ Mode = 'live'; OutOfDate = $n; Total = $res.Total; Summary = $summary; PruneCount = $pc
                   Plan = @($res.Plan); SourceRoot = $res.SourceRoot; DestinationRoot = $res.DestinationRoot }
     }
@@ -1767,14 +2032,60 @@ function New-Project {
         [string]$Name = 'New project',
         [string]$DesignSource = '',        # S:\02-DESIGN
         [string]$ExportRoot = '',          # ...\07-DATALOGGER BACKUP\{year}\{month}
-        [string]$DeviceProjectPath = ''    # Internal shared storage\Trimble Data\Projects\2100 - EXAMPLE SITE
+        [string]$DeviceProjectPath = '',   # Internal shared storage\Trimble Data\Projects\2100 - EXAMPLE SITE
+        $ExportRoutes = @()                # empty = file every export type under ExportRoot
     )
     [pscustomobject]@{
         name              = $Name
         designSource      = $DesignSource
         exportRoot        = $ExportRoot
         deviceProjectPath = $DeviceProjectPath
+        exportRoutes      = @($ExportRoutes)
     }
+}
+
+# One pull leg. Not every export belongs in the same place: raw .job files are
+# datalogger state and belong in the backup tree, while the .csv and scans a
+# surveyor deliberately exported are deliverables and belong with the QC data. So
+# the export side is a LIST of routes, each with its own file types, destination
+# and naming, rather than one destination for everything.
+#   from  'export' -> the collector's export subfolder (03-Export, Exports, ...)
+#         'root'   -> the project folder on the device itself, where Trimble Access
+#                     leaves .job files
+function New-ExportRoute {
+    param(
+        [string]$Name = 'Export',
+        [string]$From = 'export',
+        [string[]]$Extensions = @(),
+        [string]$Root = '',
+        [string]$Collision = 'prefix',
+        # 'run'  - date folders come from when the sync runs (the original behaviour)
+        # 'file' - from the julian date in the filename, or the file's own timestamp
+        [string]$DateFrom = 'run'
+    )
+    [pscustomobject]@{
+        name       = $Name
+        from       = $From
+        extensions = @($Extensions)
+        root       = $Root
+        collision  = $Collision
+        dateFrom   = $DateFrom
+    }
+}
+
+function Get-ExportRoutes {
+    param($Project, $Collector)
+    $routes = @()
+    if ($Project.PSObject.Properties['exportRoutes']) {
+        $routes = @(@($Project.exportRoutes) | Where-Object { $_ -and [string]$_.root })
+    }
+    if ($routes.Count) { return $routes }
+    # Nothing configured: the original single-destination behaviour, so every config
+    # written before routing existed keeps working without being touched.
+    return @(New-ExportRoute -Name 'Export' -From 'export' `
+                -Extensions @($Collector.exportExtensions) `
+                -Root ([string]$Project.exportRoot) `
+                -Collision ([string]$Collector.exportCollision))
 }
 
 # --------------------------------------------------------------------------
@@ -1797,7 +2108,8 @@ function New-CollectorDefaults {
         [string[]]$ExportExtensions = @('.job', '.jxl', '.csv', '.dxf', '.rxl', '.xml'),
         [string[]]$ExcludeFolders = @('SUPERSEDED'),
         [bool]$Prune = $true,                # the design folder is owned by the tool
-        [string]$ExportCollision = 'prefix'  # prefix | deviceSubfolder | overwrite
+        [string]$ExportCollision = 'prefix', # prefix | deviceSubfolder | overwrite
+        [int]$JobRetentionDays = 7           # how much recent work Tidy jobs never touches
     )
     [pscustomobject]@{
         designSubPath    = $DesignSubPath
@@ -1807,7 +2119,19 @@ function New-CollectorDefaults {
         excludeFolders   = $ExcludeFolders
         prune            = $Prune
         exportCollision  = $ExportCollision
+        jobRetentionDays = $JobRetentionDays
     }
+}
+
+# How many days of jobs Tidy must never touch. Clamped low so a mistyped 0 cannot
+# turn "keep the last week" into "delete everything backed up".
+function Get-JobRetentionDays {
+    param($Collector)
+    $d = 0
+    if ($Collector -and $Collector.PSObject.Properties['jobRetentionDays']) { $d = [int]$Collector.jobRetentionDays }
+    if ($d -lt 1) { $d = (Get-Defaults).jobRetentionDays }
+    if ($d -lt 1) { $d = 7 }
+    return $d
 }
 
 # Overlay a config's "defaults" block on the factory values. Presence of a key
@@ -1836,9 +2160,11 @@ function Resolve-Defaults {
     if (& $has 'excludeFolders')   { $exclude   = [string[]]@($Raw.excludeFolders) }
     if (& $has 'prune')            { $prune     = [bool]$Raw.prune }
     if (& $has 'exportCollision')  { $collision = [string]$Raw.exportCollision }
+    $retain = $f.jobRetentionDays
+    if (& $has 'jobRetentionDays') { $retain = [int]$Raw.jobRetentionDays }
     New-CollectorDefaults -DesignSubPath $designSub -ExportSubPath $exportSub `
         -DesignExtensions $designExt -ExportExtensions $exportExt -ExcludeFolders $exclude `
-        -Prune $prune -ExportCollision $collision
+        -Prune $prune -ExportCollision $collision -JobRetentionDays $retain
 }
 
 # The defaults in force right now.
@@ -1860,7 +2186,8 @@ function New-Collector {
         [string[]]$ExportExtensions = (Get-Defaults).exportExtensions,
         [string[]]$ExcludeFolders = (Get-Defaults).excludeFolders,
         [bool]$Prune = (Get-Defaults).prune,
-        [string]$ExportCollision = (Get-Defaults).exportCollision
+        [string]$ExportCollision = (Get-Defaults).exportCollision,
+        [int]$JobRetentionDays = (Get-Defaults).jobRetentionDays
     )
     [pscustomobject]@{
         serial           = $Serial
@@ -1874,6 +2201,7 @@ function New-Collector {
         excludeFolders   = $ExcludeFolders
         prune            = $Prune
         exportCollision  = $ExportCollision
+        jobRetentionDays = $JobRetentionDays
     }
 }
 
@@ -1945,7 +2273,7 @@ function Get-CollectorDeviceRoot {
 }
 
 function New-LegProfile {
-    param($Project, $Collector, [string]$Leg)
+    param($Project, $Collector, [string]$Leg, $Route = $null)
 
     $devRoot = Get-CollectorDeviceRoot $Project $Collector
     $model   = [string]$Collector.model
@@ -1966,14 +2294,18 @@ function New-LegProfile {
     }
 
     if ($Leg -eq 'design') {
-        # PC -> collector, mirrored: the tool owns this folder.
-        return (& $stamp (New-Profile -Name ("$label - design") -Direction 'push' `
+        # PC -> collector, mirrored: the tool owns this folder. The project root is
+        # carried along so the engine can refuse to mirror onto it -- see the guard
+        # in Invoke-Sync; that folder is the crew's, not ours.
+        $dp = New-Profile -Name ("$label - design") -Direction 'push' `
             -SourcePath ([string]$Project.designSource) `
             -TargetType $type -DeviceName $model `
             -DestinationPath ($devRoot + '\' + ([string]$Collector.designSubPath).Trim('\')) `
             -Extensions @($Collector.designExtensions) `
             -ExcludeFolders @($Collector.excludeFolders) `
-            -Prune ([bool]$Collector.prune)))
+            -Prune ([bool]$Collector.prune)
+        $dp | Add-Member -NotePropertyName deviceProjectRoot -NotePropertyValue ([string]$devRoot) -Force
+        return (& $stamp $dp)
     }
 
     # collector -> OneDrive, additive. Every collector exports into the SAME dated
@@ -1981,18 +2313,30 @@ function New-LegProfile {
     # 2100-25-346.csv collide (and OneDrive makes conflict copies).
     #   prefix          -> TSC5-01_2100-25-346.csv in one flat month folder
     #   deviceSubfolder -> TSC5-01\2100-25-346.csv
+    #   overwrite       -> the name the surveyor gave it, untouched
     # deviceName still has to be the MTP model name so the device can be found; the
     # per-collector label is separate, which is why collisionLabel exists.
-    $coll = [string]$Collector.exportCollision
+    if (-not $Route) { $Route = @(Get-ExportRoutes $Project $Collector)[0] }
+    # 'root' pulls from the project folder itself -- where Trimble Access keeps its
+    # .job files -- so there is no subfolder to append.
+    $src = $devRoot
+    if ([string]$Route.from -ne 'root') {
+        $sub = ([string]$Collector.exportSubPath).Trim('\')
+        if ($sub) { $src = $devRoot + '\' + $sub }
+    }
+    $coll = [string]$Route.collision
     if (-not $coll) { $coll = 'prefix' }
-    $p = New-Profile -Name ("$label - export") -Direction 'pull' `
-        -SourcePath ($devRoot + '\' + ([string]$Collector.exportSubPath).Trim('\')) `
+    $p = New-Profile -Name ("$label - " + [string]$Route.name) -Direction 'pull' `
+        -SourcePath $src `
         -TargetType $type -DeviceName $model `
-        -DestinationPath ([string]$Project.exportRoot) `
+        -DestinationPath ([string]$Route.root) `
         -CollisionMode $coll `
-        -Extensions @($Collector.exportExtensions) `
+        -Extensions @($Route.extensions) `
         -ExcludeFolders @() -Prune $false
     $p | Add-Member -NotePropertyName collisionLabel -NotePropertyValue (Get-CollectorFolderName $Collector) -Force
+    $df = [string]$Route.dateFrom
+    if (-not $df) { $df = 'run' }
+    $p | Add-Member -NotePropertyName dateFrom -NotePropertyValue $df -Force
     return (& $stamp $p)
 }
 
@@ -2152,7 +2496,10 @@ function Invoke-CollectorSync {
         $Project, $Collector,
         [scriptblock]$OnLog, [scriptblock]$OnProgress,
         [switch]$CheckOnly, [scriptblock]$OnChooseDevice,
-        [scriptblock]$OnItem        # param($viewRow) -- one file settled
+        [scriptblock]$OnItem,       # param($viewRow) -- one file settled
+        # Design-leg files on the collector the user has marked "keep" in the compare
+        # view. Design only: the export leg never prunes, so nothing there is at risk.
+        [string[]]$RescueDesign = @()
     )
     $label = Get-CollectorLabel $Collector
     $verb  = if ($CheckOnly) { 'CHECK' } else { 'SYNC' }
@@ -2177,11 +2524,25 @@ function Invoke-CollectorSync {
         }
     }
 
-    $legs = @(
-        @{ Key = 'design'; Title = 'Design  PC -> collector (mirrored)' }
-        @{ Key = 'export'; Title = 'Export  collector -> OneDrive (additive)' }
-    )
-    $copied = 0; $pruned = 0; $failed = 0; $legErrors = @(); $lines = @()
+    # Design first so a crew heading out has current drawings, then one pull leg per
+    # export route. Keys have to stay unique: the compare view groups rows by them.
+    $legs = @( @{ Key = 'design'; Kind = 'design'; Route = $null
+                  Title = 'Design  PC -> collector (mirrored)' } )
+    foreach ($rt in @(Get-ExportRoutes $Project $Collector)) {
+        # Under per-file dating there is no single destination to name, so leave the
+        # date tokens unexpanded rather than printing today's folder -- expanding it
+        # reads as "everything is going here", which is exactly what it is not.
+        $shown = [string]$rt.root
+        if ([string]$rt.dateFrom -ne 'file') { $shown = Expand-PathTokens $shown }
+        else { $shown = (Expand-EnvVars $shown) + '   (dated per file)' }
+        $legs += @{
+            Key   = 'export:' + [string]$rt.name
+            Kind  = 'export'
+            Route = $rt
+            Title = ('{0}  collector -> {1} (additive)' -f [string]$rt.name, $shown)
+        }
+    }
+    $copied = 0; $pruned = 0; $kept = 0; $failed = 0; $legErrors = @(); $lines = @()
     $legPlans = @()
 
     # One engine row -> one compare-view row. The engine thinks in source and
@@ -2189,7 +2550,7 @@ function Invoke-CollectorSync {
     # collector-on-the-right. On a pull the collector is the source, so sides swap.
     $toViewRow = {
         param([string]$LegKey, $Row)
-        $pull = ($LegKey -eq 'export')
+        $pull = ($LegKey -ne 'design')
         [pscustomobject]@{
             Leg       = $LegKey
             Action    = [string]$Row.Action
@@ -2209,7 +2570,7 @@ function Invoke-CollectorSync {
     # the live ticks cannot disagree about which side a file belongs on.
     $toLegPlan = {
         param($Leg, $Result)
-        $pull    = ($Leg.Key -eq 'export')
+        $pull    = ([string]$Leg.Key -ne 'design')
         $srcRoot = [string]$Result.SourceRoot
         $dstRoot = [string]$Result.DestinationRoot
         $view = @()
@@ -2217,6 +2578,7 @@ function Invoke-CollectorSync {
         return [pscustomobject]@{
             Key        = $Leg.Key
             Title      = $Leg.Title
+            Pull       = $pull
             PcRoot     = $(if ($pull) { $dstRoot } else { $srcRoot })
             DeviceRoot = $(if ($pull) { $srcRoot } else { $dstRoot })
             Rows       = @($view)
@@ -2226,7 +2588,7 @@ function Invoke-CollectorSync {
     foreach ($leg in $legs) {
         if ($script:CancelRequested) { & $OnLog 'Cancelled by user.' 'WARN'; break }
         & $OnLog "--- $($leg.Title) ---" 'INFO'
-        $p = New-LegProfile $Project $Collector $leg.Key
+        $p = New-LegProfile $Project $Collector ([string]$leg.Kind) $leg.Route
         # Engine rows arrive in engine terms; map each one before it reaches the UI.
         # GetNewClosure, and deliberately different names: Invoke-Sync has its own
         # $OnItem parameter, so a plain scriptblock would resolve $OnItem dynamically
@@ -2238,21 +2600,26 @@ function Invoke-CollectorSync {
             $thisLegKey  = [string]$leg.Key
             $legOnItem = { param($row) [void](& $outerOnItem (& $mapViewRow $thisLegKey $row)) }.GetNewClosure()
         }
+        # Only the design leg prunes, so only it can have anything to rescue.
+        $legRescue = @()
+        if ([string]$leg.Key -eq 'design') { $legRescue = @($RescueDesign) }
         try {
             if ($CheckOnly) {
                 $r = Invoke-SyncCheck -Profile $p -OnLog $OnLog -OnProgress $OnProgress `
-                        -OnChooseDevice $OnChooseDevice -OnItem $legOnItem
+                        -OnChooseDevice $OnChooseDevice -OnItem $legOnItem -Rescue $legRescue
                 $lines += ("{0}: {1}" -f $leg.Key, $r.Summary)
                 # An offline check never reached the collector, so it has no rows to show.
                 if ($r.ContainsKey('Plan')) { $legPlans += (& $toLegPlan $leg $r) }
             }
             else {
                 $r = Invoke-Sync -Profile $p -OnLog $OnLog -OnProgress $OnProgress `
-                        -OnChooseDevice $OnChooseDevice -OnItem $legOnItem
+                        -OnChooseDevice $OnChooseDevice -OnItem $legOnItem -Rescue $legRescue
                 $legPlans += (& $toLegPlan $leg $r)
                 $copied += [int]$r.Copied; $pruned += [int]$r.Pruned; $failed += [int]$r.Failed
+                $kept += [int]$r.Kept
                 $d = ''
                 if ([int]$r.Pruned -gt 0) { $d = ", deleted $($r.Pruned)" }
+                if ([int]$r.Kept -gt 0)   { $d += ", kept $($r.Kept)" }
                 $lines += ("{0}: copied {1}{2}, skipped {3}, failed {4}" -f $leg.Key, $r.Copied, $d, $r.Skipped, $r.Failed)
             }
         }
@@ -2267,7 +2634,7 @@ function Invoke-CollectorSync {
     $summary = "$label - " + ($lines -join '  |  ')
     if ($legErrors.Count) { $summary += '  [' + ($legErrors -join '; ') + ']' }
     return [pscustomobject]@{
-        Collector = $label; Copied = $copied; Pruned = $pruned; Failed = $failed
+        Collector = $label; Copied = $copied; Pruned = $pruned; Kept = $kept; Failed = $failed
         Lines = $lines; Errors = $legErrors; Summary = $summary; CheckOnly = [bool]$CheckOnly
         LegPlans = @($legPlans)
     }
@@ -2327,7 +2694,11 @@ function Invoke-Sync {
         [scriptblock]$OnProgress,   # param($current, $total)
         [switch]$CheckOnly,         # compare only: no copies, no folders, no marker
         [scriptblock]$OnChooseDevice, # param($candidates) -> one of them, when several match
-        [scriptblock]$OnItem        # param($row) -- one file settled, so the UI can tick it off
+        [scriptblock]$OnItem,       # param($row) -- one file settled, so the UI can tick it off
+        # Destination-relative paths that prune would otherwise delete, which the user
+        # has said to keep. Each is copied back to the source instead of being removed,
+        # which also settles it for good: next run the source accounts for it.
+        [string[]]$Rescue = @()
     )
 
     $direction     = if ($Profile.PSObject.Properties['direction'] -and $Profile.direction) { [string]$Profile.direction } else { 'push' }
@@ -2352,6 +2723,37 @@ function Invoke-Sync {
     # Endpoint paths (support the {julian} token).
     $srcPath = (Expand-PathTokens $Profile.sourcePath).Trim().TrimEnd('\')
     $dstPath = (Expand-PathTokens $Profile.destinationPath).Trim().TrimEnd('\')
+
+    # Per-file dating. A collector accumulates months of exports before anyone pulls
+    # them, and dating the folder from the run would file a year and a half of work
+    # under whatever month it happens to be today. Pull only: on a push the source
+    # tree is the authority on where things live.
+    $dateFrom = 'run'
+    if ($Profile.PSObject.Properties['dateFrom'] -and $Profile.dateFrom) { $dateFrom = [string]$Profile.dateFrom }
+    $perFileDate = ($direction -eq 'pull' -and $dateFrom -eq 'file')
+    $datedTail = ''
+    if ($perFileDate) {
+        # Keep the fixed part as the destination root and fold the dated part into
+        # each file's relative path instead. Everything downstream -- the no-overwrite
+        # walk, the compare grid, the marker -- then works unchanged, and the grid
+        # shows the dated folder each file is going to.
+        $sp = Split-DatedRoot (Expand-EnvVars ([string]$Profile.destinationPath))
+        $datedTail = [string]$sp.Tail
+        if ($datedTail) { $dstPath = (Expand-PathTokens ([string]$sp.Base)).Trim().TrimEnd('\') }
+        else { $perFileDate = $false }   # nothing dated in the template; nothing to do
+    }
+    # The scope for "have we pulled this before" is the DATED part only -- the month
+    # folder -- not any fixed subfolder under it. That is what lets a file the office
+    # moved into another company's folder still count as already pulled.
+    $scopeTail = ''
+    if ($perFileDate) {
+        $segs = @($datedTail -split '\\')
+        $last = -1
+        for ($i = 0; $i -lt $segs.Count; $i++) {
+            if ($segs[$i] -match '(?i)\{(julian|year|month|date)\}') { $last = $i }
+        }
+        if ($last -ge 0) { $scopeTail = (@($segs[0..$last]) -join '\') }
+    }
     if ([string]::IsNullOrWhiteSpace($srcPath)) { throw 'Source path is empty.' }
     if ([string]::IsNullOrWhiteSpace($dstPath)) { throw 'Destination path is empty.' }
 
@@ -2370,6 +2772,24 @@ function Invoke-Sync {
     if ($prune -and $direction -ne 'push') {
         & $OnLog 'Prune is ignored on pull: the destination collects field data the source cannot account for.' 'WARN'
         $prune = $false
+    }
+    # Prune deletes by PATH, not by file type: anything the source cannot account for
+    # goes, whatever its extension. That is right for a folder the tool owns, and
+    # catastrophic one level up -- the collector's project folder is where Trimble
+    # Access keeps the crew's .job files, and mirroring onto it would delete the lot,
+    # including today's. One blanked "Design subfolder" field is all that separates
+    # the two, so refuse the run rather than trust the field.
+    if ($prune) {
+        $ownRoot = ''
+        if ($Profile.PSObject.Properties['deviceProjectRoot']) {
+            $ownRoot = ([string]$Profile.deviceProjectRoot).Trim().TrimEnd('\')
+        }
+        if ($ownRoot -and ($dstPath -ieq $ownRoot)) {
+            throw ("Refusing to mirror onto '$dstPath': that is the project folder on the collector itself, " +
+                   "not a subfolder this tool owns. Everything there the design source does not account for " +
+                   "would be DELETED, including the crew's .job files. Set a design subfolder (e.g. 02-Design), " +
+                   "or turn mirror/prune off for this collector.")
+        }
     }
     if ($prune) { & $OnLog 'Prune ON - files at the destination that the source does not account for will be DELETED.' 'WARN' }
 
@@ -2477,6 +2897,7 @@ function Invoke-Sync {
         }
 
         $copied = 0; $skipped = 0; $failed = 0
+        $datedByName = 0; $datedByStamp = 0
         $outOfDate = New-Object System.Collections.ArrayList
         # Every compared file, in-sync ones included, so the compare view can show
         # both sides the way GoodSync does. Built here rather than re-derived later:
@@ -2488,6 +2909,27 @@ function Invoke-Sync {
             $i++
             $rel = $rec.Rel
             $destRel = Get-DestRel $rel $direction $collisionMode $collisionLabel
+            # LastIndexOf, not Split-Path: Split-Path reads its input as a wildcard
+            # pattern, and these filenames contain brackets.
+            $li = ([string]$rel).LastIndexOf('\')
+            $leaf = if ($li -ge 0) { ([string]$rel).Substring($li + 1) } else { [string]$rel }
+            $scopeDir = ''
+            if ($perFileDate) {
+                # The julian in the name is what the surveyor called the day's work,
+                # so it beats the timestamp -- which a copy or a restore can move.
+                $when = Get-JulianFromName $leaf
+                if ($when) { $datedByName++ }
+                else {
+                    $datedByStamp++
+                    if ($rec.MtimeUtc) { $when = ([datetime]$rec.MtimeUtc).ToLocalTime() }
+                    if (-not $when) { $when = Get-Date }
+                }
+                $dated = (Expand-PathTokens $datedTail $when).Trim('\')
+                if ($dated) { $destRel = $dated + '\' + $destRel }
+                if ($scopeTail) {
+                    $scopeDir = $dstPath + '\' + (Expand-PathTokens $scopeTail $when).Trim('\')
+                }
+            }
             $dest = $dstPath + '\' + $destRel
             # Cleared each pass: a throw before the row is built must not report the
             # previous file's row as the one that failed.
@@ -2498,6 +2940,17 @@ function Invoke-Sync {
                 if ($di.Length -lt 0) { $need = $true; $reason = 'new' }
                 elseif ([long]$rec.Length -ne $di.Length) { $need = $true; $reason = 'size changed' }
                 elseif ($null -ne $di.Mtime -and $null -ne $rec.MtimeUtc -and $rec.MtimeUtc -gt $di.Mtime.AddSeconds(2)) { $need = $true; $reason = 'source newer' }
+
+                # Nothing at the exact target -- but the office may have filed this
+                # very file under a different company subfolder in the same month.
+                # Pulling it again would put a second copy in ours, every sync.
+                if ($need -and $di.Length -lt 0 -and $neverOverwrite -and $scopeDir) {
+                    $filed = Test-AlreadyFiled $ctx $dstKind $scopeDir $leaf ([long]$rec.Length)
+                    if ($filed) {
+                        $need = $false
+                        $reason = 'already filed at ' + ($filed -replace [regex]::Escape($dstPath + '\'), '')
+                    }
+                }
 
                 # What the compare view shows on the destination side. Tracked
                 # separately from $di because the no-overwrite walk below can move
@@ -2575,8 +3028,17 @@ function Invoke-Sync {
             & $OnProgress $i $total
         }
 
+        # Say which files got their folder from a julian in the name and which fell
+        # back to a timestamp: a timestamp is only as good as whatever last touched
+        # the file, so a high fallback count is worth someone's attention.
+        if ($perFileDate -and ($datedByName + $datedByStamp) -gt 0) {
+            & $OnLog ("Filed by date: $datedByName from the julian in the filename, $datedByStamp from the file timestamp.") 'INFO'
+        }
+
         # ---- Prune: remove what the source does not account for -------------
-        $pruned = 0; $pruneSet = @{ Files = @(); Dirs = @() }
+        # $pf survives the block below so the return can report it; with prune off it
+        # stays empty, which is the honest answer -- nothing would be deleted.
+        $pruned = 0; $keptBack = 0; $pf = @(); $pruneSet = @{ Files = @(); Dirs = @() }
         if ($prune -and -not $script:CancelRequested) {
             & $OnLog 'Scanning the destination for files the source does not account for...' 'INFO'
             $pruneSet = Get-PruneSet $ctx $dstKind $dstPath $records $sel.Dirs $direction $collisionMode $collisionLabel
@@ -2586,6 +3048,91 @@ function Invoke-Sync {
             if ([int]$pruneSet.Malformed -gt 0) {
                 & $OnLog ("Ignored $($pruneSet.Malformed) unnamed item(s) the device reported - not deletion candidates.") 'WARN'
             }
+
+            # Files the user marked "keep" in the compare view. Copying one back to the
+            # source is what makes the decision stick: prune only ever removes what the
+            # source cannot account for, so once a file is in the design folder it is
+            # safe on this run and every one after it, on every collector. Split the
+            # list before anything is deleted, so a rescue can never lose the race.
+            $rescueSet = @{}
+            foreach ($rp in @($Rescue)) {
+                $k = ([string]$rp).Trim().TrimStart('\')
+                if ($k) { $rescueSet[$k] = $true }
+            }
+            $rescued = @(); $doomed = @()
+            foreach ($f in $pf) {
+                if ($rescueSet.ContainsKey([string]$f.Rel)) { $rescued += $f } else { $doomed += $f }
+            }
+            $pf = @($doomed)
+
+            # A kept file can sit in a folder the source does not account for, and
+            # folder prune is recursive -- so leaving that folder in the list would
+            # delete the very file just kept, seconds after keeping it. Spare the
+            # whole ancestor chain. Only this run needs it: once the file is in the
+            # source, the folder is accounted for like any other.
+            if ($rescued.Count) {
+                $spare = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+                foreach ($f in $rescued) {
+                    $p = [string]$f.Rel
+                    while ($true) {
+                        $i = $p.LastIndexOf('\')
+                        if ($i -lt 0) { break }
+                        $p = $p.Substring(0, $i)
+                        [void]$spare.Add($p)
+                    }
+                }
+                $pd = @($pd | Where-Object { -not $spare.Contains([string]$_) })
+            }
+
+            # A rescue row deliberately keeps the delete row's identity -- blank source
+            # side, same destination rel -- so the row the user clicked is the row that
+            # updates, rather than a second one appearing underneath it.
+            $backMode = "$dstKind`2$srcKind"
+            foreach ($f in $rescued) {
+                $rRow = [pscustomobject]@{
+                    Direction = $direction
+                    Rel       = ''
+                    DestRel   = [string]$f.Rel
+                    SrcLength = [long]-1
+                    SrcMtime  = $null
+                    DstLength = [long]$f.Length
+                    DstMtime  = $null
+                    Action    = 'rescue'
+                    Reason    = 'kept'
+                    Status    = 'pending'
+                }
+                [void]$plan.Add($rRow)
+                if ($CheckOnly) {
+                    & $OnLog ("WOULD KEEP     $($f.Rel)  ->  $srcPath") 'COPY'
+                }
+                else {
+                    try {
+                        # LastIndexOf, not Split-Path: Split-Path reads its input as a
+                        # wildcard pattern, and design filenames do contain brackets.
+                        $i = ([string]$f.Rel).LastIndexOf('\')
+                        $backDir = $(if ($i -ge 0) { $srcPath + '\' + ([string]$f.Rel).Substring(0, $i) } else { $srcPath })
+                        $back = $srcPath + '\' + [string]$f.Rel
+                        Target-EnsureDir $ctx $srcKind $backDir
+                        $from = $(if ($dstKind -eq 'mtp') { $f.Item } else { $dstPath + '\' + $f.Rel })
+                        Invoke-CopyWithRetry $ctx $backMode $from $back ([long]$f.Length) $OnLog
+                        $keptBack++
+                        # SrcLength stays -1 on purpose: the row key is built from the
+                        # source rel, so filling the left-hand side in mid-run would
+                        # split this row in two. The next Check shows it properly
+                        # paired, because by then the design folder really does have it.
+                        $rRow.Status = 'rescued'
+                        & $OnLog ("KEPT           $($f.Rel)  ->  $back") 'COPY'
+                    }
+                    catch {
+                        $failed++
+                        $rRow.Status = 'failed'
+                        $rRow.Reason = $_.Exception.Message
+                        & $OnLog ("KEEP FAILED    $($f.Rel)  ::  $($_.Exception.Message)") 'ERROR'
+                    }
+                }
+                if ($OnItem) { [void](& $OnItem $rRow) }
+            }
+
             # Destination-only rows: nothing on the source side, so the compare view
             # draws them with an empty left cell and a delete marker.
             $delRows = @{}
@@ -2607,7 +3154,8 @@ function Invoke-Sync {
                 if ($OnItem) { [void](& $OnItem $dRow) }
             }
             if ($pf.Count -eq 0 -and $pd.Count -eq 0) {
-                & $OnLog 'Nothing to prune - the destination already matches the source.' 'INFO'
+                if ($rescued.Count) { & $OnLog "Nothing left to prune - all $($rescued.Count) extra file(s) were kept." 'INFO' }
+                else                { & $OnLog 'Nothing to prune - the destination already matches the source.' 'INFO' }
             }
             elseif ($CheckOnly) {
                 & $OnLog "Would DELETE $($pf.Count) file(s) and $($pd.Count) folder(s):" 'WARN'
@@ -2662,7 +3210,10 @@ function Invoke-Sync {
             CheckOnly = [bool]$CheckOnly
             SourceNewestUtc = $newest
             Pruned    = $pruned
-            PruneCandidates = @($pruneSet.Files)
+            Kept      = $keptBack
+            # After the split, deletion candidates are only the ones NOT marked keep,
+            # so a check reports what a sync would really remove.
+            PruneCandidates = @($pf)
             Plan      = @($plan)
             SourceRoot      = $srcPath
             DestinationRoot = $dstPath
@@ -2696,6 +3247,18 @@ $script:CurrentProject   = $null
 $script:CurrentCollector = $null
 $script:LastSeenSerials  = ''
 $script:Loading          = $false
+# Which collector the user chose at Detect, when more than one is connected.
+# Held by serial rather than by object so it survives a config reload, and
+# remembered across runs so a desk with a controller and the stick permanently
+# plugged in does not need a Detect click on every launch.
+$script:PinnedSerial     = [string](Get-Pref 'PinnedCollector' '')
+# Has a Check been run that still describes what a Sync would do? Starts false, so
+# a fresh launch always compares before it is allowed to write.
+$script:CheckedOk        = $false
+# Re-entrancy guard and last-laid-out size: several events land on one resize, and
+# setting a column width can raise another.
+$script:SizingColumns    = $false
+$script:CompareLayoutSig = ''
 
 # ---- Project row ----------------------------------------------------------
 $lblProject = New-Object System.Windows.Forms.Label
@@ -2869,8 +3432,19 @@ $btnCancel = New-Object System.Windows.Forms.Button
 $btnCancel.Text = 'Cancel'; $btnCancel.Location = '314,512'; $btnCancel.Size = '85,38'; $btnCancel.Enabled = $false
 $form.Controls.Add($btnCancel)
 
+# Deliberately its own button, not part of Sync. Sync pushes design out and pulls
+# field data back; it does not destroy work on the collector. Tidying does, so it
+# is a thing you ask for, on a day you mean it.
+$btnTidy = New-Object System.Windows.Forms.Button
+$btnTidy.Text = 'Tidy jobs...'; $btnTidy.Location = '406,512'; $btnTidy.Size = '110,38'
+$form.Controls.Add($btnTidy)
+# Set here, not up with the other tooltips: $tip is built before this button is,
+# and SetToolTip on a control that does not exist yet throws at startup.
+$tip.SetToolTip($btnTidy, 'Remove old job files from the collector - but only ones already backed up.' + [Environment]::NewLine +
+    'Shows you exactly what would go, and what it is keeping, before anything happens.')
+
 $progress = New-Object System.Windows.Forms.ProgressBar
-$progress.Location = '410,520'; $progress.Size = '390,22'; $progress.Anchor = 'Top,Left,Right'
+$progress.Location = '527,520'; $progress.Size = '273,22'; $progress.Anchor = 'Top,Left,Right'
 $form.Controls.Add($progress)
 
 $lblStatus = New-Object System.Windows.Forms.Label
@@ -2989,6 +3563,32 @@ function Get-RowKey {
     return ('{0}|{1}|{2}' -f $Row.Leg, $Row.PcRel, $Row.DevRel)
 }
 
+# Files on the collector that prune would delete but the user has said to keep,
+# by device-relative path. Design leg only -- the export leg never prunes, so
+# nothing there is ever at risk. Cleared when the selected collector changes,
+# because the paths mean nothing on a different device.
+$script:RescueMarks = @{}
+
+# Is this a row the user is allowed to change their mind about? Only a design-leg
+# deletion that has not happened yet: once a file is gone, or copied, the decision
+# is history and clicking it must do nothing.
+function Test-RescueEligible {
+    param($Row)
+    if ($null -eq $Row) { return $false }
+    if ([string]$Row.Leg -ne 'design') { return $false }
+    $st = [string]$Row.Status
+    if ($st -and $st -ne 'pending') { return $false }
+    return ([string]$Row.Action -eq 'delete' -or [string]$Row.Action -eq 'rescue')
+}
+
+function Test-RescueMark {
+    param($Row)
+    if ([string]$Row.Leg -ne 'design') { return $false }
+    $k = [string]$Row.DevRel
+    if (-not $k) { return $false }
+    return $script:RescueMarks.ContainsKey($k)
+}
+
 # Glyph, wording and colour for one row -- from its action, and from how far it
 # has actually got. Shared by the initial render and the live updates so a row
 # cannot end up looking like one thing and reading like another.
@@ -2998,9 +3598,16 @@ function Get-RowLook {
         'failed'  { return @{ Glyph = $script:GlyphFailed; What = ('FAILED: ' + [string]$Row.Reason); Color = $script:ClrDelete } }
         'copied'  { return @{ Glyph = $script:GlyphDone;   What = 'Copied';  Color = $script:ClrDone } }
         'deleted' { return @{ Glyph = $script:GlyphDone;   What = 'Deleted'; Color = $script:ClrDone } }
+        'rescued' { return @{ Glyph = $script:GlyphDone;   What = 'Kept - copied into the design folder'; Color = $script:ClrDone } }
     }
-    if ([string]$Row.Action -eq 'delete') {
-        return @{ Glyph = $script:GlyphDelete; What = 'Delete from collector'; Color = $script:ClrDelete }
+    # 'delete' and 'rescue' are the same decision seen from either side, and the mark
+    # is what says which way it currently points. One branch, so the X and the arrow
+    # can never disagree -- including when a click takes a rescue row back to a delete.
+    if ([string]$Row.Action -eq 'delete' -or [string]$Row.Action -eq 'rescue') {
+        if (Test-RescueMark $Row) {
+            return @{ Glyph = $script:GlyphToPc; What = 'KEEP - copy into the design folder'; Color = $script:ClrCopy }
+        }
+        return @{ Glyph = $script:GlyphDelete; What = 'Delete from collector  (click to keep)'; Color = $script:ClrDelete }
     }
     if ([string]$Row.Action -eq 'copy') {
         return @{
@@ -3014,6 +3621,17 @@ function Get-RowLook {
         What  = $(if ($Row.Reason) { [string]$Row.Reason } else { 'In sync' })
         Color = $script:ClrSame
     }
+}
+
+# Both ends of a row, in full. On a pull the two paths genuinely differ -- dated
+# folder, company folder, collector prefix -- so showing only one leaves the other
+# a guess, and the folder column is the first thing to clip on a narrow window.
+function Get-RowTip {
+    param($Row)
+    $lines = @()
+    if ([string]$Row.PcRel)  { $lines += 'PC:        ' + [string]$Row.PcRel }
+    if ([string]$Row.DevRel) { $lines += 'Collector: ' + [string]$Row.DevRel }
+    return ($lines -join [Environment]::NewLine)
 }
 
 # Split a relative path into its folder and its filename. LastIndexOf rather than
@@ -3058,6 +3676,11 @@ function Update-CompareLayout {
     $w = $tabCompare.ClientSize.Width
     $h = $tabCompare.ClientSize.Height
     if ($w -le 40 -or $h -le 60) { return }
+    # One drag raises this from several places at once -- the page, the form, and a
+    # tab switch afterwards. Do the work once per actual size.
+    $sig = '{0}x{1}' -f $w, $h
+    if ($sig -eq $script:CompareLayoutSig) { return }
+    $script:CompareLayoutSig = $sig
     $lblPcRoot.SetBounds(2, 2, [Math]::Max(80, [int]($w / 2)), 16)
     $lvCompare.SetBounds(2, 20, ($w - 4), [Math]::Max(60, $h - 46))
     $lblCompareHint.SetBounds(2, ($h - 21), [Math]::Max(80, $w - 232), 18)
@@ -3065,30 +3688,120 @@ function Update-CompareLayout {
     Resize-CompareColumns
 }
 
+# How wide each flexible column should be for a grid this wide. Pure arithmetic,
+# separate from the control it is applied to, so the awkward cases -- a very narrow
+# window, a very wide one -- can be checked without a window at all.
+function Get-CompareColumnWidths {
+    param([int]$GridWidth)
+    # Size, Modified and the arrow are content-sized and never move. Everything else
+    # shares what is left: the two folder/file pairs, and the what-happens text.
+    $fixed = 62 + 100 + 30 + 62 + 100
+    $spare = $GridWidth - $fixed
+    # Below this the columns stop shrinking and the grid scrolls sideways instead --
+    # past a point, narrower cells stop telling you anything.
+    # Chosen so the whole grid still fits at the form's own minimum width -- a window
+    # squeezed to its smallest should not also be scrolling sideways.
+    $minSpare = 2 * (70 + 100) + 220
+    if ($spare -lt $minSpare) { $spare = $minSpare }
+
+    # What-happens has to fit its longest real sentence -- "Delete from collector
+    # (click to keep)" -- or the one row that can destroy something is the one that
+    # reads as truncated. It takes a share of the slack, capped: past ~340 it is just
+    # trailing space, and the names are what deserve the width.
+    # Floor, not [int]: PowerShell's [int] cast ROUNDS, so halving an odd number of
+    # spare pixels rounded up and each side claimed one pixel more than existed --
+    # enough to put a horizontal scrollbar under a grid that already fitted.
+    $what = [int][Math]::Floor($spare * 0.22)
+    if ($what -lt 220) { $what = 220 }
+    if ($what -gt 340) { $what = 340 }
+
+    $side = [int][Math]::Floor(($spare - $what) / 2)
+    # The filename gets the larger share: a clipped folder still shows where it
+    # starts, while a clipped filename is the thing you were trying to read. The
+    # folder is capped too -- a dated path is short, and past that width the space
+    # is better spent on names.
+    $folder = [int][Math]::Floor($side * 0.42)
+    if ($folder -lt 70)  { $folder = 70 }
+    if ($folder -gt 260) { $folder = 260 }
+    $file = $side - $folder
+    if ($file -lt 100) { $file = 100 }
+    return @{ Folder = $folder; File = $file; What = $what; Side = ($folder + $file + 62 + 100) }
+}
+
 function Resize-CompareColumns {
+    # Setting a column width can itself add or remove the vertical scrollbar, which
+    # fires Resize again. Guard, or a drag can put us in a loop.
+    if ($script:SizingColumns) { return }
     $w = $lvCompare.ClientSize.Width
     if ($w -le 0) { return }
-    $fixed = 62 + 100 + 30 + 62 + 100 + 165          # sizes, dates, arrow, what-happens
-    $spare = $w - $fixed
-    if ($spare -lt 340) { $spare = 340 }
-    # The filename gets the larger share of the slack: a clipped folder still shows
-    # where it starts, while a clipped filename is the thing you were trying to read.
-    $folder = [int]($spare / 4.8)
-    if ($folder -lt 70) { $folder = 70 }
-    $file = [int]($spare / 2) - $folder
-    if ($file -lt 110) { $file = 110 }
-    $lvCompare.Columns[0].Width = $folder
-    $lvCompare.Columns[1].Width = $file
-    $lvCompare.Columns[5].Width = $folder
-    $lvCompare.Columns[6].Width = $file
-    $side = $folder + $file + 62 + 100
-    $lblPcRoot.Width = $side
-    $lblDevRoot.Left = $lvCompare.Left + $side + 30
-    $lblDevRoot.Width = [Math]::Max(80, $side)
+    $c = Get-CompareColumnWidths $w
+    $folder = $c.Folder; $file = $c.File; $what = $c.What
+
+    $script:SizingColumns = $true
+    $lvCompare.BeginUpdate()
+    try {
+        $lvCompare.Columns[0].Width = $folder
+        $lvCompare.Columns[1].Width = $file
+        $lvCompare.Columns[5].Width = $folder
+        $lvCompare.Columns[6].Width = $file
+        $lvCompare.Columns[9].Width = $what
+    }
+    finally {
+        $lvCompare.EndUpdate()
+        $script:SizingColumns = $false
+    }
+    $sideW = $c.Side
+    $lblPcRoot.Width = $sideW
+    $lblDevRoot.Left = $lvCompare.Left + $sideW + 30
+    $lblDevRoot.Width = [Math]::Max(80, $sideW)
 }
 
 # Paint one leg's rows into the grid. Left column is always this PC and right is
 # always the collector, whichever way the leg happens to run.
+# The one-line summary under the grid. Recomputed from the plans rather than
+# accumulated while rendering, so toggling one row's keep/delete can refresh it
+# without redrawing the whole grid and losing the user's place in it.
+function Update-CompareHint {
+    $gate = ''
+    if (-not (Test-SyncAllowed)) { $gate = '   -   press Check before Sync.' }
+    $plans = @($script:LastLegPlans)
+    if ($plans.Count -eq 0) {
+        $lblCompareHint.Text = 'Nothing compared yet. Press Check to compare without writing anything.'
+        return
+    }
+    $toCopy = 0; $toDelete = 0; $toKeep = 0; $same = 0; $done = 0; $failedRows = 0
+    foreach ($lp in $plans) {
+        foreach ($r in @($lp.Rows)) {
+            switch ([string]$r.Action) {
+                'copy'   { $toCopy++ }
+                'rescue' { if (Test-RescueMark $r) { $toKeep++ } else { $toDelete++ } }
+                'delete' { if (Test-RescueMark $r) { $toKeep++ } else { $toDelete++ } }
+                default  { $same++ }
+            }
+            switch ([string]$r.Status) {
+                'copied'  { $done++ }
+                'deleted' { $done++ }
+                'rescued' { $done++ }
+                'failed'  { $failedRows++ }
+            }
+        }
+    }
+    $tail = if ($chkShowSame.Checked) { "$same in sync" } else { "$same in sync (hidden)" }
+    $bits = @()
+    if ($done -gt 0 -or $failedRows -gt 0) {
+        # A run has happened, so report what it did rather than what it intended.
+        if ($done -gt 0)       { $bits += "$done done" }
+        if ($failedRows -gt 0) { $bits += "$failedRows FAILED" }
+    }
+    else {
+        if ($toCopy -gt 0)   { $bits += "$toCopy to copy" }
+        if ($toKeep -gt 0)   { $bits += "$toKeep to KEEP" }
+        if ($toDelete -gt 0) { $bits += "$toDelete to DELETE (click one to keep it)" }
+        if ($bits.Count -eq 0) { $bits += 'nothing to do' }
+    }
+    $lblCompareHint.Text = ($bits -join ', ') + ",  $tail" + $gate
+}
+
 function Show-ComparePlan {
     param($LegPlans, [string]$DeviceLabel)
 
@@ -3099,7 +3812,6 @@ function Show-ComparePlan {
     $script:LastLegPlans = $plans
     if ($DeviceLabel) { $lblDevRoot.Text = $DeviceLabel }
     $showSame = $chkShowSame.Checked
-    $toCopy = 0; $toDelete = 0; $same = 0; $done = 0; $failedRows = 0
 
     $lvCompare.BeginUpdate()
     try {
@@ -3112,7 +3824,7 @@ function Show-ComparePlan {
             # The two legs have different endpoints, so the folder pair belongs in
             # the group header -- one pair of column headers cannot name both.
             $head = '{0}      {1}  {2}  {3}' -f $lp.Title, $lp.PcRoot, $script:GlyphToDevice, $lp.DeviceRoot
-            if ($lp.Key -eq 'export') {
+            if ($lp.Pull) {
                 $head = '{0}      {1}  {2}  {3}' -f $lp.Title, $lp.PcRoot, $script:GlyphToPc, $lp.DeviceRoot
             }
             $g = New-Object System.Windows.Forms.ListViewGroup($head)
@@ -3120,21 +3832,16 @@ function Show-ComparePlan {
             $script:CompareGroups[[string]$lp.Key] = $g
 
             foreach ($r in @($lp.Rows)) {
-                $act = [string]$r.Action
-                switch ($act) {
-                    'copy'   { $toCopy++ }
-                    'delete' { $toDelete++ }
-                    default  { $same++ }
-                }
-                switch ([string]$r.Status) {
-                    'copied'  { $done++ }
-                    'deleted' { $done++ }
-                    'failed'  { $failedRows++ }
-                }
-                if ($act -eq 'same' -and -not $showSame) { continue }
+                if ([string]$r.Action -eq 'same' -and -not $showSame) { continue }
 
-                # A side with no file shows an empty cell -- that blank is what makes
-                # "new here, missing there" readable at a glance.
+                # The NAME is shown whenever we know it, even for a file that is not
+                # there yet -- on a pull that name is where the file is going, and the
+                # dated and company folders make it genuinely different from the
+                # collector's own path, so blanking it hid the one thing worth seeing.
+                # Size and modified stay blank until the file exists: that blank is
+                # what still reads as "not on this side yet".
+                $pcNamed  = ([string]$r.PcRel  -ne '')
+                $devNamed = ([string]$r.DevRel -ne '')
                 $pcHas  = ([long]$r.PcLength  -ge 0)
                 $devHas = ([long]$r.DevLength -ge 0)
 
@@ -3145,20 +3852,23 @@ function Show-ComparePlan {
 
                 $pcP  = Split-RelPath ([string]$r.PcRel)
                 $devP = Split-RelPath ([string]$r.DevRel)
-                $it = New-Object System.Windows.Forms.ListViewItem($(if ($pcHas) { $pcP.Dir } else { '' }))
-                [void]$it.SubItems.Add($(if ($pcHas) { $pcP.Leaf } else { '' }))
+                $it = New-Object System.Windows.Forms.ListViewItem($(if ($pcNamed) { $pcP.Dir } else { '' }))
+                [void]$it.SubItems.Add($(if ($pcNamed) { $pcP.Leaf } else { '' }))
                 [void]$it.SubItems.Add($(if ($pcHas) { Format-Size ([long]$r.PcLength) } else { '' }))
                 [void]$it.SubItems.Add($(if ($pcHas) { Format-RowTime $r.PcMtime } else { '' }))
                 [void]$it.SubItems.Add($glyph)
-                [void]$it.SubItems.Add($(if ($devHas) { $devP.Dir } else { '' }))
-                [void]$it.SubItems.Add($(if ($devHas) { $devP.Leaf } else { '' }))
+                [void]$it.SubItems.Add($(if ($devNamed) { $devP.Dir } else { '' }))
+                [void]$it.SubItems.Add($(if ($devNamed) { $devP.Leaf } else { '' }))
                 [void]$it.SubItems.Add($(if ($devHas) { Format-Size ([long]$r.DevLength) } else { '' }))
                 [void]$it.SubItems.Add($(if ($devHas) { Format-RowTime $r.DevMtime } else { '' }))
                 [void]$it.SubItems.Add($what)
                 $it.ForeColor = $clr
                 $it.Group = $g
-                # The name is the one cell worth reading in full when it is clipped.
-                $it.ToolTipText = $(if ($pcHas) { [string]$r.PcRel } else { [string]$r.DevRel })
+                # Both paths in full: the two sides differ on a pull, and the folder
+                # column is the first thing to get clipped when the window is narrow.
+                $it.ToolTipText = Get-RowTip $r
+                # The row travels with its item, so a click can act on it directly.
+                $it.Tag = $r
                 [void]$lvCompare.Items.Add($it)
                 $script:CompareRowKeys[(Get-RowKey $r)] = $it
             }
@@ -3168,24 +3878,7 @@ function Show-ComparePlan {
 
     $lvCompare.ShowItemToolTips = $true
     Resize-CompareColumns
-
-    if ($plans.Count -eq 0) {
-        $lblCompareHint.Text = 'Nothing compared yet. Press Check to compare without writing anything.'
-        return
-    }
-    $tail = if ($showSame) { "$same in sync" } else { "$same in sync (hidden)" }
-    $bits = @()
-    if ($done -gt 0 -or $failedRows -gt 0) {
-        # A run has happened, so report what it did rather than what it intended.
-        if ($done -gt 0)       { $bits += "$done done" }
-        if ($failedRows -gt 0) { $bits += "$failedRows FAILED" }
-    }
-    else {
-        if ($toCopy -gt 0)   { $bits += "$toCopy to copy" }
-        if ($toDelete -gt 0) { $bits += "$toDelete to DELETE" }
-        if ($bits.Count -eq 0) { $bits += 'nothing to do' }
-    }
-    $lblCompareHint.Text = ($bits -join ', ') + ",  $tail"
+    Update-CompareHint
 }
 
 # One file has been settled mid-run: tick it off in place. If a check already put
@@ -3211,25 +3904,30 @@ function Update-CompareRow {
             [void]$lvCompare.Groups.Add($g)
             $script:CompareGroups[[string]$Row.Leg] = $g
         }
+        $pcNamed  = ([string]$Row.PcRel  -ne '')
+        $devNamed = ([string]$Row.DevRel -ne '')
         $pcHas  = ([long]$Row.PcLength  -ge 0)
         $devHas = ([long]$Row.DevLength -ge 0)
         $pcP  = Split-RelPath ([string]$Row.PcRel)
         $devP = Split-RelPath ([string]$Row.DevRel)
-        $it = New-Object System.Windows.Forms.ListViewItem($(if ($pcHas) { $pcP.Dir } else { '' }))
-        [void]$it.SubItems.Add($(if ($pcHas) { $pcP.Leaf } else { '' }))
+        $it = New-Object System.Windows.Forms.ListViewItem($(if ($pcNamed) { $pcP.Dir } else { '' }))
+        [void]$it.SubItems.Add($(if ($pcNamed) { $pcP.Leaf } else { '' }))
         [void]$it.SubItems.Add($(if ($pcHas) { Format-Size ([long]$Row.PcLength) } else { '' }))
         [void]$it.SubItems.Add($(if ($pcHas) { Format-RowTime $Row.PcMtime } else { '' }))
         [void]$it.SubItems.Add('')
-        [void]$it.SubItems.Add($(if ($devHas) { $devP.Dir } else { '' }))
-        [void]$it.SubItems.Add($(if ($devHas) { $devP.Leaf } else { '' }))
+        [void]$it.SubItems.Add($(if ($devNamed) { $devP.Dir } else { '' }))
+        [void]$it.SubItems.Add($(if ($devNamed) { $devP.Leaf } else { '' }))
         [void]$it.SubItems.Add($(if ($devHas) { Format-Size ([long]$Row.DevLength) } else { '' }))
         [void]$it.SubItems.Add($(if ($devHas) { Format-RowTime $Row.DevMtime } else { '' }))
         [void]$it.SubItems.Add('')
-        $it.ToolTipText = $(if ($pcHas) { [string]$Row.PcRel } else { [string]$Row.DevRel })
+        $it.ToolTipText = Get-RowTip $Row
         $it.Group = $g
         [void]$lvCompare.Items.Add($it)
         $script:CompareRowKeys[$key] = $it
     }
+    # Always the latest row object: a check's row and the sync's row for the same
+    # file are different objects, and the click handler must act on the live one.
+    $it.Tag = $Row
 
     $it.SubItems[4].Text = $look.Glyph
     $it.SubItems[9].Text = $look.What
@@ -3381,14 +4079,21 @@ function Apply-SettingsToUi {
 }
 function Load-CollectorToUi {
     param($C)
+    # Keep marks are device-relative paths on one particular collector, so they mean
+    # nothing on another. Dropping them on a switch is the safe way round: the worst
+    # case is being asked about a file again, not silently keeping the wrong one.
+    if ([string]$script:CurrentCollector.serial -ne [string]$C.serial) {
+        $script:RescueMarks = @{}
+        # A check vouches for one collector's plan, never the next one's.
+        $script:CheckedOk = $false
+    }
     $script:CurrentCollector = $C
     $has = ($null -ne $C)
     foreach ($ctl in @($txtDesignSub,$txtExportSub,$txtDesignExt,$txtExportExt,$txtExcl,$cboExportCollision,
                        $chkPrune,$btnNameDev,$btnResetDefaults)) {
         $ctl.Enabled = $has
     }
-    $btnSync.Enabled  = $has
-    $btnCheck.Enabled = $has
+    Update-ActionButtons
     if (-not $has) {
         $script:Loading = $true
         try {
@@ -3415,6 +4120,14 @@ function Commit-UiToCollector {
     $c.exportCollision  = [string]$cboExportCollision.SelectedItem
 }
 
+function Set-PinnedCollector {
+    param([string]$Serial)
+    $s = ([string]$Serial).Trim()
+    if ($s -eq [string]$script:PinnedSerial) { return }
+    $script:PinnedSerial = $s
+    Set-Pref 'PinnedCollector' $s
+}
+
 # The heart of it: work out which collector is plugged in and lock to it. An
 # unrecognised serial is never matched to an existing collector.
 function Update-DetectedCollector {
@@ -3431,12 +4144,14 @@ function Update-DetectedCollector {
     $known = @($cc.Known); $unknown = @($cc.Unknown)
 
     if ($known.Count -eq 0 -and $unknown.Count -eq 0) {
+        Set-PinnedCollector ''
         $lblCollector.Text = 'No collector connected.  Plug one in over USB (File transfer / MTP), or insert a USB stick target.'
         $lblCollector.ForeColor = 'DimGray'
         Load-CollectorToUi $null
         return
     }
     if ($known.Count -eq 0 -and $unknown.Count -gt 0) {
+        Set-PinnedCollector ''
         $s = ($unknown | ForEach-Object { "$($_.Name) ($($_.Serial))" }) -join ', '
         $lblCollector.Text = "Unrecognised: $s  -  press Detect to set it up."
         $lblCollector.ForeColor = [System.Drawing.Color]::FromArgb(180,90,0)
@@ -3444,13 +4159,23 @@ function Update-DetectedCollector {
         return
     }
     $pick = $known[0]
+    $also = ''
     if ($known.Count -gt 1) {
-        $labels = @($known | ForEach-Object { Get-CollectorLabel $_.Collector })
-        $lblCollector.Text = "$($known.Count) collectors connected - press Detect to choose."
-        $lblCollector.ForeColor = [System.Drawing.Color]::FromArgb(180,90,0)
-        Load-CollectorToUi $null
-        return
+        # A controller and the USB stick are routinely plugged in together, so
+        # "several connected" is normal, not an error. Detect asks which one and
+        # pins it; honour that pin here or the 4-second poll would throw the answer
+        # away moments later and leave Sync greyed out with no way to un-grey it.
+        $pinned = @($known | Where-Object { [string]$_.Collector.serial -eq [string]$script:PinnedSerial })
+        if ($pinned.Count -eq 0) {
+            $lblCollector.Text = "$($known.Count) collectors connected - press Detect to choose."
+            $lblCollector.ForeColor = [System.Drawing.Color]::FromArgb(180,90,0)
+            Load-CollectorToUi $null
+            return
+        }
+        $pick = $pinned[0]
+        $also = "   ($($known.Count) connected - Detect to switch)"
     }
+    Set-PinnedCollector ([string]$pick.Collector.serial)
     Load-CollectorToUi $pick.Collector
     $lbl = Get-CollectorLabel $pick.Collector
     $entries = @(@((Load-SyncState).entries) | Where-Object { [string]$_.deviceId -eq [string]$pick.Collector.serial })
@@ -3459,9 +4184,43 @@ function Update-DetectedCollector {
         $t = Parse-Utc ([string](@($entries | Sort-Object lastSyncUtc -Descending))[0].lastSyncUtc)
         if ($t) { $when = 'last synced ' + (Format-Local $t) }
     }
-    $lblCollector.Text = "$lbl  -  $when"
+    $lblCollector.Text = "$lbl  -  $when$also"
     $lblCollector.ForeColor = [System.Drawing.Color]::FromArgb(0,110,0)
     if ($Announce) { Write-Log "Collector detected: $lbl ($when)." }
+}
+
+# Sync is gated behind Check. The design leg is mirrored, so a sync DELETES, and the
+# compare view is the only place that plan can be read before it happens. Advanced
+# mode lifts the gate -- someone who has opened the settings panel is not the person
+# this is protecting.
+function Test-SyncAllowed {
+    if ([bool]$chkAdvanced.Checked) { return $true }
+    return [bool]$script:CheckedOk
+}
+
+# A check only vouches for the collector and settings it actually ran against, so
+# anything that changes the plan withdraws it.
+function Reset-CheckGate {
+    if ($script:Loading) { return }
+    $script:CheckedOk = $false
+    Update-ActionButtons
+}
+
+function Update-ActionButtons {
+    $ready = (-not $script:IsSyncing) -and ($null -ne $script:CurrentCollector)
+    $btnCheck.Enabled = $ready
+    $btnSync.Enabled  = $ready -and (Test-SyncAllowed)
+    # Tidy is not behind the Check gate: it does its own comparison and shows the
+    # whole list before it touches anything, so a stale plan cannot reach it.
+    $btnTidy.Enabled  = $ready
+    if ($ready -and -not $btnSync.Enabled) {
+        $tip.SetToolTip($btnSync, 'Press Check first. It reports exactly what both legs would do -' + [Environment]::NewLine +
+            'including anything the design leg would DELETE - and writes nothing.' + [Environment]::NewLine +
+            'Tick Advanced to sync without checking.')
+    }
+    else {
+        $tip.SetToolTip($btnSync, 'Run both legs: push design files out, pull field data back.')
+    }
 }
 
 function Set-Busy {
@@ -3474,8 +4233,7 @@ function Set-Busy {
                      $btnResetDefaults,$chkShowSame)) {
         $c.Enabled = -not $Busy
     }
-    $btnSync.Enabled  = (-not $Busy) -and ($null -ne $script:CurrentCollector)
-    $btnCheck.Enabled = $btnSync.Enabled
+    Update-ActionButtons
     if (-not $Busy -and $null -eq $script:CurrentCollector) { Load-CollectorToUi $null }
 }
 
@@ -3491,6 +4249,13 @@ function Invoke-CollectorAction {
     $progress.Value = 0
     $verb = if ($CheckOnly) { 'Checking' } else { 'Syncing' }
     $lblStatus.Text = "$verb..."
+    # Snapshot the keep list now: the run is re-entrant through DoEvents, so reading
+    # the live hashtable mid-run could see a click that arrived after the split.
+    $keepThese = @($script:RescueMarks.Keys)
+    if ($keepThese.Count) {
+        Write-Log ("Keeping $($keepThese.Count) file(s) the collector has that the design folder does not: " +
+                   ($keepThese -join ', ')) 'WARN'
+    }
     # A check rebuilds the plan from scratch, so start from an empty grid -- a stale
     # grid under a fresh error message is worse than no grid. A sync instead ticks
     # off the rows a check has already put on screen, so those are left in place.
@@ -3522,16 +4287,29 @@ function Invoke-CollectorAction {
         $r = if ($CheckOnly) {
             Invoke-CollectorSync -Project $script:CurrentProject -Collector $script:CurrentCollector `
                 -OnLog $onLog -OnProgress $onProg -CheckOnly -OnChooseDevice ${function:Choose-DeviceDialog} `
-                -OnItem $onItem
+                -OnItem $onItem -RescueDesign $keepThese
         } else {
             Invoke-CollectorSync -Project $script:CurrentProject -Collector $script:CurrentCollector `
                 -OnLog $onLog -OnProgress $onProg -OnChooseDevice ${function:Choose-DeviceDialog} `
-                -OnItem $onItem
+                -OnItem $onItem -RescueDesign $keepThese
         }
         $msg = [string]$r.Summary
         if ($script:CancelRequested) { $msg = 'Cancelled. ' + $msg }
         $lblStatus.Text = $msg
         Write-Log ('----- ' + $msg + ' -----')
+        # A file that was actually kept is now in the design folder, so the mark has
+        # done its job and must go. Left behind, it would silently rescue the file
+        # again the day someone deliberately supersedes it -- turning a one-off
+        # "keep this" into a standing veto on ever deleting it.
+        foreach ($lp in @($r.LegPlans)) {
+            foreach ($row in @($lp.Rows)) {
+                if ([string]$row.Status -eq 'rescued') { $script:RescueMarks.Remove([string]$row.DevRel) }
+            }
+        }
+        # A completed check is what unlocks Sync. A completed sync withdraws it, so
+        # the next run is compared afresh rather than assumed from a plan the run
+        # itself has just invalidated. Set before the render, so the hint agrees.
+        $script:CheckedOk = [bool]$CheckOnly
         # Both a check and a real sync produce a plan; after a sync it reads as a
         # record of what was done, which is the same grid either way.
         # Rebuild from the finished plan: the live ticks were per-file, this is the
@@ -3593,7 +4371,56 @@ $chkShowSame.Add_CheckedChanged({
     Show-ComparePlan $script:LastLegPlans ''
 })
 
+# Change your mind about a deletion. Prune is how superseded drawings actually go
+# away, so it has to stay on -- but a file someone copied onto the collector by
+# hand is a real file, and being made to delete it to get a clean sync is no
+# choice at all. Clicking its row keeps it instead: the sync copies it back into
+# the design folder, which is also what stops it being flagged again next time.
+function Toggle-RescueMark {
+    param($Item)
+    if ($script:IsSyncing) { return }
+    if ($null -eq $Item -or $null -eq $Item.Tag) { return }
+    $row = $Item.Tag
+    if (-not (Test-RescueEligible $row)) { return }
+    $k = [string]$row.DevRel
+    if (-not $k) { return }
+    if ($script:RescueMarks.ContainsKey($k)) {
+        $script:RescueMarks.Remove($k)
+        Write-Log "Back to deleting '$k' from the collector on the next sync."
+    }
+    else {
+        $script:RescueMarks[$k] = $true
+        Write-Log "Keeping '$k': the next sync copies it into the design folder instead of deleting it."
+    }
+    $look = Get-RowLook $row
+    $Item.SubItems[4].Text = $look.Glyph
+    $Item.SubItems[9].Text = $look.What
+    $Item.ForeColor = $look.Color
+    Update-CompareHint
+}
+
+# The arrow cell and the "What happens" cell are the two that describe the action,
+# so both are the button. Anywhere else on the row still just selects it.
+$lvCompare.Add_MouseUp({
+    param($snd, $e)
+    if ($e.Button -ne [System.Windows.Forms.MouseButtons]::Left) { return }
+    $hit = $lvCompare.HitTest($e.X, $e.Y)
+    if ($null -eq $hit -or $null -eq $hit.Item) { return }
+    $col = -1
+    if ($null -ne $hit.SubItem) { $col = $hit.Item.SubItems.IndexOf($hit.SubItem) }
+    if ($col -ne 4 -and $col -ne 9) { return }
+    Toggle-RescueMark $hit.Item
+})
+
+# Three ways in, because one alone is not reliable. The TabPage's own Resize is the
+# direct signal; the form's catches maximise/restore, which does not always reach the
+# page; and the tab switch catches a resize that happened while the Log tab was in
+# front, when the Compare page was laid out for a window that no longer exists.
+# Update-CompareLayout does nothing when the size has not actually changed, so the
+# overlap costs nothing.
 $tabCompare.Add_Resize({ Update-CompareLayout })
+$form.Add_Resize({ Update-CompareLayout })
+$tabsOut.Add_SelectedIndexChanged({ Update-CompareLayout })
 
 $cboProject.Add_SelectedIndexChanged({
     if ($script:IsSyncing) { return }
@@ -3603,6 +4430,9 @@ $cboProject.Add_SelectedIndexChanged({
         Load-ProjectToUi $p
         $script:Config.activeProject = $name
         Set-Pref 'LastProject' $name
+        # Different project, different endpoints: the last check describes neither.
+        $script:CheckedOk = $false
+        Update-ActionButtons
     }
 })
 
@@ -3641,6 +4471,9 @@ $btnDetect.Add_Click({
         }
         $existing = Get-CollectorBySerial $pick.Serial
         if ($existing) {
+            # Pin before refreshing: Update-DetectedCollector re-picks from the pin,
+            # so without this it would immediately undo the choice just made.
+            Set-PinnedCollector ([string]$existing.serial)
             Load-CollectorToUi $existing
             Update-DetectedCollector $true
             return
@@ -3669,6 +4502,7 @@ $btnDetect.Add_Click({
         $c = Register-Collector $pick $nm
         try { Save-Config } catch {}
         Write-Log "Registered collector '$nm' (serial $($pick.Serial))."
+        Set-PinnedCollector ([string]$c.serial)
         Load-CollectorToUi $c
         Update-DetectedCollector $true
     }
@@ -3740,11 +4574,16 @@ $btnProjDelete.Add_Click({
 
 # Editing a field changes THIS collector, never the baseline. The indicator
 # tracks that live so it is always obvious which of the two you are looking at.
+# Each of these also changes what a sync would do, so it withdraws the last check.
 foreach ($ctl in @($txtDesignSub,$txtExportSub,$txtDesignExt,$txtExportExt,$txtExcl)) {
-    $ctl.Add_TextChanged({ Update-DefaultsIndicator })
+    $ctl.Add_TextChanged({ Update-DefaultsIndicator; Reset-CheckGate })
 }
-$cboExportCollision.Add_SelectedIndexChanged({ Update-DefaultsIndicator })
-$chkPrune.Add_CheckedChanged({ Update-DefaultsIndicator })
+$cboExportCollision.Add_SelectedIndexChanged({ Update-DefaultsIndicator; Reset-CheckGate })
+$chkPrune.Add_CheckedChanged({ Update-DefaultsIndicator; Reset-CheckGate })
+# The project paths decide both endpoints, so they invalidate a check just as surely.
+foreach ($ctl in @($txtDesignSrc,$txtExportRoot,$txtDevProj)) {
+    $ctl.Add_TextChanged({ Reset-CheckGate })
+}
 
 # Resets THIS collector to the baseline. There is deliberately no button that
 # writes the baseline: it is changed by editing config.json, so no amount of
@@ -3781,8 +4620,88 @@ $btnCancel.Add_Click({ $script:CancelRequested = $true; $lblStatus.Text = 'Cance
 $btnCheck.Add_Click({ Invoke-CollectorAction $true })
 $btnSync.Add_Click({ Invoke-CollectorAction $false })
 
+$btnTidy.Add_Click({
+    if ($script:IsSyncing) { return }
+    if (-not $script:CurrentCollector) { return }
+    Commit-UiToProject
+    Commit-UiToCollector
+    $days = Get-JobRetentionDays $script:CurrentCollector
+    Set-Busy $true
+    $lblStatus.Text = 'Checking which jobs are safe to remove...'
+    $tabsOut.SelectedTab = $tabLog
+    $onLog = { param($m,$l) Write-Log $m $l; [System.Windows.Forms.Application]::DoEvents() }
+    try {
+        $label = Get-CollectorLabel $script:CurrentCollector
+        Write-Log "===== TIDY JOBS  $label  (keeping the last $days day(s)) =====" 'INFO'
+        $ctx = @{ DeviceName = [string]$script:CurrentCollector.model; Settings = $script:Config.mtp; FolderCache = @{} }
+        if ([string]$script:CurrentCollector.type -eq 'mtp') {
+            Ensure-MtpInterop
+            $dev = Resolve-CollectorDevice ([string]$script:CurrentCollector.model) '' ${function:Choose-DeviceDialog}
+            $ctx.DeviceItem = $dev.Item; $ctx.DeviceSerial = $dev.Serial
+        }
+        $plan = Get-JobCleanupPlan $ctx $script:CurrentProject $script:CurrentCollector $days $onLog
+        $go   = @($plan.Rows | Where-Object { $_.Remove })
+        $keep = @($plan.Rows | Where-Object { -not $_.Remove })
+
+        foreach ($r in $keep) { Write-Log ("keep     $($r.Rel)  ::  $($r.Why)") 'SKIP' }
+        foreach ($r in $go)   { Write-Log ("would remove  $($r.Rel)  ::  $($r.Why)") 'WARN' }
+
+        if ($go.Count -eq 0) {
+            $lblStatus.Text = "Nothing to tidy - all $($plan.Rows.Count) job(s) are being kept."
+            [System.Windows.Forms.MessageBox]::Show(
+                ("Nothing to remove.`r`n`r`nAll $($plan.Rows.Count) job file(s) on $label are being kept - " +
+                 "either they are inside the last $days day(s), they have no date in the name, or no backup copy was found."),
+                'Tidy jobs', 'OK', 'Information') | Out-Null
+            return
+        }
+        # Name every file, both lists. A count alone is not something anyone can agree
+        # to, and the kept list is what shows the rules actually working.
+        $lines = @("Remove $($go.Count) job file(s) from $label ?", '',
+                   "Each one is older than $days day(s) AND has a verified backup copy.", '')
+        # Name the copy that vouches for each deletion, not just the count. A backup
+        # is matched by name and size, and the name it was filed under has changed
+        # over the years -- so the one thing worth being able to eyeball is exactly
+        # which file is standing in for the one about to go.
+        foreach ($r in ($go | Sort-Object Rel)) {
+            $where = [string]$r.Backup
+            if ($where -and $plan.BackupRoot) { $where = $where.Replace($plan.BackupRoot + '\', '') }
+            $lines += ("   {0}`r`n        {1}  ->  saved as {2}" -f $r.Rel, $r.Why, $where)
+        }
+        if ($keep.Count) {
+            $lines += ''
+            $lines += "Keeping $($keep.Count):"
+            foreach ($r in ($keep | Sort-Object Rel | Select-Object -First 12)) { $lines += ("   {0}   - {1}" -f $r.Rel, $r.Why) }
+            if ($keep.Count -gt 12) { $lines += "   ... and $($keep.Count - 12) more (all listed in the Log tab)" }
+        }
+        $lines += ''
+        $lines += "Backups were confirmed under $($plan.BackupRoot)."
+        $lines += 'This cannot be undone on the collector.'
+        $answer = [System.Windows.Forms.MessageBox]::Show(($lines -join "`r`n"), 'Tidy jobs', 'YesNo', 'Warning', 'Button2')
+        if ($answer -ne 'Yes') { $lblStatus.Text = 'Tidy cancelled - nothing removed.'; Write-Log 'Tidy cancelled by user.' 'INFO'; return }
+
+        $res = Invoke-JobCleanup $ctx $plan $onLog
+        $msg = "Removed $($res.Removed) job file(s) from $label"
+        if ($res.Failed -gt 0) { $msg += ", $($res.Failed) kept back (see the Log)" }
+        $lblStatus.Text = $msg + '.'
+        Write-Log ("----- $msg -----") 'INFO'
+    }
+    catch {
+        $lblStatus.Text = 'Tidy failed: ' + $_.Exception.Message
+        Write-Log ('TIDY FAILED: ' + $_.Exception.Message) 'ERROR'
+        [System.Windows.Forms.MessageBox]::Show($_.Exception.Message, 'Tidy jobs', 'OK', 'Error') | Out-Null
+    }
+    finally {
+        Set-Busy $false
+        Update-DetectedCollector $false
+    }
+})
+
 $chkAdvanced.Add_CheckedChanged({
     Set-AdvancedMode ([bool]$chkAdvanced.Checked)
+    # Advanced lifts the check-before-sync gate, so the buttons and the hint under
+    # the grid both have to catch up the moment it is ticked either way.
+    Update-ActionButtons
+    Update-CompareHint
     Set-Pref 'Advanced' $(if ($chkAdvanced.Checked) { '1' } else { '0' })
 })
 
@@ -3839,4 +4758,15 @@ Update-CompareLayout
 
 $chkAdvanced.Checked = ([string](Get-Pref 'Advanced' '0') -eq '1')
 Set-AdvancedMode ([bool]$chkAdvanced.Checked)
+
+# Smoke-test hook: build the whole window, wire every handler, then stop without
+# showing it. A parse check cannot catch a control referenced before it is created
+# -- a tooltip set on a button declared further down, a handler attached to a
+# control that does not exist yet -- and those only ever surface as a crash on
+# somebody's first launch. This runs the same construction path and reports.
+if ($env:SDC_SMOKETEST -eq '1') {
+    Write-Host 'SMOKE OK: window built, handlers wired, nothing shown.'
+    $form.Dispose()
+    return
+}
 [void]$form.ShowDialog()

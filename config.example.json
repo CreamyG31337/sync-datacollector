@@ -1,12 +1,32 @@
 {
   "activeProject": "Example project",
 
+  "_exportRoutes_note": "Optional. Leave exportRoutes empty and every pulled file type lands under exportRoot, which is the original behaviour. Add routes when different file types belong in different places - raw .job files are datalogger state, while the .csv and scans a surveyor exported are deliverables. 'from' is 'export' (the collector's exportSubPath) or 'root' (the project folder on the device, where Trimble Access keeps .job). Each route gets its own leg in the compare view. Use 'overwrite' collision where filenames must stay exactly as exported - it still never destroys anything, a clash lands as 'name (2).ext' - and note that 'prefix' renames a scan's '<name> Files' folder, which severs the .jxl from its point cloud.",
   "projects": [
     {
       "name": "Example project",
       "designSource": "S:\\02-DESIGN",
       "exportRoot": "S:\\07-DATALOGGER BACKUP\\{year}\\{month}",
-      "deviceProjectPath": "Internal shared storage\\Trimble Data\\Projects\\Example project"
+      "deviceProjectPath": "Internal shared storage\\Trimble Data\\Projects\\Example project",
+      "exportRoutes": [
+        {
+          "_note": "The trailing fixed segment (a company folder here) sits under the dated part, so files land in <year>\\<month>\\OURCO. Duplicate detection still scopes to the whole month, so a file someone later moved into a different company's folder is not pulled again.",
+          "name": "QC survey data",
+          "from": "export",
+          "extensions": [ ".csv", ".jxl" ],
+          "root": "S:\\05-QC SURVEY DATA\\{year}\\{month}\\OURCO",
+          "collision": "overwrite",
+          "dateFrom": "file"
+        },
+        {
+          "name": "Job files",
+          "from": "root",
+          "extensions": [ ".job" ],
+          "root": "S:\\07-DATALOGGER BACKUP\\{year}\\{month}",
+          "collision": "prefix",
+          "dateFrom": "file"
+        }
+      ]
     }
   ],
 
@@ -29,7 +49,9 @@
     "exportExtensions": [ ".job", ".jxl", ".csv", ".dxf", ".rxl", ".xml" ],
     "excludeFolders": [ "SUPERSEDED" ],
     "prune": true,
-    "exportCollision": "prefix"
+    "exportCollision": "prefix",
+    "_jobRetentionDays_note": "Days of recent jobs the 'Tidy jobs' button must never touch. It only ever removes a .job that is older than this AND has a date in its filename AND has a verified backup copy - all three, or it stays.",
+    "jobRetentionDays": 7
   },
 
   "_collectors_note": "Do not hand-write these. Plug a collector in and press Detect - the serial is read from the USB descriptor (or, for a USB stick, from the volume), the name you give becomes the export filename prefix, and these settings are copied from defaults.",

@@ -34,7 +34,8 @@ WinForms GUI that runs on stock Windows (PowerShell 5.1 + .NET Framework 4.x).
 - **See what will happen before it happens** — **Check** fills a side-by-side compare grid:
   this PC on the left, the collector on the right, an arrow per file showing which way it
   moves and why. Both legs share the grid, so one glance covers the whole run. Preview and
-  run are built from the same comparison pass, so they cannot disagree.
+  run are built from the same comparison pass, so they cannot disagree. **Sync is greyed out
+  until you have checked** (Advanced lifts that), because a mirrored design leg deletes.
 - **One button, two one-way legs** — *design* mirrors the project's drawings onto the
   collector; *export* pulls its field data into OneDrive. Not a two-way merge.
 - **Everyday mode by default** — the window shows the project, which collector is plugged in,
@@ -64,9 +65,12 @@ WinForms GUI that runs on stock Windows (PowerShell 5.1 + .NET Framework 4.x).
 - **Knows one collector from another** — units are identified by **hardware serial** read from
   the USB descriptor, not by the model name they all share, and you can give each a friendly
   name. Two identical models connected at once makes it ask, never guess.
-- **Dated path tokens** — `{year}` (`2026`), `{month}` (`8-AUG`), `{julian}` (`26-236`) and
+- **Dated path tokens** — `{year}` (`2026`), `{month}` (`08-AUG`), `{julian}` (`26-236`) and
   `{date}` (`2026-08-24`) expand in any path, so `…\BACKUP\{year}\{month}` files each pull into
   the right dated folder on its own. Today's values are shown in the app.
+- **Different file types can be filed in different places** — one pull leg per **export
+  route**, each with its own file types, destination and naming. Raw `.job` files go to the
+  datalogger backup; the `.csv` and scans a surveyor exported go to the QC folder.
 - **Superseded designs stay off the collector** — folder names listed in `excludeFolders`
   (default `SUPERSEDED`) are skipped at any depth, so obsolete drawings never reach the field.
 - **Copies only new or changed files** — compares size and modified-time; re-syncs are fast.
@@ -78,9 +82,14 @@ WinForms GUI that runs on stock Windows (PowerShell 5.1 + .NET Framework 4.x).
   has moved on since. See below.
 - **Additive by default; mirroring on request** — nothing is deleted unless a collector opts
   into **prune** on its design leg, which makes the tool *own* that folder. Never on exports.
+- **Never forced to delete a good file** — when prune flags something on the collector that
+  the design folder doesn't have, click the `X` and it becomes a `←`: the sync copies that
+  file *into* the design folder instead of deleting it. Which also settles it for good, since
+  from then on the source accounts for it.
 - **Per-machine preferences in the registry** — the app folder (and its shared `config.json`)
   can live on OneDrive and run from several PCs/collectors; each machine remembers its own
-  last project in `HKCU\Software\SyncDataCollector` instead of churning the shared file.
+  last project, and which collector it last chose, in `HKCU\Software\SyncDataCollector`
+  instead of churning the shared file.
 - **Reliable MTP** — see below.
 
 ---
@@ -286,6 +295,19 @@ Insert the stick and press **Detect**; it is offered alongside any connected con
 `<volume label> [USB D:]`. Name it as you would a controller, since that name still becomes the
 export filename prefix.
 
+Having a controller and the stick plugged in at once is normal rather than a problem, but the
+tool will not guess between them: it says **"2 collectors connected — press Detect to choose"**
+and leaves Check and Sync greyed out until you pick one. That choice is then **remembered**,
+including across restarts, so a desk with both permanently connected does not need a Detect
+click every launch. The status line names the one in use and says how many are connected:
+
+```
+TSC5-01 (JAJ000000001)  -  last synced 09-03 08:14   (2 connected - Detect to switch)
+```
+
+Press **Detect** again at any time to switch to the other. Unplugging the pinned device falls
+back to whatever is left.
+
 The stick is keyed on its **volume serial, not its drive letter**. Windows hands removable
 media whatever letter happens to be free, so today's `D:` really can be tomorrow's `E:` — and a
 mirrored design push aimed at "whatever is on `D:`" is exactly the accident worth engineering
@@ -395,12 +417,197 @@ There is a second, independent limit: a companion folder is matched **by name**,
 aggregate "dumpall" export is the usual case — will not have that folder pulled, because
 nothing pairs them. The media simply does not travel, silently.
 
+### Export routes: filing different file types in different places
+
+Not everything a collector holds belongs in the same folder. A `.job` is datalogger state —
+useful to have a copy of, meaningless to anyone else. A `.csv` or a scan is something the
+surveyor deliberately exported, and belongs with the rest of the QC data where people look
+for it.
+
+Leave `exportRoutes` empty and everything lands under `exportRoot`, exactly as before. Set
+routes and each one becomes **its own pull leg**, with its own file types, destination and
+naming:
+
+```json
+"exportRoutes": [
+  { "name": "QC survey data",  "from": "export", "extensions": [".csv", ".jxl"],
+    "root": "S:\\05-QC SURVEY DATA\\{year}\\{month}",   "collision": "overwrite" },
+  { "name": "Linework backup", "from": "export", "extensions": [".dxf"],
+    "root": "S:\\07-DATALOGGER BACKUP\\{year}\\{month}", "collision": "prefix" },
+  { "name": "Job files",       "from": "root",   "extensions": [".job"],
+    "root": "S:\\07-DATALOGGER BACKUP\\{year}\\{month}", "collision": "prefix" }
+]
+```
+
+`from` says where on the device to read:
+
+- **`export`** — the collector's `exportSubPath` (`03-Export`, `Exports`, whatever that unit
+  uses). This is where a surveyor's exports go.
+- **`root`** — the project folder on the device itself. Trimble Access keeps `.job` files
+  here, not in the export folder, so a job backup has to read the root.
+
+> **Keep a `root` route's extension list tight.** The project folder also holds the `.xml`,
+> `.dxf` and `.rxl` the *design* leg put there. A `root` route listing those would pull design
+> files back off the collector and file them as if they were field data.
+
+Two things follow from `collision` that are worth stating plainly:
+
+- **`overwrite` is the right choice for a deliverables folder.** It means "don't disambiguate
+  by device" — files keep the name the surveyor gave them, matching a folder that people
+  already name by hand. It still never destroys anything: a genuine clash lands beside the
+  original as `name (2).ext`.
+- **Never use `prefix` on a route carrying `.jxl`.** Prefixing renames the scan's
+  `<name> Files` folder, and the `.jxl` records that folder name inside itself, so the job
+  silently loses its point cloud and photos. The app warns if you do it anyway.
+
+Each route shows as its own group in the compare view, so one Check tells you what is going
+where.
+
+#### Filing by when the work was done, not when you pulled it
+
+A collector accumulates months of exports before anyone plugs it in. Dating the destination
+folder from the *run* would file a year and a half of survey work under whichever month it
+happens to be today. Set `"dateFrom": "file"` on a route and each file is filed by **its own**
+date instead:
+
+1. **The julian date in the filename**, if there is one — `26-219-ABC.csv` is day 219 of 2026,
+   so it goes to `2026\08-AUG`. This wins, because it is what the surveyor called the day's
+   work; a timestamp only records whatever last touched the file.
+2. **The file's modified time**, otherwise.
+
+The match is deliberately strict — exactly two digits, a dash, exactly three digits, with no
+digit either side — so these are all correctly **not** read as dates:
+
+| filename | why not |
+|---|---|
+| `2100-26-06-ABC.csv` | two-digit day, not a julian |
+| `11182025.csv` | `MMDDYYYY` |
+| `260112-SCA-ALL-POINTS.csv` | `YYMMDD` |
+| `2221-02579-00 Extra Laydown.csv` | five-digit block |
+| `2100-25-CONTROL.job` | a word, not a day number |
+
+Anything it isn't sure about falls back to the timestamp rather than guessing. Each leg logs
+the split so you can see how much is guesswork:
+
+```
+Filed by date: 40 from the julian in the filename, 14 from the file timestamp.
+```
+
+`dateFrom` defaults to `run` — the original behaviour — so nothing changes for a config that
+doesn't ask for it. It only applies to pulls, and only to a destination that actually has
+`{year}` / `{month}` / `{julian}` / `{date}` in it.
+
+## Tidying old jobs off the collector
+
+A controller fills up with `.job` files. **Tidy jobs…** removes the old ones — and it is a
+separate button on purpose. Sync pushes design out and pulls field data back; it does not
+destroy work on the collector. Tidying does, so it is something you ask for on a day you mean
+it, not a side effect of the daily round trip.
+
+A job is removed only when **all three** of these are true. Any one of them failing keeps the
+file:
+
+1. **It has a verified backup copy.** Same byte count, found anywhere under the backup root.
+   No copy, no deletion — this is the condition the whole feature rests on. The filename is
+   matched under **either** naming era: `TSC5-01_26-219-ABC.job` as `prefix` writes it today,
+   or a bare `26-219-ABC.job` as an older `deviceSubfolder` run left it. The size has to match
+   either way, and that is what makes a name match mean anything.
+2. **It has a date in its filename.** `26-219-ABC.job` is one day's work. `2100-25-CONTROL.job`
+   is a job the crew reopens, and its age says nothing about whether it is wanted.
+3. **Both clocks agree it is old.** The julian in the name says when the work was done; the
+   timestamp says when the file was last touched. Either one inside the retention window keeps
+   the file — an old survey reopened yesterday is in use.
+
+`jobRetentionDays` sets the window, default **7**. A zero or negative value falls back to the
+default rather than being read as "delete everything backed up".
+
+Before anything happens you get the full list — what would go, *and* what is being kept with
+the reason for each, so you can see the rules working:
+
+```
+Remove 2 job file(s) from TSC5-02 ?
+
+Each one is older than 7 day(s) AND has a verified backup copy.
+
+   26-100-ABC.job
+        60 day(s) old, backed up  ->  saved as 2026\08-AUG\TSC5-01_26-100-ABC.job
+   26-120-GHI.job
+        40 day(s) old, backed up  ->  saved as 2025\12-DEC\26-120-GHI.job
+
+Keeping 4:
+   2100-25-CONTROL.job   - no date in the name - a job that gets reused
+   26-130-XYZ.job        - no backup copy found
+   26-240-DEF.job        - modified 2 day(s) ago
+   26-246-DEF-UTM.job    - the date in its name is inside the window
+```
+
+Every backup is **re-checked at the moment of deletion**, not just when the plan was drawn —
+the dialog may have sat on screen a while, and a backup that has moved or changed size aborts
+that one file rather than the run.
+
+Two scope limits worth knowing: only `.job` files sitting directly in the project folder are
+considered (anything nested under a scan folder or `02-Design` is somebody else's business),
+and a collector that is connected but locked is refused outright rather than read as empty.
+
+### The one folder mirroring must never be pointed at
+
+Prune deletes by **path, not by file type** — anything the source cannot account for goes,
+whatever its extension. Inside a folder the tool owns, that is the point. One level up it is
+a disaster: the collector's *project* folder is where Trimble Access keeps the crew's `.job`
+files, so mirroring onto it would delete every job on the controller, including today's.
+
+The only thing separating the two is the **Design subfolder** field. Blank it, and the
+destination collapses from `…\Projects\<job>\02-Design` to `…\Projects\<job>`.
+
+So a mirrored design leg whose destination resolves to the project folder itself is refused
+outright, before anything is read or written:
+
+```
+Refusing to mirror onto '...\Projects\2100 - EXAMPLE SITE': that is the project folder on the
+collector itself, not a subfolder this tool owns. Everything there the design source does not
+account for would be DELETED, including the crew's .job files. Set a design subfolder
+(e.g. 02-Design), or turn mirror/prune off for this collector.
+```
+
+Turning mirror off is still allowed on any folder — the refusal is specifically about
+*deleting* in a folder that isn't ours.
+
 ### Exports are never destroyed
 
 Field data cannot be re-collected, so a pull will not overwrite. If a name is taken by a
-*different* file, the new one lands beside it as `name (2).ext`. Re-running does not spawn
-`(3)`, `(4)`, … — the next pull recognises its own earlier copy and skips. Prune is refused
-outright on a pull, and logs the refusal.
+*different* file, the new one lands beside it as **`name (ORIG).ext`** — the collector's
+original, kept next to the copy the office has since edited. In practice that copy is the
+same survey with the check shots deleted during review, so both are worth having and neither
+should clobber the other. A third version would be `name (ORIG 2).ext`.
+
+Re-running does not spawn more of them — the next pull recognises its own earlier copy and
+skips. Prune is refused outright on a pull, and logs the refusal.
+
+### Recognising a file the office has since moved
+
+Matching only the exact target path is not enough once people file things. A month's folder
+is usually split by company (`OURCO`, `SUBA`, `SUBB`, …), and a file gets moved into one of them
+after it lands — so the tool's own copy is no longer where the tool would put it, and every
+sync from then on pulls it again.
+
+So before pulling, a dated route also looks for the **same filename and the same byte count
+anywhere under that month's folder**. Found, and it counts as already pulled:
+
+```
+skip  2100-26-026-PV.csv   already filed at 2026\01-JAN\ABC\2100-26-026-PV.csv
+```
+
+The scope is deliberately narrow — one month, and the size must match too. Two files sharing
+a name in one month, with identical byte counts, really are the same file. Where they differ
+they are treated as different files and both are kept, which matters more than it sounds:
+
+```
+2100-26-012.csv   on the collector 85,378 B
+                  already in QC     1,080 B  (2026\01-JAN\SUBC\)
+```
+
+Same name, different survey. Matching on name alone would have silently thrown away 85 KB of
+field data.
 
 ---
 
@@ -533,9 +740,22 @@ Hoist House(HH) 26-243 HH.dxf   240 KB 08-31 17:22 ->                           
 ```
 
 Both legs share the one grid, grouped by leg, because they run in opposite directions:
-design files travel out to the collector (`->`) and field data comes back (`<-`). An empty
-cell means the file is not on that side yet, which is what makes "new here, missing there"
-readable without reading a word of it.
+design files travel out to the collector (`->`) and field data comes back (`<-`).
+
+**Names are always shown; size and date are not.** A file that isn't on a side yet still
+shows the folder and filename it *will* have there — on a pull that is the whole point, since
+the dated and company folders make the destination genuinely different from the collector's
+own path. What stays blank is **Size** and **Modified**, and that blank is what reads as "not
+on this side yet". Hover any row for both paths in full.
+
+**The columns follow the window.** Size, Modified and the arrow are content-sized and never
+move; the two folder/file pairs and *What happens* share whatever is left, re-divided as you
+resize. The filename gets the larger share of the slack — a clipped folder still shows where
+it starts, while a clipped filename is the thing you were trying to read — and both the
+folder and *What happens* are capped, so a wide monitor spends its extra width on names
+rather than on padding. Squeeze the window below its minimum and the columns stop shrinking
+and the grid scrolls sideways instead, because past a point narrower cells stop telling you
+anything.
 
 The export rows repay a second look. The collector holds `2100-25-346.csv`, but it lands on
 the PC as `TSC5-01_2100-25-346.csv`. Each side is shown under the name it actually has, so
@@ -551,9 +771,66 @@ the reason. On a 150-file push over MTP that is the difference between watching 
 watching nothing. Run Check first and Sync ticks off the rows already on screen rather than
 building a second list underneath them.
 
-The grid is a report, not a picker: **Sync this collector** always runs the whole plan. What
-it does guarantee is that the preview and the run agree, because both are built from the
-same comparison pass rather than from two passes that could drift apart.
+### Check is required before Sync
+
+**Sync stays greyed out until a Check has been run.** The design leg is mirrored, so a sync
+deletes; the compare view is the only place that plan can be read before it happens, and it
+costs one click. The hint under the grid says so, and so does the Sync button's tooltip.
+
+A check only vouches for the plan it actually ran, so the gate closes again whenever that
+plan stops being true — a different collector, a different project, an edited path, file
+type, skip list, naming mode or mirror setting, and after a sync completes. Marking a row to
+[keep](#keeping-a-file-the-collector-has-and-the-design-folder-doesnt) does *not* close it:
+that row updates in place, so what is on screen is still exactly what will happen.
+
+Tick **Advanced** to lift the gate. Someone who has opened the settings panel is not the
+person this is protecting.
+
+The grid is otherwise a report rather than a picker: **Sync this collector** always runs the
+whole plan, and you cannot pick and choose which files get copied. What it does guarantee is
+that the preview and the run agree, because both are built from the same comparison pass
+rather than from two passes that could drift apart.
+
+The one exception is a deletion, because that is the only row that destroys something.
+
+### Keeping a file the collector has and the design folder doesn't
+
+[Prune](#mirror-mode-letting-the-tool-own-the-destination-folder) deletes anything on the
+collector the design folder cannot account for. That is what makes superseded drawings
+actually go away, so it needs to stay on — but every so often the file it flags is a good
+one. Someone copied an alignment onto the controller by hand, and now the only way to get a
+clean sync is to delete real work.
+
+**Click the `X`** — on the arrow cell or on the *What happens* cell — and it becomes a `←`:
+
+```
+                                                    X  Hoist Ho..  26-111 HH.dxf  Delete from collector  (click to keep)
+                                                    <-  Hoist Ho..  26-111 HH.dxf  KEEP - copy into the design folder
+```
+
+The next Sync copies that file **into the design folder** instead of deleting it, and leaves
+it on the collector. Click again to change your mind. The summary line under the grid counts
+what is marked, and the log names every file before anything happens:
+
+```
+Keeping 1 file(s) the collector has that the design folder does not: Hoist House(HH)\26-111 HH.dxf
+KEPT           Hoist House(HH)\26-111 HH.dxf  ->  S:\02-DESIGN\Hoist House(HH)\26-111 HH.dxf
+```
+
+Copying it back is the point, not a side effect: prune only ever removes what the source
+cannot account for, so once the file is in the design folder it is safe on every future run,
+on every collector — and everyone else gets it on their next sync. A one-click keep is
+therefore also how a hand-copied file rejoins the project properly.
+
+Details worth knowing:
+
+- **Design leg only.** The export leg never prunes, so nothing there is ever at risk.
+- **A folder holding a kept file is spared too.** Folder pruning is recursive, so without
+  this the run would delete the folder out from under the file it had just kept.
+- **The mark is cleared once it has been honoured**, so superseding that file later works
+  normally. Marks are also dropped when you switch collectors, since the paths are that
+  device's own.
+- **Check is still safe.** It shows the `←` and reports what would happen, and writes nothing.
 
 The **Log** tab keeps the full commentary -- every `COPIED`, `DELETED` and `FAILED` line with
 its reason -- and still writes to `sync-log.txt` next to the app.
@@ -684,7 +961,10 @@ root can be written `%OneDriveCommercial%\…` where a drive letter is not wante
 | `activeProject` | Which project is currently selected. |
 | `projects[].name` | Display name in the dropdown. |
 | `projects[].designSource` | Where the drawings live on the PC, e.g. `S:\02-DESIGN`. Supports the same tokens as `exportRoot`. |
-| `projects[].exportRoot` | Where pulled field data is filed. Supports `{year}` `{month}` `{julian}` `{date}` `{apphome}`, and `%ENVVAR%`. `{apphome}` is the folder the app is running from — use it when the app runs off a USB stick, so no drive letter is baked in. |
+| `projects[].exportRoot` | Where pulled field data is filed when no routes are set. Supports `{year}` `{month}` `{julian}` `{date}` `{apphome}`, and `%ENVVAR%`. `{apphome}` is the folder the app is running from — use it when the app runs off a USB stick, so no drive letter is baked in. `{month}` is zero-padded (`08-AUG`) so a year's folders sort in calendar order. |
+| `projects[].exportRoutes` | Optional list. Empty means "everything under `exportRoot`". Each route is one pull leg: `name`, `from` (`export` = the collector's `exportSubPath`, `root` = the project folder on the device), `extensions`, `root` (same tokens as `exportRoot`), `collision` (`prefix` / `deviceSubfolder` / `overwrite`) and `dateFrom`. |
+| `collectors[].jobRetentionDays` | Days of recent jobs **Tidy jobs…** never touches (default 7). It only removes a `.job` that is older than this *and* carries a date in its filename *and* has a verified backup copy. A value below 1 falls back to the default. |
+| `projects[].exportRoutes[].dateFrom` | `run` (default) dates the destination folder from when the sync runs. `file` dates it from the julian in each filename, falling back to that file's modified time — so exports pulled months later still land in the month they were surveyed. |
 | `projects[].deviceProjectPath` | The project folder **on the collector**. For MTP the first segment is the device storage. For a `"folder"` collector that first segment is replaced by wherever the volume is currently mounted, so one project path serves both kinds. |
 | `driveMap[].letter` | A drive letter the app creates with `subst` when it is missing, e.g. `S`. Leave `driveMap` out entirely and it never maps anything. |
 | `driveMap[].targets` | Folders that letter may point at, **best first**. `%ENVVAR%` is expanded — prefer `%OneDriveCommercial%\…` to `C:\Users\<name>\…`, or the config only works for whoever wrote it. |
