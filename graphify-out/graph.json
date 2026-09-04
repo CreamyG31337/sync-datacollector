@@ -489,7 +489,7 @@
       "file_type": "code",
       "norm_label": "commit-uitoproject()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4029"
+      "source_location": "L4038"
     },
     {
       "id": "syncdatacollector_format_local",
@@ -511,7 +511,7 @@
       "file_type": "code",
       "norm_label": "format-rowtime()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3678"
+      "source_location": "L3687"
     },
     {
       "id": "syncdatacollector_format_size",
@@ -522,7 +522,7 @@
       "file_type": "code",
       "norm_label": "format-size()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3664"
+      "source_location": "L3673"
     },
     {
       "id": "syncdatacollector_get_collectorlabel",
@@ -544,7 +544,7 @@
       "file_type": "code",
       "norm_label": "get-rowkey()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3577"
+      "source_location": "L3586"
     },
     {
       "id": "syncdatacollector_get_rowlook",
@@ -555,7 +555,7 @@
       "file_type": "code",
       "norm_label": "get-rowlook()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3611"
+      "source_location": "L3620"
     },
     {
       "id": "syncdatacollector_get_rowtip",
@@ -566,7 +566,7 @@
       "file_type": "code",
       "norm_label": "get-rowtip()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3645"
+      "source_location": "L3654"
     },
     {
       "id": "syncdatacollector_invoke_collectoraction",
@@ -577,7 +577,7 @@
       "file_type": "code",
       "norm_label": "invoke-collectoraction()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4257"
+      "source_location": "L4266"
     },
     {
       "id": "syncdatacollector_load_collectortoui",
@@ -588,7 +588,7 @@
       "file_type": "code",
       "norm_label": "load-collectortoui()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4096"
+      "source_location": "L4105"
     },
     {
       "id": "syncdatacollector_reset_checkgate",
@@ -599,7 +599,7 @@
       "file_type": "code",
       "norm_label": "reset-checkgate()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4219"
+      "source_location": "L4228"
     },
     {
       "id": "syncdatacollector_set_busy",
@@ -610,7 +610,7 @@
       "file_type": "code",
       "norm_label": "set-busy()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4242"
+      "source_location": "L4251"
     },
     {
       "id": "syncdatacollector_show_compareplan",
@@ -621,7 +621,7 @@
       "file_type": "code",
       "norm_label": "show-compareplan()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3821"
+      "source_location": "L3830"
     },
     {
       "id": "syncdatacollector_split_relpath",
@@ -632,7 +632,7 @@
       "file_type": "code",
       "norm_label": "split-relpath()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3656"
+      "source_location": "L3665"
     },
     {
       "id": "syncdatacollector_test_rescueeligible",
@@ -643,7 +643,7 @@
       "file_type": "code",
       "norm_label": "test-rescueeligible()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3591"
+      "source_location": "L3600"
     },
     {
       "id": "syncdatacollector_test_rescuemark",
@@ -654,7 +654,7 @@
       "file_type": "code",
       "norm_label": "test-rescuemark()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3600"
+      "source_location": "L3609"
     },
     {
       "id": "syncdatacollector_test_syncallowed",
@@ -665,7 +665,7 @@
       "file_type": "code",
       "norm_label": "test-syncallowed()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4212"
+      "source_location": "L4221"
     },
     {
       "id": "syncdatacollector_toggle_rescuemark",
@@ -676,7 +676,7 @@
       "file_type": "code",
       "norm_label": "toggle-rescuemark()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4395"
+      "source_location": "L4404"
     },
     {
       "id": "syncdatacollector_update_actionbuttons",
@@ -687,7 +687,7 @@
       "file_type": "code",
       "norm_label": "update-actionbuttons()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4225"
+      "source_location": "L4234"
     },
     {
       "id": "syncdatacollector_update_comparehint",
@@ -698,7 +698,7 @@
       "file_type": "code",
       "norm_label": "update-comparehint()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3780"
+      "source_location": "L3789"
     },
     {
       "id": "syncdatacollector_update_comparerow",
@@ -709,7 +709,7 @@
       "file_type": "code",
       "norm_label": "update-comparerow()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3903"
+      "source_location": "L3912"
     },
     {
       "id": "syncdatacollector_update_detectedcollector",
@@ -720,7 +720,7 @@
       "file_type": "code",
       "norm_label": "update-detectedcollector()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4149"
+      "source_location": "L4158"
     },
     {
       "id": "syncdatacollector_write_log",
@@ -731,7 +731,7 @@
       "file_type": "code",
       "norm_label": "write-log()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3548"
+      "source_location": "L3557"
     },
     {
       "id": "syncdatacollector_convertfrom_legacyprofiles",
@@ -896,7 +896,7 @@
       "file_type": "code",
       "norm_label": "apply-settingstoui()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4078"
+      "source_location": "L4087"
     },
     {
       "id": "syncdatacollector_commit_uitocollector",
@@ -907,7 +907,7 @@
       "file_type": "code",
       "norm_label": "commit-uitocollector()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4127"
+      "source_location": "L4136"
     },
     {
       "id": "syncdatacollector_format_settings",
@@ -918,7 +918,7 @@
       "file_type": "code",
       "norm_label": "format-settings()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4056"
+      "source_location": "L4065"
     },
     {
       "id": "syncdatacollector_get_uisettings",
@@ -929,7 +929,7 @@
       "file_type": "code",
       "norm_label": "get-uisettings()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4045"
+      "source_location": "L4054"
     },
     {
       "id": "syncdatacollector_parse_extensions",
@@ -962,7 +962,7 @@
       "file_type": "code",
       "norm_label": "update-defaultsindicator()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4065"
+      "source_location": "L4074"
     },
     {
       "id": "syncdatacollector_copy_tabletconfigtovolume",
@@ -1127,7 +1127,7 @@
       "file_type": "code",
       "norm_label": "update-datelabel()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4725"
+      "source_location": "L4734"
     },
     {
       "id": "syncdatacollector",
@@ -1149,7 +1149,7 @@
       "file_type": "code",
       "norm_label": "choose-devicedialog()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3999"
+      "source_location": "L4008"
     },
     {
       "id": "syncdatacollector_format_devicechoice",
@@ -1204,7 +1204,7 @@
       "file_type": "code",
       "norm_label": "get-comparecolumnwidths()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3710"
+      "source_location": "L3719"
     },
     {
       "id": "syncdatacollector_get_connectedcollectors",
@@ -1336,7 +1336,7 @@
       "file_type": "code",
       "norm_label": "load-projecttoui()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4020"
+      "source_location": "L4029"
     },
     {
       "id": "syncdatacollector_load_syncstate",
@@ -1380,7 +1380,7 @@
       "file_type": "code",
       "norm_label": "prompt-text()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3954"
+      "source_location": "L3963"
     },
     {
       "id": "syncdatacollector_refresh_projectlist",
@@ -1391,7 +1391,7 @@
       "file_type": "code",
       "norm_label": "refresh-projectlist()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4008"
+      "source_location": "L4017"
     },
     {
       "id": "syncdatacollector_remove_syncstateentry",
@@ -1413,7 +1413,7 @@
       "file_type": "code",
       "norm_label": "resize-comparecolumns()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3747"
+      "source_location": "L3756"
     },
     {
       "id": "syncdatacollector_resolve_collectordevice",
@@ -1457,7 +1457,7 @@
       "file_type": "code",
       "norm_label": "select-fromlist()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3975"
+      "source_location": "L3984"
     },
     {
       "id": "syncdatacollector_select_syncset",
@@ -1479,7 +1479,7 @@
       "file_type": "code",
       "norm_label": "set-advancedmode()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4355"
+      "source_location": "L4364"
     },
     {
       "id": "syncdatacollector_set_devicefriendlyname",
@@ -1501,7 +1501,7 @@
       "file_type": "code",
       "norm_label": "set-pinnedcollector()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4139"
+      "source_location": "L4148"
     },
     {
       "id": "syncdatacollector_set_pref",
@@ -1545,7 +1545,7 @@
       "file_type": "code",
       "norm_label": "update-comparelayout()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3691"
+      "source_location": "L3700"
     },
     {
       "id": "syncdatacollector_update_syncrecords",
@@ -2011,7 +2011,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4094",
+      "source_location": "L4103",
       "weight": 1.0
     },
     {
@@ -2022,7 +2022,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4001",
+      "source_location": "L4010",
       "weight": 1.0
     },
     {
@@ -2033,7 +2033,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4002",
+      "source_location": "L4011",
       "weight": 1.0
     },
     {
@@ -2044,7 +2044,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4132",
+      "source_location": "L4141",
       "weight": 1.0
     },
     {
@@ -2055,7 +2055,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4134",
+      "source_location": "L4143",
       "weight": 1.0
     },
     {
@@ -2319,7 +2319,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3681",
+      "source_location": "L3690",
       "weight": 1.0
     },
     {
@@ -2330,7 +2330,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4059",
+      "source_location": "L4068",
       "weight": 1.0
     },
     {
@@ -2341,7 +2341,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4061",
+      "source_location": "L4070",
       "weight": 1.0
     },
     {
@@ -2781,7 +2781,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3623",
+      "source_location": "L3632",
       "weight": 1.0
     },
     {
@@ -2847,7 +2847,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4046",
+      "source_location": "L4055",
       "weight": 1.0
     },
     {
@@ -2858,7 +2858,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4048",
+      "source_location": "L4057",
       "weight": 1.0
     },
     {
@@ -2869,7 +2869,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4050",
+      "source_location": "L4059",
       "weight": 1.0
     },
     {
@@ -2880,7 +2880,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4261",
+      "source_location": "L4270",
       "weight": 1.0
     },
     {
@@ -2891,7 +2891,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4262",
+      "source_location": "L4271",
       "weight": 1.0
     },
     {
@@ -2902,7 +2902,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4264",
+      "source_location": "L4273",
       "weight": 1.0
     },
     {
@@ -2913,7 +2913,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4272",
+      "source_location": "L4281",
       "weight": 1.0
     },
     {
@@ -2924,7 +2924,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4278",
+      "source_location": "L4287",
       "weight": 1.0
     },
     {
@@ -2935,7 +2935,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4299",
+      "source_location": "L4308",
       "weight": 1.0
     },
     {
@@ -2946,7 +2946,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4304",
+      "source_location": "L4313",
       "weight": 1.0
     },
     {
@@ -2957,7 +2957,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4333",
+      "source_location": "L4342",
       "weight": 1.0
     },
     {
@@ -2968,7 +2968,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4342",
+      "source_location": "L4351",
       "weight": 1.0
     },
     {
@@ -3309,7 +3309,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2964",
+      "source_location": "L2973",
       "weight": 1.0
     },
     {
@@ -3320,7 +3320,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2979",
+      "source_location": "L2988",
       "weight": 1.0
     },
     {
@@ -3331,7 +3331,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3018",
+      "source_location": "L3027",
       "weight": 1.0
     },
     {
@@ -3342,7 +3342,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3060",
+      "source_location": "L3069",
       "weight": 1.0
     },
     {
@@ -3353,7 +3353,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3184",
+      "source_location": "L3193",
       "weight": 1.0
     },
     {
@@ -3364,7 +3364,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3199",
+      "source_location": "L3208",
       "weight": 1.0
     },
     {
@@ -3375,7 +3375,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3217",
+      "source_location": "L3226",
       "weight": 1.0
     },
     {
@@ -3529,7 +3529,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4112",
+      "source_location": "L4121",
       "weight": 1.0
     },
     {
@@ -3540,7 +3540,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4124",
+      "source_location": "L4133",
       "weight": 1.0
     },
     {
@@ -3837,7 +3837,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4222",
+      "source_location": "L4231",
       "weight": 1.0
     },
     {
@@ -3848,7 +3848,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3753",
+      "source_location": "L3762",
       "weight": 1.0
     },
     {
@@ -3980,7 +3980,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4252",
+      "source_location": "L4261",
       "weight": 1.0
     },
     {
@@ -3991,7 +3991,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4253",
+      "source_location": "L4262",
       "weight": 1.0
     },
     {
@@ -4002,7 +4002,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4144",
+      "source_location": "L4153",
       "weight": 1.0
     },
     {
@@ -4035,7 +4035,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3866",
+      "source_location": "L3875",
       "weight": 1.0
     },
     {
@@ -4046,7 +4046,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3869",
+      "source_location": "L3878",
       "weight": 1.0
     },
     {
@@ -4057,7 +4057,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3873",
+      "source_location": "L3882",
       "weight": 1.0
     },
     {
@@ -4068,7 +4068,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3874",
+      "source_location": "L3883",
       "weight": 1.0
     },
     {
@@ -4079,7 +4079,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3885",
+      "source_location": "L3894",
       "weight": 1.0
     },
     {
@@ -4090,7 +4090,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3889",
+      "source_location": "L3898",
       "weight": 1.0
     },
     {
@@ -4101,7 +4101,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3896",
+      "source_location": "L3905",
       "weight": 1.0
     },
     {
@@ -4112,7 +4112,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3897",
+      "source_location": "L3906",
       "weight": 1.0
     },
     {
@@ -4244,7 +4244,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4400",
+      "source_location": "L4409",
       "weight": 1.0
     },
     {
@@ -4255,7 +4255,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4405",
+      "source_location": "L4414",
       "weight": 1.0
     },
     {
@@ -4266,7 +4266,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4411",
+      "source_location": "L4420",
       "weight": 1.0
     },
     {
@@ -4277,7 +4277,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4415",
+      "source_location": "L4424",
       "weight": 1.0
     },
     {
@@ -4288,7 +4288,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4228",
+      "source_location": "L4237",
       "weight": 1.0
     },
     {
@@ -4299,7 +4299,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3782",
+      "source_location": "L3791",
       "weight": 1.0
     },
     {
@@ -4310,7 +4310,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3793",
+      "source_location": "L3802",
       "weight": 1.0
     },
     {
@@ -4321,7 +4321,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3704",
+      "source_location": "L3713",
       "weight": 1.0
     },
     {
@@ -4332,7 +4332,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3906",
+      "source_location": "L3915",
       "weight": 1.0
     },
     {
@@ -4343,7 +4343,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3907",
+      "source_location": "L3916",
       "weight": 1.0
     },
     {
@@ -4354,7 +4354,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3927",
+      "source_location": "L3936",
       "weight": 1.0
     },
     {
@@ -4365,7 +4365,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3931",
+      "source_location": "L3940",
       "weight": 1.0
     },
     {
@@ -4376,7 +4376,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3932",
+      "source_location": "L3941",
       "weight": 1.0
     },
     {
@@ -4387,7 +4387,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3939",
+      "source_location": "L3948",
       "weight": 1.0
     },
     {
@@ -4398,7 +4398,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4727",
+      "source_location": "L4736",
       "weight": 1.0
     },
     {
@@ -4409,7 +4409,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4727",
+      "source_location": "L4736",
       "weight": 1.0
     },
     {
@@ -4420,7 +4420,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4068",
+      "source_location": "L4077",
       "weight": 1.0
     },
     {
@@ -4431,7 +4431,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4068",
+      "source_location": "L4077",
       "weight": 1.0
     },
     {
@@ -4442,7 +4442,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4068",
+      "source_location": "L4077",
       "weight": 1.0
     },
     {
@@ -4453,7 +4453,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4153",
+      "source_location": "L4162",
       "weight": 1.0
     },
     {
@@ -4464,7 +4464,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4157",
+      "source_location": "L4166",
       "weight": 1.0
     },
     {
@@ -4475,7 +4475,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4163",
+      "source_location": "L4172",
       "weight": 1.0
     },
     {
@@ -4486,7 +4486,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4196",
+      "source_location": "L4205",
       "weight": 1.0
     },
     {
@@ -4497,7 +4497,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4197",
+      "source_location": "L4206",
       "weight": 1.0
     },
     {
@@ -4508,7 +4508,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4200",
+      "source_location": "L4209",
       "weight": 1.0
     },
     {
@@ -4519,7 +4519,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4201",
+      "source_location": "L4210",
       "weight": 1.0
     },
     {
@@ -4530,7 +4530,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4205",
+      "source_location": "L4214",
       "weight": 1.0
     },
     {
@@ -5762,7 +5762,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3548",
+      "source_location": "L3557",
       "weight": 1.0
     },
     {
@@ -5773,7 +5773,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3577",
+      "source_location": "L3586",
       "weight": 1.0
     },
     {
@@ -5795,7 +5795,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3591",
+      "source_location": "L3600",
       "weight": 1.0
     },
     {
@@ -5806,7 +5806,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3600",
+      "source_location": "L3609",
       "weight": 1.0
     },
     {
@@ -5817,7 +5817,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3611",
+      "source_location": "L3620",
       "weight": 1.0
     },
     {
@@ -5828,7 +5828,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3645",
+      "source_location": "L3654",
       "weight": 1.0
     },
     {
@@ -5839,7 +5839,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3656",
+      "source_location": "L3665",
       "weight": 1.0
     },
     {
@@ -5850,7 +5850,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3664",
+      "source_location": "L3673",
       "weight": 1.0
     },
     {
@@ -5861,7 +5861,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3678",
+      "source_location": "L3687",
       "weight": 1.0
     },
     {
@@ -5872,7 +5872,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3691",
+      "source_location": "L3700",
       "weight": 1.0
     },
     {
@@ -5883,7 +5883,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3710",
+      "source_location": "L3719",
       "weight": 1.0
     },
     {
@@ -5894,7 +5894,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3747",
+      "source_location": "L3756",
       "weight": 1.0
     },
     {
@@ -5916,7 +5916,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3780",
+      "source_location": "L3789",
       "weight": 1.0
     },
     {
@@ -5927,7 +5927,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3821",
+      "source_location": "L3830",
       "weight": 1.0
     },
     {
@@ -5938,7 +5938,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3903",
+      "source_location": "L3912",
       "weight": 1.0
     },
     {
@@ -5960,7 +5960,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3954",
+      "source_location": "L3963",
       "weight": 1.0
     },
     {
@@ -5971,7 +5971,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3975",
+      "source_location": "L3984",
       "weight": 1.0
     },
     {
@@ -5982,7 +5982,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3999",
+      "source_location": "L4008",
       "weight": 1.0
     },
     {
@@ -5993,7 +5993,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4008",
+      "source_location": "L4017",
       "weight": 1.0
     },
     {
@@ -6004,7 +6004,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4020",
+      "source_location": "L4029",
       "weight": 1.0
     },
     {
@@ -6015,7 +6015,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4029",
+      "source_location": "L4038",
       "weight": 1.0
     },
     {
@@ -6026,7 +6026,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4045",
+      "source_location": "L4054",
       "weight": 1.0
     },
     {
@@ -6037,7 +6037,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4056",
+      "source_location": "L4065",
       "weight": 1.0
     },
     {
@@ -6048,7 +6048,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4065",
+      "source_location": "L4074",
       "weight": 1.0
     },
     {
@@ -6059,7 +6059,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4078",
+      "source_location": "L4087",
       "weight": 1.0
     },
     {
@@ -6070,18 +6070,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4096",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_commit_uitocollector",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4127",
+      "source_location": "L4105",
       "weight": 1.0
     },
     {
@@ -6097,13 +6086,24 @@
     },
     {
       "source": "syncdatacollector",
+      "target": "syncdatacollector_commit_uitocollector",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4136",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
       "target": "syncdatacollector_set_pinnedcollector",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4139",
+      "source_location": "L4148",
       "weight": 1.0
     },
     {
@@ -6114,7 +6114,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4149",
+      "source_location": "L4158",
       "weight": 1.0
     },
     {
@@ -6125,7 +6125,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4212",
+      "source_location": "L4221",
       "weight": 1.0
     },
     {
@@ -6136,7 +6136,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4219",
+      "source_location": "L4228",
       "weight": 1.0
     },
     {
@@ -6147,7 +6147,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4225",
+      "source_location": "L4234",
       "weight": 1.0
     },
     {
@@ -6158,7 +6158,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4242",
+      "source_location": "L4251",
       "weight": 1.0
     },
     {
@@ -6169,7 +6169,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4257",
+      "source_location": "L4266",
       "weight": 1.0
     },
     {
@@ -6191,7 +6191,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4355",
+      "source_location": "L4364",
       "weight": 1.0
     },
     {
@@ -6202,7 +6202,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4395",
+      "source_location": "L4404",
       "weight": 1.0
     },
     {
@@ -6246,7 +6246,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4725",
+      "source_location": "L4734",
       "weight": 1.0
     },
     {
@@ -6548,5 +6548,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "6ec197a572c0649565964b736afcc750cff16c4d"
+  "built_at_commit": "03727048049070cf2037cd7ee00e998ec4cc1761"
 }

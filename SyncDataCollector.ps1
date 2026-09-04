@@ -2954,7 +2954,16 @@ function Invoke-Sync {
                 $need = $false; $reason = ''
                 $di = Target-GetInfo $ctx $dstKind $dest     # one live lookup (Length = -1 if absent)
                 if ($di.Length -lt 0) { $need = $true; $reason = 'new' }
-                elseif ([long]$rec.Length -ne $di.Length) { $need = $true; $reason = 'size changed' }
+                elseif ([long]$rec.Length -ne $di.Length) {
+                    $need = $true
+                    # On a superseding backup route a size difference is the normal
+                    # case rather than an anomaly: merely opening a .job rewrites it,
+                    # so a day's working set differs by a few hundred bytes every
+                    # time. Say what happened instead of reporting a mismatch as if
+                    # something were wrong with the file.
+                    if ($direction -eq 'pull' -and -not $neverOverwrite) { $reason = 'updated on the collector' }
+                    else { $reason = 'size changed' }
+                }
                 elseif ($null -ne $di.Mtime -and $null -ne $rec.MtimeUtc -and $rec.MtimeUtc -gt $di.Mtime.AddSeconds(2)) { $need = $true; $reason = 'source newer' }
 
                 # Nothing at the exact target -- but the office may have filed this
