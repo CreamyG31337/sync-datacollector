@@ -1,44 +1,56 @@
 {
   ".claude/settings.json": {
-    "mtime": 1788484414.7078648,
-    "seen": 1788484416.7054317,
+    "mtime": 1788484416.0,
+    "seen": 1791227948.0935967,
     "ast_hash": "c8e7bbc3071b4d79b4bdc1b70329f02f",
     "semantic_hash": ""
   },
   ".vscode/settings.json": {
-    "mtime": 1787680453.303957,
-    "seen": 1787682863.2862303,
+    "mtime": 1787680454.0,
+    "seen": 1791227948.0936012,
     "ast_hash": "cb6d82866899cce9265346cd8752f5bb",
     "semantic_hash": "cb6d82866899cce9265346cd8752f5bb"
   },
   "SyncDataCollector.ps1": {
-    "mtime": 1788547030.6081283,
-    "seen": 1788547035.0661988,
-    "ast_hash": "e48ea6f0a1e544165f556d6c8f0f479b",
+    "mtime": 1791305897.4178052,
+    "seen": 1791305945.6272771,
+    "ast_hash": "1d8f6ee05419cbb87eeee9bca014d30c",
     "semantic_hash": ""
   },
   "config.example.json": {
-    "mtime": 1788546710.863603,
-    "seen": 1788546714.3914657,
-    "ast_hash": "5decda6b4e670258416979b99a08a51d",
+    "mtime": 1791306068.0969439,
+    "seen": 1791306071.4045608,
+    "ast_hash": "c28e138243d7ed8259a954d13fc828eb",
     "semantic_hash": ""
   },
   ".github/copilot-instructions.md": {
-    "mtime": 1787682759.314366,
-    "seen": 1787865373.7702518,
+    "mtime": 1787682760.0,
+    "seen": 1791227948.0936053,
     "ast_hash": "2b23503628bf2ec71d067a85ca8948ab",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1787682759.5478086,
-    "seen": 1787865373.7702549,
+    "mtime": 1787682760.0,
+    "seen": 1791227948.0936062,
     "ast_hash": "8a6643a420fdad6bfb583523bc6cef16",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1788546726.3314285,
-    "seen": 1788546737.5941978,
-    "ast_hash": "cdf19577c8c1200e0ec00ee8afa428e4",
+    "mtime": 1791306058.5581713,
+    "seen": 1791306071.4045637,
+    "ast_hash": "8a5e74cfdc9d6cf20c1cc6d06e4b9fbc",
+    "semantic_hash": ""
+  },
+  "Sync Datacollector README.pdf": {
+    "mtime": 1789582562.0,
+    "seen": 1791227948.0936077,
+    "ast_hash": "be12f432fa073ec7f33748c8364ebcb4",
+    "semantic_hash": ""
+  },
+  "docs/images/main screen.png": {
+    "mtime": 1789582486.0,
+    "seen": 1791227948.0936084,
+    "ast_hash": "638f17220e46de1446e2e7e8e6b87f34",
     "semantic_hash": ""
   }
 }
