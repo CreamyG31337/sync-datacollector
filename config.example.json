@@ -8,6 +8,8 @@
       "designSource": "S:\\02-DESIGN",
       "exportRoot": "S:\\07-DATALOGGER BACKUP\\{year}\\{month}",
       "deviceProjectPath": "Internal shared storage\\Trimble Data\\Projects\\Example project",
+      "_tabletProjectPath_note": "Optional. The project's full path on a Windows tablet, when it is named differently there than on the controllers - renaming it on the tablet is not safe, jobs reference their files by path. Goes only into the tablet config written onto the stick. Empty = tabletDataRoot + the controllers' path.",
+      "tabletProjectPath": "",
       "exportRoutes": [
         {
           "_note": "The trailing fixed segment (a company folder here) sits under the dated part, so files land in <year>\\<month>\\OURCO. Duplicate detection still scopes to the whole month, so a file someone later moved into a different company's folder is not pulled again.",
@@ -43,6 +45,8 @@
     }
   ],
 
+  "_tabletDataRoot_note": "Optional. The folder that CONTAINS 'Trimble Data' on Windows tablets. Defaults to C:\\ProgramData\\Trimble, where Trimble Access for Windows keeps it; only set it for tablets set up differently.",
+
   "_defaults_note": "The baseline every collector starts from. Edit it HERE - the GUI deliberately cannot write it, so nobody can turn a one-off tweak into everyone's default by clicking. Reset to defaults (Advanced) puts one collector back on it; collectors already set up keep what they have until you do.",
   "defaults": {
     "designSubPath": "02-Design",
@@ -72,7 +76,7 @@
       "exportCollision": "prefix"
     },
     {
-      "_note": "A USB stick as a collector. serial is VOL- plus the volume serial, so it is found wherever Windows mounts it; model is the volume label.",
+      "_note": "A USB stick as a collector. serial is VOL- plus the volume serial, so it is found wherever Windows mounts it; model is the volume label. exportCollision is 'overwrite' because tablets have already prefixed their exports with their own name; on a stick it wins over each route's collision, so nothing is named twice.",
       "serial": "VOL-00000000",
       "name": "USB-01",
       "model": "External",
@@ -83,7 +87,7 @@
       "exportExtensions": [ ".job", ".jxl", ".csv", ".dxf", ".rxl", ".xml" ],
       "excludeFolders": [ "SUPERSEDED" ],
       "prune": true,
-      "exportCollision": "prefix"
+      "exportCollision": "overwrite"
     }
   ],
 

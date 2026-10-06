@@ -22,6 +22,10 @@ WinForms GUI that runs on stock Windows (PowerShell 5.1 + .NET Framework 4.x).
 > Not affiliated with, or endorsed by, any hardware manufacturer. "MTP" is a generic
 > protocol; this tool works with any MTP-class device.
 
+## Main screen
+
+![Sync DataCollector main screen](docs/images/main%20screen.png)
+
 ---
 
 ## Features
@@ -90,6 +94,9 @@ WinForms GUI that runs on stock Windows (PowerShell 5.1 + .NET Framework 4.x).
   can live on OneDrive and run from several PCs/collectors; each machine remembers its own
   last project, and which collector it last chose, in `HKCU\Software\SyncDataCollector`
   instead of churning the shared file.
+- **One copy at a time** — starting the app while it is already open, from any folder, brings
+  up the open window instead and says where that copy is running from. Two windows would be two
+  engines working the same folders, and a stray copy is easy to come by on a stick.
 - **Reliable MTP** — see below.
 
 ---
@@ -178,8 +185,8 @@ but to let a **USB stick carry everything**, in a four-leg round trip:
 | | Runs on | Source → Destination |
 |---|---|---|
 | 1. design out | office PC | `S:\02-DESIGN` → stick |
-| 2. design in | tablet | stick → `C:\Trimble Data\…` |
-| 3. exports out | tablet | `C:\Trimble Data\…\Exports` → stick |
+| 2. design in | tablet | stick → `C:\ProgramData\Trimble\Trimble Data\…` |
+| 3. exports out | tablet | `C:\ProgramData\Trimble\Trimble Data\…\Exports` → stick |
 | 4. exports in | office PC | stick → `S:\07-DATALOGGER BACKUP\{year}\{month}` |
 
 Legs 1 and 4 are one press of **Sync** against the stick's collector entry on the office PC.
@@ -196,15 +203,45 @@ Nobody sets the tablet up by hand. Every sync to a USB target also writes, to th
 - **a generated `config.json`** for the tablet, derived from this PC's project and the stick's
   own settings.
 
-The surveyor plugs the stick in, double-clicks `SyncDataCollector.cmd`, and presses **Sync**.
+It also creates the project's `Exports` folder on the stick if it is missing — the folder the
+tablet config sends exports to. Until a tablet has exported anything, this PC's export legs then
+find nothing to pull instead of failing with "Source folder not found" on every sync.
+
+The surveyor plugs the stick in, double-clicks `SyncDataCollector.cmd` **at the stick's root**,
+and presses **Sync**. It has to be that copy: the app reads the `config.json` next to itself, so
+a copy of the office's app folder that happens to be on the stick runs with the *office* config
+on the tablet — it looks for `S:`, finds nothing, and reports everything up to date. Keep the
+stick to the one copy at its root.
 
 That generated config is **derived, never a copy of ours**. Its stick-side paths use
 `{apphome}`, so the tablet can mount the stick as any drive letter; its collector is the
-tablet's local `C:\Trimble Data\…`; and it carries no network paths, no OneDrive, and no
-hardware serials. This matters when the surveyor is a third party: nothing about the company's
+tablet's local `C:\ProgramData\Trimble\Trimble Data\…`, which is where Trimble Access for
+Windows keeps its projects; and it carries no network paths, no OneDrive, and no hardware
+serials. This matters when the surveyor is a third party: nothing about the company's
 storage layout travels, and the tablet never signs in to anything. Editing it on the tablet is
 pointless — the next sync from the office overwrites it — but the collector's generated id is
 preserved across regenerations, so sync-state and the device marker keep matching.
+
+A tablet that keeps its data elsewhere can be pointed there with a top-level `"tabletDataRoot"`
+in the office PC's `config.json` (the folder that *contains* `Trimble Data`). If the project
+folder on the tablet is named differently from the controllers' — and renaming it is not safe,
+since jobs reference their files by path — set the project's `"tabletProjectPath"` to its full
+path on the tablet. Only the tablet end changes; the stick keeps the controllers' layout.
+
+### Field data on the tablet
+
+The tablet sends two things back, laid out the way the office's export routes read the stick:
+
+- **`.job` files** from the project folder itself → the stick's project folder. A job changes
+  every time it is opened, so a newer copy replaces the tablet's earlier one on the stick rather
+  than piling up beside it.
+- **Everything else** (`.csv`, `.jxl` with its scan folder, `.dxf`, …) from the project's
+  **`Exports`** folder → the stick's `Exports`.
+
+**Procedure: export into `Exports`.** Exports saved anywhere else in the project are not
+collected — reading the whole project would also carry the design files in `02-Design` back to
+the office as if they were field data. The app creates `Exports` on the tablet on its first sync
+(only inside a project folder that already exists), so it is there to pick in Trimble Access.
 
 ### Telling tablets apart
 
@@ -215,7 +252,8 @@ one config file, a distinct export prefix per machine, and nothing to type on a 
 real keyboard. Exports reach the stick already prefixed, e.g. `T110-A_26-245.jxl`.
 
 The office PC consequently does **not** prefix again on leg 4 — the stick's collector is set to
-`exportCollision: "overwrite"` — or every file would read `USB-01_T110-A_26-245.jxl`. Despite
+`exportCollision: "overwrite"`, and for a stick that setting wins over each export route's own
+naming — or every file would read `USB-01_T110-A_26-245.jxl`. Despite
 the name, `overwrite` only means "do not disambiguate by device"; a pull still never destroys
 field data, landing a genuine clash as `name (2).ext`.
 
@@ -332,9 +370,10 @@ The root is the right place for them because `SyncDataCollector.cmd` resolves it
 with `%~dp0`, and the app reads `config.json` and writes its log next to itself. So the stick
 ends up self-contained: app at the root, data under `Trimble Data\`, double-click and go.
 
-`config.json` is **deliberately not copied**. It holds this site's network paths and collector
-serials, and a tablet needs its own anyway — its design source is the stick, not `S:`. Copying
-ours would both hand out the site layout and point the tablet at drives it cannot reach.
+This PC's `config.json` is **deliberately not copied**. It holds this site's network paths and
+collector serials, and a tablet needs its own anyway — its design source is the stick, not `S:`.
+Copying ours would both hand out the site layout and point the tablet at drives it cannot reach.
+A tablet config is generated in its place (see *The stick is a self-contained kit* above).
 
 This applies to USB targets only. MTP controllers do not run this app, so nothing is copied to
 them. A **Check** reports what would be updated without writing, and a stick that is full or
@@ -459,6 +498,10 @@ Two things follow from `collision` that are worth stating plainly:
 - **Never use `prefix` on a route carrying `.jxl`.** Prefixing renames the scan's
   `<name> Files` folder, and the `.jxl` records that folder name inside itself, so the job
   silently loses its point cloud and photos. The app warns if you do it anyway.
+
+On a **USB stick**, the stick's own `exportCollision` wins over each route's. What comes off a
+stick was already named by the tablet that exported it, so a route set to `prefix` would
+otherwise name the stick as well: `USB-01_T110-A_26-245.job`.
 
 Each route shows as its own group in the compare view, so one Check tells you what is going
 where.
@@ -907,13 +950,16 @@ Disconnect all but one, or choose which to use.
 the next sync, and the stale record is retired so one unit never appears twice:
 
 ```
-Device identity upgraded to hardware serial JAJ000000001 (was 6a03f199-36e3-49eb-94db-7a1273d4da8e).
+Device identity upgraded to serial JAJ000000001 (was 6a03f199-36e3-49eb-94db-7a1273d4da8e).
 ```
 
-**Where there is no serial:** a `folder` target (a USB stick) has none, so the marker keeps a
-generated GUID there, shown truncated (`STICK (ee3d7fa8)`). On **pull** the marker lives on the
-USB/cloud destination rather than on the collector — the tool never writes to a collector it is
-pulling field data from — so pull profiles still identify by name.
+**Where there is no hardware serial:** a `folder` collector has none to read, so it is recorded
+under the id it is configured by — a USB stick's volume serial (`VOL-1A2B3C4D`), or the id
+generated into a tablet's config — on push and pull alike. That is the id the collector banner
+looks records up by, so a stick synced a minute ago reads "last synced …", not "never synced".
+Records left under an older generated GUID are retired on the next sync, as above. Only a
+`folder` profile outside the collector model still falls back to a generated GUID, shown
+truncated (`STICK (ee3d7fa8)`).
 
 ### What gets written, and where
 
@@ -922,7 +968,7 @@ pulling field data from — so pull profiles still identify by name.
 | `_SyncDataCollector.json` | destination root, i.e. **on the collector / USB stick** | Identity marker: a stable `deviceId` plus a note of the last sync written to it. |
 | `sync-state.json` | next to the app (git-ignored) | What *this install* last synced, **one record per profile per collector**: when, file counts, newest source timestamp. |
 
-The `deviceId` is a GUID generated once and then preserved across syncs, so a USB stick is
+The `deviceId` is the collector's serial — hardware, volume, or configured — so a USB stick is
 still recognisable after Windows gives it a different drive letter. The marker is **never
 itself synced** — copying it onward would hand a second device the same identity — so it is
 skipped even if you add `.json` to a profile's file types.
@@ -996,6 +1042,8 @@ root can be written `%OneDriveCommercial%\…` where a drive letter is not wante
 | `projects[].exportRoutes[].supersede` | `false` (default) keeps a differing same-named file beside the original as `name (ORIG).ext`. `true` lets a newer copy replace the backup — for routes carrying files still being worked in, such as `.job`. Never set it on a route carrying exports. |
 | `projects[].exportRoutes[].dateFrom` | `run` (default) dates the destination folder from when the sync runs. `file` dates it from the julian in each filename, falling back to that file's modified time — so exports pulled months later still land in the month they were surveyed. |
 | `projects[].deviceProjectPath` | The project folder **on the collector**. For MTP the first segment is the device storage. For a `"folder"` collector that first segment is replaced by wherever the volume is currently mounted, so one project path serves both kinds. |
+| `projects[].tabletProjectPath` | Optional. The project folder's full path **on a Windows tablet**, for when it is named differently there than on the controllers (e.g. `C:\ProgramData\Trimble\Trimble Data\Projects\2100 - Example Site Upgrade`). Only goes into the generated tablet config; the stick keeps the controllers' layout. Empty = `tabletDataRoot` + the controllers' path. |
+| `tabletDataRoot` | Optional, top level. The folder that **contains** `Trimble Data` on the tablets. Default `C:\ProgramData\Trimble`, where Trimble Access for Windows keeps it. |
 | `driveMap[].letter` | A drive letter the app creates with `subst` when it is missing, e.g. `S`. Leave `driveMap` out entirely and it never maps anything. |
 | `driveMap[].targets` | Folders that letter may point at, **best first**. `%ENVVAR%` is expanded — prefer `%OneDriveCommercial%\…` to `C:\Users\<name>\…`, or the config only works for whoever wrote it. |
 | `defaults.*` | The baseline new collectors are seeded from, and what **Reset to defaults** applies. Same seven fields as `collectors[]` below, minus the identity ones (`serial`, `name`, `model`, `type`). **Edit here only** — the GUI never writes this. Omit it and the built-in values are used; a partial block falls back key by key. |
@@ -1009,7 +1057,7 @@ root can be written `%OneDriveCommercial%\…` where a drive letter is not wante
 | `collectors[].exportExtensions` | Types pulled. Include `.jxl` to bring scans with their `<name> Files` folder. |
 | `collectors[].excludeFolders` | Folder **names** skipped at any depth, case-insensitive. Defaults `[ "SUPERSEDED" ]`; `[]` excludes nothing. |
 | `collectors[].prune` | Design leg only. `true` makes the collector's design folder an exact mirror, deleting what the source lacks. Defaults `true`. |
-| `collectors[].exportCollision` | `"prefix"` (default), `"deviceSubfolder"`, or `"overwrite"`. |
+| `collectors[].exportCollision` | `"prefix"` (default), `"deviceSubfolder"`, or `"overwrite"`. Routes carry their own `collision`, which wins — except on a USB stick, where this wins, and should be `"overwrite"` because the tablets have already named their files. |
 | `mtp.retries` | Extra attempts per file after the first (default 2). |
 | `mtp.verifyAfterUpload` | Re-read the on-device size and confirm it matches (default true). |
 
@@ -1043,6 +1091,26 @@ Per-machine settings (not in `config.json`) live in `HKCU\Software\SyncDataColle
   moment; just run **Sync now** again.
 - **Cloud-backed source (OneDrive/SharePoint "Files On-Demand")** — the first sync may be
   slow while files hydrate from the cloud; this is transparent.
+- **"Sync Data Collector is already open"** — another copy is running; the message says from
+  which folder, and that window is brought to the front. Use it, or close it first. If it names
+  a folder you did not expect, that is the copy you have been running.
+- **The app was open while `config.json` was edited by hand** — it read the file at startup
+  and does not see the change. Close and reopen it. Pressing **Save settings** in the old window
+  would write its in-memory copy back over the edit.
+
+**On a tablet:**
+
+- **"Cannot map S:", the design leg fails on `S:\02-DESIGN`, and every export leg checks 0
+  files** — this is the *office* config running on the tablet, i.e. a copy of the app
+  other than the one at the stick's root. Run `SyncDataCollector.cmd` from the stick's root, and
+  delete the stray copy.
+- **Every design file shows as new, and "Nothing to prune"** — the tablet has nothing at the
+  project path it was given. Check the `Comparing against destination:` line in the log against
+  where the project really is on the tablet, and set `tabletDataRoot` or the project's
+  `tabletProjectPath` on the office PC. Then sync the stick from the office (look for "Tablet
+  config written to the stick") before trying the tablet again.
+- **"Collector folder not found: …\Exports"** — the tablet's project has no `Exports` folder yet.
+  A Sync on the tablet creates it; exports saved anywhere else in the project are not collected.
 
 ---
 

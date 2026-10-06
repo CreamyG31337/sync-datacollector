@@ -38,6 +38,47 @@ Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
 
 # --------------------------------------------------------------------------
+# Console window
+#
+# The launcher starts powershell.exe, which opens a console window that then sits
+# behind the GUI for the whole session -- the "black window in the background".
+# Hide it once the GUI is about to take over, and show it again if anything fails,
+# so the launcher's error pause is never waiting on a window nobody can see.
+#
+# Best-effort throughout: on a host where this P/Invoke will not compile, both
+# calls no-op and the console simply stays visible, exactly as it did before. The
+# same GetConsoleWindow/ShowWindow pair Explorer-launched console apps use -- no
+# relaunch, no script host, nothing that reads as evasion to endpoint security.
+# --------------------------------------------------------------------------
+function Get-ConsoleWindow {
+    if (-not ('SyncDC.Console' -as [type])) {
+        Add-Type -Namespace SyncDC -Name Console -MemberDefinition @'
+[DllImport("kernel32.dll")] public static extern System.IntPtr GetConsoleWindow();
+[DllImport("user32.dll")] public static extern bool ShowWindow(System.IntPtr hWnd, int nCmdShow);
+'@
+    }
+    return [SyncDC.Console]::GetConsoleWindow()
+}
+function Hide-ConsoleWindow {
+    try {
+        $h = Get-ConsoleWindow
+        if ($h -ne [IntPtr]::Zero) { [void][SyncDC.Console]::ShowWindow($h, 0) }  # SW_HIDE
+        $script:ConsoleHidden = $true
+    }
+    catch {}
+}
+function Show-ConsoleWindow {
+    if (-not $script:ConsoleHidden) { return }
+    try {
+        $h = Get-ConsoleWindow
+        if ($h -ne [IntPtr]::Zero) { [void][SyncDC.Console]::ShowWindow($h, 5) }  # SW_SHOW
+        $script:ConsoleHidden = $false
+    }
+    catch {}
+}
+$script:ConsoleHidden = $false
+
+# --------------------------------------------------------------------------
 # Config load / save
 # --------------------------------------------------------------------------
 function New-Profile {
@@ -164,7 +205,15 @@ function Load-Config {
         try {
             $raw = Get-Content -LiteralPath $ConfigPath -Raw -Encoding UTF8
             $cfg = $raw | ConvertFrom-Json
-            if (-not $cfg.profiles) { throw 'no profiles' }
+            # Profiles are the pre-collector model, needed only to migrate a config that
+            # has no projects yet. A config with projects is complete without them: the
+            # tablet config written onto a USB stick never has any, and the old ones are
+            # safe to delete by hand (see below).
+            if (-not $cfg.profiles) {
+                $hasProjects = $cfg.PSObject.Properties['projects'] -and @($cfg.projects).Count
+                if (-not $hasProjects) { throw 'no projects or profiles' }
+                $cfg | Add-Member -NotePropertyName profiles -NotePropertyValue @() -Force
+            }
             # Normalise: make sure every profile has all expected fields (older
             # configs won't have direction/collisionMode -> default to push).
             $cfg.profiles = @($cfg.profiles | ForEach-Object {
@@ -206,9 +255,10 @@ function Load-Config {
                                         -Collision $rc -DateFrom $rd -Supersede $rs
                         }
                     }
+                    $tpp = if ($prj.PSObject.Properties['tabletProjectPath']) { [string]$prj.tabletProjectPath } else { '' }
                     New-Project -Name $prj.name -DesignSource $prj.designSource `
                         -ExportRoot $prj.exportRoot -DeviceProjectPath $prj.deviceProjectPath `
-                        -ExportRoutes $rts
+                        -ExportRoutes $rts -TabletProjectPath $tpp
                 })
             }
             if (-not $cfg.PSObject.Properties['collectors']) {
@@ -1747,9 +1797,10 @@ function Update-SyncRecords {
 
     $stamp = Format-Utc ([datetime]::UtcNow)
 
-    # Identity, best first: the hardware serial (stable, meaningful, known before the
-    # first sync, survives a wipe), then whatever the marker already carried, then a
-    # fresh GUID for targets that have no serial at all (a USB stick).
+    # Identity, best first: the serial -- a controller's hardware serial, or the id a
+    # folder collector is configured under (stable, known before the first sync,
+    # survives a wipe) -- then whatever the marker already carried, then a fresh GUID
+    # for a target with neither.
     $existing = Read-DeviceMarker $Ctx $DstKind $DstPath
     $priorId = ''
     if ($existing -and $existing.PSObject.Properties['deviceId'] -and $existing.deviceId) { $priorId = [string]$existing.deviceId }
@@ -1764,7 +1815,15 @@ function Update-SyncRecords {
     # so one physical unit does not show up twice in the fleet list.
     if ($priorId -and $deviceId -ne $priorId) {
         Remove-SyncStateEntry ([string]$Profile.name) $priorId
-        & $OnLog "Device identity upgraded to hardware serial $deviceId (was $priorId)." 'INFO'
+        & $OnLog "Device identity upgraded to serial $deviceId (was $priorId)." 'INFO'
+    }
+    # A pull reads no marker, so without a serial every pull minted a fresh GUID and
+    # left one more record behind. None of them can ever be matched again; once there
+    # is a serial to record under, retire them.
+    if ($serial -and $Direction -eq 'pull') {
+        foreach ($old in @(Get-SyncStateEntries ([string]$Profile.name) | Where-Object { -not [string]$_.deviceSerial })) {
+            Remove-SyncStateEntry ([string]$Profile.name) ([string]$old.deviceId)
+        }
     }
 
     $last = [pscustomobject]@{
@@ -2034,13 +2093,17 @@ function New-Project {
         [string]$DesignSource = '',        # S:\02-DESIGN
         [string]$ExportRoot = '',          # ...\07-DATALOGGER BACKUP\{year}\{month}
         [string]$DeviceProjectPath = '',   # Internal shared storage\Trimble Data\Projects\2100 - EXAMPLE SITE
-        $ExportRoutes = @()                # empty = file every export type under ExportRoot
+        $ExportRoutes = @(),               # empty = file every export type under ExportRoot
+        # Where this project lives on a Windows tablet, in full, when its folder there
+        # is not named as it is on the controllers. Empty = derived (see New-TabletConfig).
+        [string]$TabletProjectPath = ''
     )
     [pscustomobject]@{
         name              = $Name
         designSource      = $DesignSource
         exportRoot        = $ExportRoot
         deviceProjectPath = $DeviceProjectPath
+        tabletProjectPath = $TabletProjectPath
         exportRoutes      = @($ExportRoutes)
     }
 }
@@ -2295,11 +2358,16 @@ function New-LegProfile {
     # it above. Carry the serial on the profile so reachability can ask "is THAT stick
     # mounted?" rather than "does this path exist?" -- with the stick unplugged the
     # path either does not resolve or, worse, resolves onto a different stick.
+    # Any folder collector -- a stick or a tablet -- also reports no hardware serial, so
+    # the id it is configured under is its identity: carry that for the sync records.
     $isVol = Test-VolumeCollector $Collector
     $stamp = {
         param($P)
         if ($isVol) {
             $P | Add-Member -NotePropertyName volumeSerial -NotePropertyValue ([string]$Collector.serial) -Force
+        }
+        if ($type -eq 'folder') {
+            $P | Add-Member -NotePropertyName collectorSerial -NotePropertyValue ([string]$Collector.serial) -Force
         }
         return $P
     }
@@ -2336,6 +2404,10 @@ function New-LegProfile {
         if ($sub) { $src = $devRoot + '\' + $sub }
     }
     $coll = [string]$Route.collision
+    # A stick is a courier, not a collector: what comes off it was already named by
+    # the tablet that exported it. Its own setting wins over the route's, or a route
+    # that prefixes would turn T110-A_26-245.job into USB-01_T110-A_26-245.job.
+    if ($isVol -and [string]$Collector.exportCollision) { $coll = [string]$Collector.exportCollision }
     if (-not $coll) { $coll = 'prefix' }
     $p = New-Profile -Name ("$label - " + [string]$Route.name) -Direction 'pull' `
         -SourcePath $src `
@@ -2418,8 +2490,13 @@ function Copy-AppToVolume {
 # is the collector. So the two sides swap round:
 #
 #            this PC                          the tablet
-#   design   S:\02-DESIGN    -> stick         stick -> C:\Trimble Data\...\02-Design
-#   export   stick           -> S:\07-...     C:\Trimble Data\...\Exports -> stick
+#   design   S:\02-DESIGN    -> stick         stick -> <data root>\Trimble Data\...\02-Design
+#   export   stick           -> S:\07-...     <data root>\Trimble Data\...\Exports -> stick
+#
+# Trimble Access for Windows keeps "Trimble Data" under C:\ProgramData\Trimble, not at
+# the root of C: -- pointing at C:\Trimble Data built a parallel tree it never reads,
+# and every file looked new. A site with tablets set up differently can override the
+# root with "tabletDataRoot" at the top level of this PC's config.json.
 #
 # Every stick-side path uses {apphome}, so the tablet can mount it as any letter.
 # Nothing site-specific travels: no network paths, no OneDrive, no hardware serials.
@@ -2430,6 +2507,29 @@ function Copy-AppToVolume {
 # machine its own prefix with nothing typed on a device that has no real keyboard.
 # This PC therefore does NOT prefix again on the way into OneDrive (the stick's own
 # collector is set to "overwrite"), or every file would read USB-01_T110-A_...
+function New-TabletExportRoutes {
+    # The tablet's half of the export side, laid out the way this PC's routes already
+    # read the stick: .job files into the stick's project folder (where a 'root' route
+    # looks), everything else into its Exports folder. Without this the tablet fell back
+    # to one route reading every type from Exports, and Trimble Access never writes a
+    # .job there -- the jobs themselves were never collected at all.
+    param($Collector, [string]$StickJob, [string]$Export)
+    $exts = @(@($Collector.exportExtensions) | ForEach-Object { ([string]$_).ToLowerInvariant() })
+    $routes = @()
+    if ($exts -contains '.job') {
+        # Superseding: a .job is a live database that changes every time it is opened,
+        # and keeping each version would leave one more "(ORIG)" copy per sync.
+        $routes += New-ExportRoute -Name 'Job files' -From 'root' -Extensions @('.job') `
+                        -Root $StickJob -Collision 'prefix' -Supersede $true
+    }
+    $rest = @($exts | Where-Object { $_ -ne '.job' })
+    if ($rest.Count) {
+        $routes += New-ExportRoute -Name 'Exports' -From 'export' -Extensions $rest `
+                        -Root ($StickJob + '\' + $Export) -Collision 'prefix'
+    }
+    return $routes
+}
+
 function New-TabletConfig {
     param($Project, $Collector, $Existing)
 
@@ -2437,6 +2537,17 @@ function New-TabletConfig {
     $stickJob = if ($sub) { '{apphome}\' + $sub } else { '{apphome}' }
     $design   = ([string]$Collector.designSubPath).Trim('\')
     $export   = ([string]$Collector.exportSubPath).Trim('\')
+    $dataRoot = 'C:\ProgramData\Trimble'
+    if ($script:Config.PSObject.Properties['tabletDataRoot'] -and $script:Config.tabletDataRoot) {
+        $dataRoot = ([string]$script:Config.tabletDataRoot).Trim().TrimEnd('\')
+    }
+    $tabletProj = ($dataRoot + '\' + $sub).TrimEnd('\')
+    # Whoever set the tablet up may have named the project differently, and renaming
+    # it there is not an option: jobs reference their files by path. Only the tablet
+    # end moves -- the stick keeps the controllers' layout, which this PC writes.
+    if ($Project.PSObject.Properties['tabletProjectPath'] -and $Project.tabletProjectPath) {
+        $tabletProj = ([string]$Project.tabletProjectPath).Trim().TrimEnd('\')
+    }
 
     # Identity has to survive a regeneration or the tablet's sync-state and device
     # marker stop matching, and every file looks new again. Settings are ours to
@@ -2451,7 +2562,8 @@ function New-TabletConfig {
     $tabletProject = New-Project -Name ([string]$Project.name) `
         -DesignSource ($stickJob + '\' + $design) `
         -ExportRoot   ($stickJob + '\' + $export) `
-        -DeviceProjectPath ('C:\' + $sub)
+        -DeviceProjectPath $tabletProj `
+        -ExportRoutes @(New-TabletExportRoutes $Collector $stickJob $export)
 
     $tabletCollector = New-Collector -Serial $serial -Name '%COMPUTERNAME%' `
         -Model 'Tablet' -Type 'folder' `
@@ -2481,9 +2593,10 @@ function Copy-TabletConfigToVolume {
     if (Test-Path -LiteralPath $dst -PathType Leaf) {
         try { $existing = Get-Content -LiteralPath $dst -Raw -Encoding UTF8 | ConvertFrom-Json } catch { }
     }
-    $want = (New-TabletConfig $Project $Collector $existing | ConvertTo-Json -Depth 6)
+    # Depth 8, as Save-Config: a route's extension list sits right at 6.
+    $want = (New-TabletConfig $Project $Collector $existing | ConvertTo-Json -Depth 8)
     $have = ''
-    if ($existing) { try { $have = ($existing | ConvertTo-Json -Depth 6) } catch { } }
+    if ($existing) { try { $have = ($existing | ConvertTo-Json -Depth 8) } catch { } }
     if ($have -eq $want) {
         & $OnLog 'Tablet config on the stick is already current.' 'INFO'
         return $false
@@ -2500,6 +2613,41 @@ function Copy-TabletConfigToVolume {
     }
     catch {
         & $OnLog "Could not write the tablet config to the stick :: $($_.Exception.Message)" 'WARN'
+        return $false
+    }
+}
+
+# The stick's export folder only appears once a tablet has written exports to it, so
+# until then every pull leg reading it FAILED with "Source folder not found" -- on each
+# sync, for nothing more than "no exports yet". Empty is the true state, and it is the
+# folder the tablet config already sends exports to, so it belongs in the kit.
+#
+# The tablet needs the same, for a different reason: the procedure is to export into
+# Exports, and a surveyor cannot pick a folder in Trimble Access that is not there.
+# On the tablet it is only ever created INSIDE a project folder that already exists --
+# a wrong project path must fail as "not found", not quietly grow a project tree
+# nothing reads.
+function Ensure-ExportFolder {
+    param($Project, $Collector, [scriptblock]$OnLog, [bool]$CheckOnly)
+    $sub     = ([string]$Collector.exportSubPath).Trim('\')
+    $devRoot = Get-CollectorDeviceRoot $Project $Collector
+    if (-not $sub -or -not $devRoot) { return $false }
+    $isVol = Test-VolumeCollector $Collector
+    if (-not $isVol -and -not (Test-Path -LiteralPath $devRoot -PathType Container)) { return $false }
+    $where = if ($isVol) { 'on the stick' } else { 'in the project' }
+    $dir = $devRoot + '\' + $sub
+    if (Test-Path -LiteralPath $dir -PathType Container) { return $false }
+    if ($CheckOnly) {
+        & $OnLog "Export folder would be created $where`: $dir" 'INFO'
+        return $true
+    }
+    try {
+        [void][System.IO.Directory]::CreateDirectory($dir)
+        & $OnLog "Export folder created $where`: $dir" 'INFO'
+        return $true
+    }
+    catch {
+        & $OnLog "Could not create the export folder $where :: $($_.Exception.Message)" 'WARN'
         return $false
     }
 }
@@ -2537,7 +2685,12 @@ function Invoke-CollectorSync {
             $app = Copy-AppToVolume $volRoot $OnLog ([bool]$CheckOnly)
             if ($app.Updated -eq 0) { & $OnLog "App on the stick is already current ($($app.Current) file(s))." 'INFO' }
             [void](Copy-TabletConfigToVolume $volRoot $Project $Collector $OnLog ([bool]$CheckOnly))
+            [void](Ensure-ExportFolder $Project $Collector $OnLog ([bool]$CheckOnly))
         }
+    }
+    elseif ([string]$Collector.type -eq 'folder') {
+        # A tablet running against its own disk.
+        [void](Ensure-ExportFolder $Project $Collector $OnLog ([bool]$CheckOnly))
     }
 
     # Design first so a crew heading out has current drawings, then one pull leg per
@@ -2816,6 +2969,13 @@ function Invoke-Sync {
     if ($Profile.PSObject.Properties['neverOverwrite']) { $neverOverwrite = [bool]$Profile.neverOverwrite }
 
     $ctx = @{ DeviceName = $deviceName; Settings = $script:Config.mtp; FolderCache = @{} }
+    # A folder collector has no hardware serial to read, so record it under the id it
+    # is configured by -- the id the banner looks its records up by. Left to fall back,
+    # a push took the marker's GUID and every pull minted a new one, so a stick synced
+    # a minute ago still read "never synced".
+    if ($collectorType -eq 'folder' -and $Profile.PSObject.Properties['collectorSerial'] -and $Profile.collectorSerial) {
+        $ctx.DeviceSerial = [string]$Profile.collectorSerial
+    }
     try {
         # Prepare the MTP side (whichever end it is).
         if ($srcKind -eq 'mtp' -or $dstKind -eq 'mtp') {
@@ -3257,6 +3417,49 @@ $script:Config = Load-Config
 # Headless hook: when SDC_NOGUI=1 the file can be dot-sourced to reuse the
 # engine/providers (and $script:Config) without building or showing the window.
 if ($env:SDC_NOGUI -eq '1') { return }
+
+# One copy at a time on this machine. Two windows are two engines comparing and
+# copying against the same folders, and a stray copy is easy to come by: the stick
+# can carry the app in more than one folder, and on a tablet that has meant running
+# the office's copy -- with the office config -- while believing it was the tablet's.
+# The name deliberately ignores where the app runs from, so copies in different
+# folders still count as the same app. Local\ is per logon session, which is the
+# scope that matters and needs no rights to create.
+if ($env:SDC_SMOKETEST -ne '1') {
+    $createdNew = $false
+    $script:InstanceMutex = New-Object System.Threading.Mutex($true, 'Local\SyncDataCollector', [ref]$createdNew)
+    if (-not $createdNew) {
+        # Say WHICH copy is open -- that is the thing worth knowing when there are two.
+        $where = ''
+        try {
+            $other = @(Get-CimInstance Win32_Process -Filter "Name='powershell.exe' OR Name='pwsh.exe'" |
+                Where-Object { $_.ProcessId -ne $PID -and [string]$_.CommandLine -match 'SyncDataCollector\.ps1' }) | Select-Object -First 1
+            if ($other -and ([string]$other.CommandLine -match '"([^"]*SyncDataCollector\.ps1)"')) {
+                $where = Split-Path -Parent $Matches[1]
+            }
+        }
+        catch { }
+        $msg = 'Sync Data Collector is already open'
+        if ($where) { $msg += " - running from:`r`n`r`n$where" } else { $msg += '.' }
+        $msg += "`r`n`r`nUse that window, or close it before starting another."
+        [System.Windows.Forms.MessageBox]::Show($msg, 'Sync Data Collector', 'OK', 'Information') | Out-Null
+        try {
+            Add-Type -AssemblyName Microsoft.VisualBasic
+            [Microsoft.VisualBasic.Interaction]::AppActivate('Sync Data Collector')
+        }
+        catch { }
+        # 0, not 1: the launcher pauses on an error, and this is not one.
+        exit 0
+    }
+}
+
+# Hide the launcher's console for the whole GUI session. Skipped for the smoke
+# test (which reports on the console) and overridable with SDC_HIDECONSOLE=0 for
+# anyone troubleshooting who wants the console output in view. The trap re-shows
+# it on any terminating error during construction or ShowDialog, so the launcher's
+# pause stays visible; a clean exit just lets the hidden console close with us.
+trap { Show-ConsoleWindow; break }
+if ($env:SDC_SMOKETEST -ne '1' -and $env:SDC_HIDECONSOLE -ne '0') { Hide-ConsoleWindow }
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text = 'Sync Data Collector'
@@ -4375,7 +4578,7 @@ function Set-AdvancedMode {
         if ($wantCollapsed) { $d = -$script:AdvShift }
         $form.SuspendLayout()
         $tabsOut.Anchor = 'Top,Left,Right'
-        foreach ($c in @($btnSync,$btnCheck,$btnCancel,$progress,$lblStatus,$tabsOut)) { $c.Top = $c.Top + $d }
+        foreach ($c in @($btnSync,$btnCheck,$btnCancel,$btnTidy,$progress,$lblStatus,$tabsOut)) { $c.Top = $c.Top + $d }
         $minH = $form.MinimumSize.Height + $d
         $newH = $form.Height + $d
         if ($d -lt 0) {
