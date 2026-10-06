@@ -12,9 +12,9 @@
     "semantic_hash": "cb6d82866899cce9265346cd8752f5bb"
   },
   "SyncDataCollector.ps1": {
-    "mtime": 1791309293.6268754,
-    "seen": 1791309354.9967804,
-    "ast_hash": "3eac0e08497a4827cf49e43b93412fa6",
+    "mtime": 1791314141.1478057,
+    "seen": 1791314157.7054455,
+    "ast_hash": "e8e96578f847b2cf156f95f501453caa",
     "semantic_hash": ""
   },
   "config.example.json": {
@@ -36,21 +36,15 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1791309349.0253854,
-    "seen": 1791309354.9967852,
-    "ast_hash": "6c6c6cf496cbab9b09c1b17692a2b915",
-    "semantic_hash": ""
-  },
-  "Sync Datacollector README.pdf": {
-    "mtime": 1789582562.0,
-    "seen": 1791227948.0936077,
-    "ast_hash": "be12f432fa073ec7f33748c8364ebcb4",
+    "mtime": 1791314141.1402876,
+    "seen": 1791314157.7054505,
+    "ast_hash": "a3093c21b41559abcbdb10d5af79f8fd",
     "semantic_hash": ""
   },
   "docs/images/main screen.png": {
-    "mtime": 1789582486.0,
-    "seen": 1791227948.0936084,
-    "ast_hash": "638f17220e46de1446e2e7e8e6b87f34",
+    "mtime": 1791310130.7718308,
+    "seen": 1791314157.7054515,
+    "ast_hash": "44768c562146f669ea0335acc51970d3",
     "semantic_hash": ""
   }
 }
