@@ -2600,8 +2600,12 @@ function New-TabletExportRoutes {
     }
     $rest = @($exts | Where-Object { $_ -ne '.job' })
     if ($rest.Count) {
+        # A per-tablet folder, NOT a prefix. A scan is a .jxl plus a "<name> Files"
+        # folder whose name the .jxl records inside itself; prefixing renames that
+        # folder and the job loses its point cloud and photos. A subfolder still says
+        # which tablet the files came from, and leaves every name as exported.
         $routes += New-ExportRoute -Name 'Exports' -From 'export' -Extensions $rest `
-                        -Root ($StickJob + '\' + $Export) -Collision 'prefix'
+                        -Root ($StickJob + '\' + $Export) -Collision 'deviceSubfolder'
     }
     return $routes
 }
@@ -3162,11 +3166,46 @@ function Invoke-Sync {
         $copyMode = "$srcKind`2$dstKind"   # fs2fs | fs2mtp | mtp2fs
         if ($copyMode -eq 'mtp2mtp') { throw 'MTP-to-MTP is not supported.' }
 
+        # The date a pulled file is filed under. The julian in the name is what the
+        # surveyor called the day's work, so it beats the timestamp -- which a copy or
+        # a restore can move. Except inside a scan's "<name> Files" folder: the photos
+        # and point cloud there carry no date of their own, and dating them one by one
+        # filed a scan's .jxl under September and its point cloud under October. They
+        # belong wherever their .jxl goes, and the .jxl is what decides.
+        $scanOwner = @{}     # "<dir>\<name> files\" (lower case) -> @{ When; ByName }
+        $fileDate = {
+            param([string]$Rel, $MtimeUtc)
+            $rl = $Rel.ToLowerInvariant()
+            foreach ($k in $scanOwner.Keys) { if ($rl.StartsWith($k)) { return $scanOwner[$k] } }
+            $li = $Rel.LastIndexOf('\')
+            $lf = if ($li -ge 0) { $Rel.Substring($li + 1) } else { $Rel }
+            $w = Get-JulianFromName $lf
+            if ($w) { return @{ When = $w; ByName = $true } }
+            if ($MtimeUtc) { $w = ([datetime]$MtimeUtc).ToLocalTime() } else { $w = Get-Date }
+            return @{ When = $w; ByName = $false }
+        }
+        if ($perFileDate) {
+            foreach ($r in $records) {
+                if ([string]$r.Ext -ne '.jxl') { continue }
+                $li = ([string]$r.Rel).LastIndexOf('\')
+                $dirRel = if ($li -ge 0) { ([string]$r.Rel).Substring(0, $li) } else { '' }
+                $base = [System.IO.Path]::GetFileNameWithoutExtension([string]$r.Rel)
+                $key = $(if ($dirRel) { "$dirRel\$base Files\" } else { "$base Files\" }).ToLowerInvariant()
+                $scanOwner[$key] = (& $fileDate ([string]$r.Rel) $r.MtimeUtc)
+            }
+        }
+
         # Pre-create companion (scan) subfolders on the destination so even empty
-        # point-cloud directories are preserved. A check writes nothing, so skip it.
+        # point-cloud directories are preserved -- under the same dated folder as
+        # their .jxl, or they land outside the date tree as empty strays. A check
+        # writes nothing, so skip it.
         if (-not $CheckOnly) {
             foreach ($drel in $sel.Dirs) {
                 $ddestRel = Get-DestRel $drel $direction $collisionMode $collisionLabel
+                if ($perFileDate) {
+                    $dd = (Expand-PathTokens $datedTail (& $fileDate ([string]$drel + '\') $null).When).Trim('\')
+                    if ($dd) { $ddestRel = $dd + '\' + $ddestRel }
+                }
                 try { Target-EnsureDir $ctx $dstKind ($dstPath + '\' + $ddestRel) } catch {}
             }
         }
@@ -3190,15 +3229,9 @@ function Invoke-Sync {
             $leaf = if ($li -ge 0) { ([string]$rel).Substring($li + 1) } else { [string]$rel }
             $scopeDir = ''
             if ($perFileDate) {
-                # The julian in the name is what the surveyor called the day's work,
-                # so it beats the timestamp -- which a copy or a restore can move.
-                $when = Get-JulianFromName $leaf
-                if ($when) { $datedByName++ }
-                else {
-                    $datedByStamp++
-                    if ($rec.MtimeUtc) { $when = ([datetime]$rec.MtimeUtc).ToLocalTime() }
-                    if (-not $when) { $when = Get-Date }
-                }
+                $fd = & $fileDate ([string]$rel) $rec.MtimeUtc
+                $when = $fd.When
+                if ($fd.ByName) { $datedByName++ } else { $datedByStamp++ }
                 $dated = (Expand-PathTokens $datedTail $when).Trim('\')
                 if ($dated) { $destRel = $dated + '\' + $destRel }
                 if ($scopeTail) {

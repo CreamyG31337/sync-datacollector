@@ -239,7 +239,10 @@ The tablet sends two things back, laid out the way the office's export routes re
   every time it is opened, so a newer copy replaces the tablet's earlier one on the stick rather
   than piling up beside it.
 - **Everything else** (`.csv`, `.jxl` with its scan folder, `.dxf`, …) from the project's
-  **`Exports`** folder → the stick's `Exports`.
+  **`Exports`** folder → a folder named after the tablet in the stick's `Exports`
+  (`Exports\T110-A\26-245-SCAN.jxl`). Not a filename prefix: a `.jxl` records its
+  `<name> Files` folder's name inside itself, so renaming that folder would cut the job off
+  from its point cloud and photos.
 
 **Procedure: export into `Exports`.** Exports saved anywhere else in the project are not
 collected — reading the whole project would also carry the design files in `02-Design` back to
@@ -251,16 +254,17 @@ the office as if they were field data. The app creates `Exports` on the tablet o
 One stick can serve several tablets, so the thing that has to be identifiable in an export
 filename is the **tablet**, not the stick — the stick is the same for everyone. The generated
 config therefore names the collector `%COMPUTERNAME%`, which each tablet resolves to itself:
-one config file, a distinct export prefix per machine, and nothing to type on a device with no
-real keyboard. Exports reach the stick already prefixed, e.g. `T110-A_26-245.jxl`.
+one config file, a distinct label per machine, and nothing to type on a device with no real
+keyboard. Jobs reach the stick prefixed (`T110-A_26-245.job`); exports arrive in a per-tablet
+folder (`Exports\T110-A\…`), which keeps scan folders intact.
 
-The office PC consequently does **not** prefix again on leg 4 — the stick's collector is set to
+The office PC consequently does **not** label again on leg 4 — the stick's collector is set to
 `exportCollision: "overwrite"`, and for a stick that setting wins over each export route's own
-naming — or every file would read `USB-01_T110-A_26-245.jxl`. Despite
+naming — or every job would read `USB-01_T110-A_26-245.job`. Despite
 the name, `overwrite` only means "do not disambiguate by device"; a pull still never destroys
 field data, landing a genuine clash as `name (2).ext`.
 
-Two limits worth knowing. The prefix is whatever Windows calls the tablet, so a machine named
+Two limits worth knowing. The label is whatever Windows calls the tablet, so a machine named
 `DESKTOP-A1B2C3` produces exactly that in your export folder — rename the tablet if the name
 should mean something. And because the generated config carries one collector id, tablets
 sharing a stick share that id: each tablet keeps its own local marker, but the `sync-state.json`
