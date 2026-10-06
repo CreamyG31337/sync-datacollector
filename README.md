@@ -322,6 +322,35 @@ A run is **two one-way legs, never a merge**:
 A failing leg does not stop the other — getting field data off a device matters more than
 either leg on its own, so the export still runs if the design push fails.
 
+### More than one folder going out: survey control
+
+Not everything the crews need lives in the design folder. Survey control is kept in
+`S:\01-OUTPUT\01-Survey Control`, and the design leg never touches it. A project can list
+**extra design sources**, and each one gets its own mirrored leg into **its own folder** on the
+device:
+
+```json
+"extraDesign": [
+  { "name": "Survey control", "source": "S:\\01-OUTPUT\\01-Survey Control",
+    "subPath": "01-Survey Control", "extensions": [".csv", ".jxl"] }
+]
+```
+
+This puts the control `.csv` and `.jxl` files in `…\Projects\<job>\01-Survey Control` on
+every controller, stick and tablet. The leg runs right after the design leg, and Check shows it
+as its own group.
+
+**Why its own folder:** it cannot go inside `02-Design` on the device. That folder is a mirror
+of `S:\02-DESIGN`, so the next design sync would delete anything `S:\02-DESIGN` does not have.
+For the same reason the app refuses (and logs why) an extra source whose `subPath` is empty,
+overlaps the design or export folder, or overlaps another extra source. Two mirrors writing to
+one folder would delete each other's files on every sync.
+
+Each extra leg follows the collector's `prune` and `excludeFolders`, like the design leg. One
+difference: its deletions cannot be switched to **keep**. Keeping a file copies it back into
+the source, which is not wanted for a control folder, so remove a file from the source if it
+should go.
+
 ### USB sticks as collectors
 
 A USB stick can be a collector in its own right (`type: "folder"`). Both legs work exactly as
@@ -1043,6 +1072,7 @@ root can be written `%OneDriveCommercial%\…` where a drive letter is not wante
 | `projects[].exportRoutes[].dateFrom` | `run` (default) dates the destination folder from when the sync runs. `file` dates it from the julian in each filename, falling back to that file's modified time — so exports pulled months later still land in the month they were surveyed. |
 | `projects[].deviceProjectPath` | The project folder **on the collector**. For MTP the first segment is the device storage. For a `"folder"` collector that first segment is replaced by wherever the volume is currently mounted, so one project path serves both kinds. |
 | `projects[].tabletProjectPath` | Optional. The project folder's full path **on a Windows tablet**, for when it is named differently there than on the controllers (e.g. `C:\ProgramData\Trimble\Trimble Data\Projects\2100 - Example Site Upgrade`). Only goes into the generated tablet config; the stick keeps the controllers' layout. Empty = `tabletDataRoot` + the controllers' path. |
+| `projects[].extraDesign` | Optional list of more office folders pushed to the devices, each mirrored into its own folder: `name`, `source` (e.g. `S:\01-OUTPUT\01-Survey Control`), `subPath` (its folder under the project on the device, e.g. `01-Survey Control`; must not be empty or overlap the design/export folders or another extra source) and `extensions`. Carried through the stick to tablets too. |
 | `tabletDataRoot` | Optional, top level. The folder that **contains** `Trimble Data` on the tablets. Default `C:\ProgramData\Trimble`, where Trimble Access for Windows keeps it. |
 | `driveMap[].letter` | A drive letter the app creates with `subst` when it is missing, e.g. `S`. Leave `driveMap` out entirely and it never maps anything. |
 | `driveMap[].targets` | Folders that letter may point at, **best first**. `%ENVVAR%` is expanded — prefer `%OneDriveCommercial%\…` to `C:\Users\<name>\…`, or the config only works for whoever wrote it. |

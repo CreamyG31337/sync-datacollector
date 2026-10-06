@@ -256,9 +256,17 @@ function Load-Config {
                         }
                     }
                     $tpp = if ($prj.PSObject.Properties['tabletProjectPath']) { [string]$prj.tabletProjectPath } else { '' }
+                    $xds = @()
+                    if ($prj.PSObject.Properties['extraDesign']) {
+                        foreach ($x in @($prj.extraDesign)) {
+                            if (-not $x) { continue }
+                            $xds += New-ExtraDesign -Name ([string]$x.name) -Source ([string]$x.source) `
+                                        -SubPath ([string]$x.subPath) -Extensions @($x.extensions)
+                        }
+                    }
                     New-Project -Name $prj.name -DesignSource $prj.designSource `
                         -ExportRoot $prj.exportRoot -DeviceProjectPath $prj.deviceProjectPath `
-                        -ExportRoutes $rts -TabletProjectPath $tpp
+                        -ExportRoutes $rts -TabletProjectPath $tpp -ExtraDesign $xds
                 })
             }
             if (-not $cfg.PSObject.Properties['collectors']) {
@@ -2096,7 +2104,8 @@ function New-Project {
         $ExportRoutes = @(),               # empty = file every export type under ExportRoot
         # Where this project lives on a Windows tablet, in full, when its folder there
         # is not named as it is on the controllers. Empty = derived (see New-TabletConfig).
-        [string]$TabletProjectPath = ''
+        [string]$TabletProjectPath = '',
+        $ExtraDesign = @()                 # more office folders pushed to the collector
     )
     [pscustomobject]@{
         name              = $Name
@@ -2105,7 +2114,66 @@ function New-Project {
         deviceProjectPath = $DeviceProjectPath
         tabletProjectPath = $TabletProjectPath
         exportRoutes      = @($ExportRoutes)
+        extraDesign       = @($ExtraDesign)
     }
+}
+
+# One more folder pushed to the collector, beside the design folder rather than in
+# it. Survey control lives under 01-OUTPUT, not 02-DESIGN, and the crews need it as
+# much as the drawings. It cannot ride inside the design folder on the device: that
+# folder is mirrored from 02-DESIGN, so anything there 02-DESIGN lacks gets deleted.
+# So each extra source gets its own folder on the device and its own mirrored leg.
+function New-ExtraDesign {
+    param(
+        [string]$Name = 'Extra',
+        [string]$Source = '',              # S:\01-OUTPUT\01-Survey Control
+        [string]$SubPath = '',             # its folder under the project on the device
+        [string[]]$Extensions = @()
+    )
+    [pscustomobject]@{
+        name       = $Name
+        source     = $Source
+        subPath    = $SubPath
+        extensions = @($Extensions)
+    }
+}
+
+# A project's extra design legs, with any that could not be safe dropped. Each owns
+# its folder on the device outright -- prune deletes whatever its source lacks -- so
+# it must never share that folder with the design or export leg, or another extra:
+# two mirrors on one folder delete each other's files on every sync.
+function Get-ExtraDesigns {
+    param($Project, $Collector, [scriptblock]$OnLog = $null)
+    $out = @()
+    if (-not $Project.PSObject.Properties['extraDesign']) { return $out }
+    $taken = @{}
+    foreach ($s in @([string]$Collector.designSubPath, [string]$Collector.exportSubPath)) {
+        $k = $s.Trim('\').ToLowerInvariant()
+        if ($k) { $taken[$k] = $true }
+    }
+    foreach ($x in @($Project.extraDesign)) {
+        if (-not $x) { continue }
+        $sub = ([string]$x.subPath).Trim('\')
+        $why = ''
+        if (-not [string]$x.source) { $why = 'it has no source folder' }
+        elseif (-not $sub) { $why = 'it has no subPath, and mirroring onto the project folder itself would delete the crew''s jobs' }
+        elseif (-not @($x.extensions).Count) { $why = 'it lists no file types' }
+        else {
+            # Nested counts as shared: a leg mirroring "02-Design\Control" sits inside
+            # the design leg's mirror, which would delete it.
+            $k = $sub.ToLowerInvariant()
+            foreach ($t in @($taken.Keys)) {
+                if ($k -eq $t -or $k.StartsWith($t + '\') -or $t.StartsWith($k + '\')) { $why = "its folder '$sub' overlaps '$t', which another leg already owns" }
+            }
+        }
+        if ($why) {
+            if ($OnLog) { & $OnLog "Extra design source '$($x.name)' skipped: $why." 'WARN' }
+            continue
+        }
+        $taken[$sub.ToLowerInvariant()] = $true
+        $out += $x
+    }
+    return $out
 }
 
 # One pull leg. Not every export belongs in the same place: raw .job files are
@@ -2376,11 +2444,19 @@ function New-LegProfile {
         # PC -> collector, mirrored: the tool owns this folder. The project root is
         # carried along so the engine can refuse to mirror onto it -- see the guard
         # in Invoke-Sync; that folder is the crew's, not ours.
-        $dp = New-Profile -Name ("$label - design") -Direction 'push' `
-            -SourcePath ([string]$Project.designSource) `
+        # $Route, on a design leg, is one of the project's extra design sources: the
+        # same mirrored push, from its own folder into its own folder on the device.
+        $dName = "$label - design"; $dSrc = [string]$Project.designSource
+        $dSub  = ([string]$Collector.designSubPath).Trim('\'); $dExt = @($Collector.designExtensions)
+        if ($Route) {
+            $dName = "$label - " + [string]$Route.name; $dSrc = [string]$Route.source
+            $dSub  = ([string]$Route.subPath).Trim('\'); $dExt = @($Route.extensions)
+        }
+        $dp = New-Profile -Name $dName -Direction 'push' `
+            -SourcePath $dSrc `
             -TargetType $type -DeviceName $model `
-            -DestinationPath ($devRoot + '\' + ([string]$Collector.designSubPath).Trim('\')) `
-            -Extensions @($Collector.designExtensions) `
+            -DestinationPath ($devRoot + '\' + $dSub) `
+            -Extensions $dExt `
             -ExcludeFolders @($Collector.excludeFolders) `
             -Prune ([bool]$Collector.prune)
         $dp | Add-Member -NotePropertyName deviceProjectRoot -NotePropertyValue ([string]$devRoot) -Force
@@ -2559,11 +2635,22 @@ function New-TabletConfig {
     }
     if (-not $serial) { $serial = [guid]::NewGuid().ToString() }
 
+    # Each extra design source reaches the stick in its own folder (this PC pushes it
+    # there like any collector), so on the tablet it is read from that folder and
+    # lands in the same-named one under the tablet's project.
+    $tabletExtra = @()
+    foreach ($xd in @(Get-ExtraDesigns $Project $Collector)) {
+        $xs = ([string]$xd.subPath).Trim('\')
+        $tabletExtra += New-ExtraDesign -Name ([string]$xd.name) -Source ($stickJob + '\' + $xs) `
+                            -SubPath $xs -Extensions @($xd.extensions)
+    }
+
     $tabletProject = New-Project -Name ([string]$Project.name) `
         -DesignSource ($stickJob + '\' + $design) `
         -ExportRoot   ($stickJob + '\' + $export) `
         -DeviceProjectPath $tabletProj `
-        -ExportRoutes @(New-TabletExportRoutes $Collector $stickJob $export)
+        -ExportRoutes @(New-TabletExportRoutes $Collector $stickJob $export) `
+        -ExtraDesign $tabletExtra
 
     $tabletCollector = New-Collector -Serial $serial -Name '%COMPUTERNAME%' `
         -Model 'Tablet' -Type 'folder' `
@@ -2697,6 +2784,15 @@ function Invoke-CollectorSync {
     # export route. Keys have to stay unique: the compare view groups rows by them.
     $legs = @( @{ Key = 'design'; Kind = 'design'; Route = $null
                   Title = 'Design  PC -> collector (mirrored)' } )
+    # Extra design sources go out with the design, before anything comes back.
+    foreach ($xd in @(Get-ExtraDesigns $Project $Collector $OnLog)) {
+        $legs += @{
+            Key   = 'design:' + [string]$xd.name
+            Kind  = 'design'
+            Route = $xd
+            Title = ('{0}  PC -> collector\{1} (mirrored)' -f [string]$xd.name, ([string]$xd.subPath).Trim('\'))
+        }
+    }
     foreach ($rt in @(Get-ExportRoutes $Project $Collector)) {
         # Under per-file dating there is no single destination to name, so leave the
         # date tokens unexpanded rather than printing today's folder -- expanding it
@@ -2719,7 +2815,9 @@ function Invoke-CollectorSync {
     # collector-on-the-right. On a pull the collector is the source, so sides swap.
     $toViewRow = {
         param([string]$LegKey, $Row)
-        $pull = ($LegKey -ne 'design')
+        # By prefix: every pull leg is 'export:<route>', and design legs are 'design'
+        # plus one 'design:<name>' per extra source.
+        $pull = $LegKey.StartsWith('export:')
         [pscustomobject]@{
             Leg       = $LegKey
             Action    = [string]$Row.Action
@@ -2739,7 +2837,7 @@ function Invoke-CollectorSync {
     # the live ticks cannot disagree about which side a file belongs on.
     $toLegPlan = {
         param($Leg, $Result)
-        $pull    = ([string]$Leg.Key -ne 'design')
+        $pull    = ([string]$Leg.Key).StartsWith('export:')
         $srcRoot = [string]$Result.SourceRoot
         $dstRoot = [string]$Result.DestinationRoot
         $view = @()
@@ -2769,7 +2867,8 @@ function Invoke-CollectorSync {
             $thisLegKey  = [string]$leg.Key
             $legOnItem = { param($row) [void](& $outerOnItem (& $mapViewRow $thisLegKey $row)) }.GetNewClosure()
         }
-        # Only the design leg prunes, so only it can have anything to rescue.
+        # Only design legs prune, and only the main one offers rescue: keeping a file
+        # copies it back into the source, which for a control folder is not wanted.
         $legRescue = @()
         if ([string]$leg.Key -eq 'design') { $legRescue = @($RescueDesign) }
         try {

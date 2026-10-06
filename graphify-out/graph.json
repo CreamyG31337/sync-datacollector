@@ -8,154 +8,253 @@
       "label": "Copy-AppToVolume()",
       "_origin": "ast",
       "community": 0,
-      "community_name": "Resolve-MtpDir",
+      "community_name": "Invoke-Sync",
       "file_type": "code",
       "norm_label": "copy-apptovolume()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2446"
+      "source_location": "L2522"
     },
     {
       "id": "syncdatacollector_copy_filefolder",
       "label": "Copy-FileFolder()",
       "_origin": "ast",
       "community": 0,
-      "community_name": "Resolve-MtpDir",
+      "community_name": "Invoke-Sync",
       "file_type": "code",
       "norm_label": "copy-filefolder()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L741"
+      "source_location": "L749"
     },
     {
       "id": "syncdatacollector_copy_filemtp",
       "label": "Copy-FileMtp()",
       "_origin": "ast",
       "community": 0,
-      "community_name": "Resolve-MtpDir",
+      "community_name": "Invoke-Sync",
       "file_type": "code",
       "norm_label": "copy-filemtp()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L763"
+      "source_location": "L771"
     },
     {
       "id": "syncdatacollector_copy_filemtpdownload",
       "label": "Copy-FileMtpDownload()",
       "_origin": "ast",
       "community": 0,
-      "community_name": "Resolve-MtpDir",
+      "community_name": "Invoke-Sync",
       "file_type": "code",
       "norm_label": "copy-filemtpdownload()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L783"
+      "source_location": "L791"
     },
     {
       "id": "syncdatacollector_ensure_mtpinterop",
       "label": "Ensure-MtpInterop()",
       "_origin": "ast",
       "community": 0,
-      "community_name": "Resolve-MtpDir",
+      "community_name": "Invoke-Sync",
       "file_type": "code",
       "norm_label": "ensure-mtpinterop()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L843"
+      "source_location": "L851"
     },
     {
       "id": "syncdatacollector_find_shellchild",
       "label": "Find-ShellChild()",
       "_origin": "ast",
       "community": 0,
-      "community_name": "Resolve-MtpDir",
+      "community_name": "Invoke-Sync",
       "file_type": "code",
       "norm_label": "find-shellchild()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L943"
+      "source_location": "L951"
+    },
+    {
+      "id": "syncdatacollector_get_destrel",
+      "label": "Get-DestRel()",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "Invoke-Sync",
+      "file_type": "code",
+      "norm_label": "get-destrel()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L1218"
+    },
+    {
+      "id": "syncdatacollector_get_fsinventory",
+      "label": "Get-FsInventory()",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "Invoke-Sync",
+      "file_type": "code",
+      "norm_label": "get-fsinventory()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L1158"
     },
     {
       "id": "syncdatacollector_get_mtpinfo",
       "label": "Get-MtpInfo()",
       "_origin": "ast",
       "community": 0,
-      "community_name": "Resolve-MtpDir",
+      "community_name": "Invoke-Sync",
       "file_type": "code",
       "norm_label": "get-mtpinfo()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1096"
+      "source_location": "L1104"
+    },
+    {
+      "id": "syncdatacollector_get_mtpinventory",
+      "label": "Get-MtpInventory()",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "Invoke-Sync",
+      "file_type": "code",
+      "norm_label": "get-mtpinventory()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L1121"
+    },
+    {
+      "id": "syncdatacollector_get_pruneset",
+      "label": "Get-PruneSet()",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "Invoke-Sync",
+      "file_type": "code",
+      "norm_label": "get-pruneset()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L1548"
+    },
+    {
+      "id": "syncdatacollector_get_targetinventory",
+      "label": "Get-TargetInventory()",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "Invoke-Sync",
+      "file_type": "code",
+      "norm_label": "get-targetinventory()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L1312"
     },
     {
       "id": "syncdatacollector_invoke_copywithretry",
       "label": "Invoke-CopyWithRetry()",
       "_origin": "ast",
       "community": 0,
-      "community_name": "Resolve-MtpDir",
+      "community_name": "Invoke-Sync",
       "file_type": "code",
       "norm_label": "invoke-copywithretry()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L808"
+      "source_location": "L816"
     },
     {
       "id": "syncdatacollector_invoke_jobcleanup",
       "label": "Invoke-JobCleanup()",
       "_origin": "ast",
       "community": 0,
-      "community_name": "Resolve-MtpDir",
+      "community_name": "Invoke-Sync",
       "file_type": "code",
       "norm_label": "invoke-jobcleanup()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1514"
+      "source_location": "L1522"
+    },
+    {
+      "id": "syncdatacollector_invoke_sync",
+      "label": "Invoke-Sync()",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "Invoke-Sync",
+      "file_type": "code",
+      "norm_label": "invoke-sync()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2958"
     },
     {
       "id": "syncdatacollector_read_devicemarker",
       "label": "Read-DeviceMarker()",
       "_origin": "ast",
       "community": 0,
-      "community_name": "Resolve-MtpDir",
+      "community_name": "Invoke-Sync",
       "file_type": "code",
       "norm_label": "read-devicemarker()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1747"
+      "source_location": "L1755"
     },
     {
       "id": "syncdatacollector_resolve_mtpdir",
       "label": "Resolve-MtpDir()",
       "_origin": "ast",
       "community": 0,
-      "community_name": "Resolve-MtpDir",
+      "community_name": "Invoke-Sync",
       "file_type": "code",
       "norm_label": "resolve-mtpdir()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1062"
+      "source_location": "L1070"
+    },
+    {
+      "id": "syncdatacollector_resolve_nooverwritedest",
+      "label": "Resolve-NoOverwriteDest()",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "Invoke-Sync",
+      "file_type": "code",
+      "norm_label": "resolve-nooverwritedest()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L718"
     },
     {
       "id": "syncdatacollector_target_deletedir",
       "label": "Target-DeleteDir()",
       "_origin": "ast",
       "community": 0,
-      "community_name": "Resolve-MtpDir",
+      "community_name": "Invoke-Sync",
       "file_type": "code",
       "norm_label": "target-deletedir()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1334"
+      "source_location": "L1342"
     },
     {
       "id": "syncdatacollector_target_deletefile",
       "label": "Target-DeleteFile()",
       "_origin": "ast",
       "community": 0,
-      "community_name": "Resolve-MtpDir",
+      "community_name": "Invoke-Sync",
       "file_type": "code",
       "norm_label": "target-deletefile()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1318"
+      "source_location": "L1326"
     },
     {
       "id": "syncdatacollector_target_ensuredir",
       "label": "Target-EnsureDir()",
       "_origin": "ast",
       "community": 0,
-      "community_name": "Resolve-MtpDir",
+      "community_name": "Invoke-Sync",
       "file_type": "code",
       "norm_label": "target-ensuredir()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L676"
+      "source_location": "L684"
+    },
+    {
+      "id": "syncdatacollector_target_getinfo",
+      "label": "Target-GetInfo()",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "Invoke-Sync",
+      "file_type": "code",
+      "norm_label": "target-getinfo()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L698"
+    },
+    {
+      "id": "syncdatacollector_test_alreadyfiled",
+      "label": "Test-AlreadyFiled()",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "Invoke-Sync",
+      "file_type": "code",
+      "norm_label": "test-alreadyfiled()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L1359"
     },
     {
       "id": "syncdatacollector_apply_settingstoui",
@@ -166,7 +265,7 @@
       "file_type": "code",
       "norm_label": "apply-settingstoui()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4290"
+      "source_location": "L4389"
     },
     {
       "id": "syncdatacollector_commit_uitocollector",
@@ -177,7 +276,7 @@
       "file_type": "code",
       "norm_label": "commit-uitocollector()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4339"
+      "source_location": "L4438"
     },
     {
       "id": "syncdatacollector_format_settings",
@@ -188,7 +287,7 @@
       "file_type": "code",
       "norm_label": "format-settings()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4268"
+      "source_location": "L4367"
     },
     {
       "id": "syncdatacollector_get_defaults",
@@ -199,7 +298,7 @@
       "file_type": "code",
       "norm_label": "get-defaults()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2245"
+      "source_location": "L2313"
     },
     {
       "id": "syncdatacollector_get_jobretentiondays",
@@ -210,7 +309,7 @@
       "file_type": "code",
       "norm_label": "get-jobretentiondays()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2202"
+      "source_location": "L2270"
     },
     {
       "id": "syncdatacollector_get_uisettings",
@@ -221,7 +320,7 @@
       "file_type": "code",
       "norm_label": "get-uisettings()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4257"
+      "source_location": "L4356"
     },
     {
       "id": "syncdatacollector_new_collectordefaults",
@@ -232,7 +331,7 @@
       "file_type": "code",
       "norm_label": "new-collectordefaults()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2177"
+      "source_location": "L2245"
     },
     {
       "id": "syncdatacollector_parse_extensions",
@@ -243,7 +342,7 @@
       "file_type": "code",
       "norm_label": "parse-extensions()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L371"
+      "source_location": "L379"
     },
     {
       "id": "syncdatacollector_parse_folderlist",
@@ -254,7 +353,7 @@
       "file_type": "code",
       "norm_label": "parse-folderlist()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L386"
+      "source_location": "L394"
     },
     {
       "id": "syncdatacollector_resolve_defaults",
@@ -265,7 +364,7 @@
       "file_type": "code",
       "norm_label": "resolve-defaults()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2215"
+      "source_location": "L2283"
     },
     {
       "id": "syncdatacollector_update_defaultsindicator",
@@ -276,7 +375,7 @@
       "file_type": "code",
       "norm_label": "update-defaultsindicator()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4277"
+      "source_location": "L4376"
     },
     {
       "id": "claude",
@@ -346,7 +445,7 @@
       "file_type": "code",
       "norm_label": "choose-devicedialog()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4211"
+      "source_location": "L4310"
     },
     {
       "id": "syncdatacollector_format_devicechoice",
@@ -357,40 +456,7 @@
       "file_type": "code",
       "norm_label": "format-devicechoice()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1668"
-    },
-    {
-      "id": "syncdatacollector_format_local",
-      "label": "Format-Local()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "format-local()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1622"
-    },
-    {
-      "id": "syncdatacollector_format_rowtime",
-      "label": "Format-RowTime()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "format-rowtime()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3890"
-    },
-    {
-      "id": "syncdatacollector_format_size",
-      "label": "Format-Size()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "format-size()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3876"
+      "source_location": "L1676"
     },
     {
       "id": "syncdatacollector_get_activeproject",
@@ -401,7 +467,18 @@
       "file_type": "code",
       "norm_label": "get-activeproject()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2282"
+      "source_location": "L2350"
+    },
+    {
+      "id": "syncdatacollector_get_collectorbyserial",
+      "label": "Get-CollectorBySerial()",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "SyncDataCollector.ps1",
+      "file_type": "code",
+      "norm_label": "get-collectorbyserial()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2359"
     },
     {
       "id": "syncdatacollector_get_comparecolumnwidths",
@@ -412,7 +489,18 @@
       "file_type": "code",
       "norm_label": "get-comparecolumnwidths()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3922"
+      "source_location": "L4021"
+    },
+    {
+      "id": "syncdatacollector_get_connectedcollectors",
+      "label": "Get-ConnectedCollectors()",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "SyncDataCollector.ps1",
+      "file_type": "code",
+      "norm_label": "get-connectedcollectors()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2914"
     },
     {
       "id": "syncdatacollector_get_consolewindow",
@@ -426,6 +514,28 @@
       "source_location": "L53"
     },
     {
+      "id": "syncdatacollector_get_deviceprojectsubpath",
+      "label": "Get-DeviceProjectSubPath()",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "SyncDataCollector.ps1",
+      "file_type": "code",
+      "norm_label": "get-deviceprojectsubpath()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2399"
+    },
+    {
+      "id": "syncdatacollector_get_julianfromname",
+      "label": "Get-JulianFromName()",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "SyncDataCollector.ps1",
+      "file_type": "code",
+      "norm_label": "get-julianfromname()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L417"
+    },
+    {
       "id": "syncdatacollector_get_mtpdevicenames",
       "label": "Get-MtpDeviceNames()",
       "_origin": "ast",
@@ -434,7 +544,7 @@
       "file_type": "code",
       "norm_label": "get-mtpdevicenames()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1027"
+      "source_location": "L1035"
     },
     {
       "id": "syncdatacollector_get_mtpdevices",
@@ -445,7 +555,7 @@
       "file_type": "code",
       "norm_label": "get-mtpdevices()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L961"
+      "source_location": "L969"
     },
     {
       "id": "syncdatacollector_get_pref",
@@ -456,40 +566,7 @@
       "file_type": "code",
       "norm_label": "get-pref()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L342"
-    },
-    {
-      "id": "syncdatacollector_get_rowkey",
-      "label": "Get-RowKey()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "get-rowkey()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3789"
-    },
-    {
-      "id": "syncdatacollector_get_rowlook",
-      "label": "Get-RowLook()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "get-rowlook()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3823"
-    },
-    {
-      "id": "syncdatacollector_get_rowtip",
-      "label": "Get-RowTip()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "get-rowtip()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3857"
+      "source_location": "L350"
     },
     {
       "id": "syncdatacollector_get_shellapp",
@@ -500,7 +577,18 @@
       "file_type": "code",
       "norm_label": "get-shellapp()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L937"
+      "source_location": "L945"
+    },
+    {
+      "id": "syncdatacollector_get_volumedevices",
+      "label": "Get-VolumeDevices()",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "SyncDataCollector.ps1",
+      "file_type": "code",
+      "norm_label": "get-volumedevices()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L990"
     },
     {
       "id": "syncdatacollector_hide_consolewindow",
@@ -514,17 +602,6 @@
       "source_location": "L62"
     },
     {
-      "id": "syncdatacollector_load_collectortoui",
-      "label": "Load-CollectorToUi()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "load-collectortoui()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4308"
-    },
-    {
       "id": "syncdatacollector_load_projecttoui",
       "label": "Load-ProjectToUi()",
       "_origin": "ast",
@@ -533,7 +610,7 @@
       "file_type": "code",
       "norm_label": "load-projecttoui()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4232"
+      "source_location": "L4331"
     },
     {
       "id": "syncdatacollector_prompt_text",
@@ -544,7 +621,7 @@
       "file_type": "code",
       "norm_label": "prompt-text()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4166"
+      "source_location": "L4265"
     },
     {
       "id": "syncdatacollector_refresh_projectlist",
@@ -555,18 +632,7 @@
       "file_type": "code",
       "norm_label": "refresh-projectlist()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4220"
-    },
-    {
-      "id": "syncdatacollector_reset_checkgate",
-      "label": "Reset-CheckGate()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "reset-checkgate()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4431"
+      "source_location": "L4319"
     },
     {
       "id": "syncdatacollector_resize_comparecolumns",
@@ -577,7 +643,7 @@
       "file_type": "code",
       "norm_label": "resize-comparecolumns()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3959"
+      "source_location": "L4058"
     },
     {
       "id": "syncdatacollector_resolve_collectordevice",
@@ -588,7 +654,7 @@
       "file_type": "code",
       "norm_label": "resolve-collectordevice()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1037"
+      "source_location": "L1045"
     },
     {
       "id": "syncdatacollector_save_config",
@@ -599,7 +665,7 @@
       "file_type": "code",
       "norm_label": "save-config()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L328"
+      "source_location": "L336"
     },
     {
       "id": "syncdatacollector_select_fromlist",
@@ -610,7 +676,7 @@
       "file_type": "code",
       "norm_label": "select-fromlist()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4187"
+      "source_location": "L4286"
     },
     {
       "id": "syncdatacollector_select_syncset",
@@ -621,7 +687,7 @@
       "file_type": "code",
       "norm_label": "select-syncset()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1230"
+      "source_location": "L1238"
     },
     {
       "id": "syncdatacollector_set_advancedmode",
@@ -632,18 +698,7 @@
       "file_type": "code",
       "norm_label": "set-advancedmode()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4567"
-    },
-    {
-      "id": "syncdatacollector_set_busy",
-      "label": "Set-Busy()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "set-busy()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4454"
+      "source_location": "L4666"
     },
     {
       "id": "syncdatacollector_set_devicefriendlyname",
@@ -654,7 +709,7 @@
       "file_type": "code",
       "norm_label": "set-devicefriendlyname()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1658"
+      "source_location": "L1666"
     },
     {
       "id": "syncdatacollector_set_pinnedcollector",
@@ -665,7 +720,7 @@
       "file_type": "code",
       "norm_label": "set-pinnedcollector()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4351"
+      "source_location": "L4450"
     },
     {
       "id": "syncdatacollector_set_pref",
@@ -676,18 +731,7 @@
       "file_type": "code",
       "norm_label": "set-pref()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L353"
-    },
-    {
-      "id": "syncdatacollector_show_compareplan",
-      "label": "Show-ComparePlan()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "show-compareplan()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4033"
+      "source_location": "L361"
     },
     {
       "id": "syncdatacollector_show_consolewindow",
@@ -701,15 +745,26 @@
       "source_location": "L70"
     },
     {
-      "id": "syncdatacollector_split_relpath",
-      "label": "Split-RelPath()",
+      "id": "syncdatacollector_split_mtppath",
+      "label": "Split-MtpPath()",
       "_origin": "ast",
       "community": 2,
       "community_name": "SyncDataCollector.ps1",
       "file_type": "code",
-      "norm_label": "split-relpath()",
+      "norm_label": "split-mtppath()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3868"
+      "source_location": "L373"
+    },
+    {
+      "id": "syncdatacollector_test_jobremovable",
+      "label": "Test-JobRemovable()",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "SyncDataCollector.ps1",
+      "file_type": "code",
+      "norm_label": "test-jobremovable()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L1392"
     },
     {
       "id": "syncdatacollector_test_landxml",
@@ -720,73 +775,7 @@
       "file_type": "code",
       "norm_label": "test-landxml()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1166"
-    },
-    {
-      "id": "syncdatacollector_test_rescueeligible",
-      "label": "Test-RescueEligible()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "test-rescueeligible()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3803"
-    },
-    {
-      "id": "syncdatacollector_test_rescuemark",
-      "label": "Test-RescueMark()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "test-rescuemark()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3812"
-    },
-    {
-      "id": "syncdatacollector_test_syncallowed",
-      "label": "Test-SyncAllowed()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "test-syncallowed()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4424"
-    },
-    {
-      "id": "syncdatacollector_toggle_rescuemark",
-      "label": "Toggle-RescueMark()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "toggle-rescuemark()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4607"
-    },
-    {
-      "id": "syncdatacollector_update_actionbuttons",
-      "label": "Update-ActionButtons()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "update-actionbuttons()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4437"
-    },
-    {
-      "id": "syncdatacollector_update_comparehint",
-      "label": "Update-CompareHint()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "update-comparehint()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3992"
+      "source_location": "L1174"
     },
     {
       "id": "syncdatacollector_update_comparelayout",
@@ -797,125 +786,260 @@
       "file_type": "code",
       "norm_label": "update-comparelayout()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3903"
-    },
-    {
-      "id": "syncdatacollector_update_comparerow",
-      "label": "Update-CompareRow()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "update-comparerow()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4115"
-    },
-    {
-      "id": "readme_defaults",
-      "label": "Defaults",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Projects and collectors",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "defaults",
-      "source_file": "README.md",
-      "source_location": "L398"
-    },
-    {
-      "id": "readme_everyday_mode_and_the_advanced_tick_box",
-      "label": "Everyday mode, and the Advanced tick-box",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Projects and collectors",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "everyday mode, and the advanced tick-box",
-      "source_file": "README.md",
-      "source_location": "L382"
-    },
-    {
-      "id": "readme_export_routes_filing_different_file_types_in_different_places",
-      "label": "Export routes: filing different file types in different places",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Projects and collectors",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "export routes: filing different file types in different places",
-      "source_file": "README.md",
-      "source_location": "L459"
-    },
-    {
-      "id": "readme_filing_by_when_the_work_was_done_not_when_you_pulled_it",
-      "label": "Filing by when the work was done, not when you pulled it",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Projects and collectors",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "filing by when the work was done, not when you pulled it",
-      "source_file": "README.md",
-      "source_location": "L509"
-    },
-    {
-      "id": "readme_keeping_exports_from_different_collectors_apart",
-      "label": "Keeping exports from different collectors apart",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Projects and collectors",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "keeping exports from different collectors apart",
-      "source_file": "README.md",
-      "source_location": "L429"
-    },
-    {
-      "id": "readme_projects_and_collectors",
-      "label": "Projects and collectors",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Projects and collectors",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "projects and collectors",
-      "source_file": "README.md",
-      "source_location": "L303"
-    },
-    {
-      "id": "readme_the_app_rides_along",
-      "label": "The app rides along",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Projects and collectors",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "the app rides along",
-      "source_file": "README.md",
-      "source_location": "L361"
-    },
-    {
-      "id": "readme_usb_sticks_as_collectors",
-      "label": "USB sticks as collectors",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Projects and collectors",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "usb sticks as collectors",
-      "source_file": "README.md",
-      "source_location": "L325"
+      "source_location": "L4002"
     },
     {
       "id": "syncdatacollector_commit_uitoproject",
       "label": "Commit-UiToProject()",
       "_origin": "ast",
-      "community": 4,
-      "community_name": "Invoke-CollectorSync",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
       "file_type": "code",
       "norm_label": "commit-uitoproject()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4241"
+      "source_location": "L4340"
+    },
+    {
+      "id": "syncdatacollector_format_local",
+      "label": "Format-Local()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "format-local()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L1630"
+    },
+    {
+      "id": "syncdatacollector_format_rowtime",
+      "label": "Format-RowTime()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "format-rowtime()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L3989"
+    },
+    {
+      "id": "syncdatacollector_format_size",
+      "label": "Format-Size()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "format-size()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L3975"
+    },
+    {
+      "id": "syncdatacollector_get_rowkey",
+      "label": "Get-RowKey()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "get-rowkey()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L3888"
+    },
+    {
+      "id": "syncdatacollector_get_rowlook",
+      "label": "Get-RowLook()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "get-rowlook()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L3922"
+    },
+    {
+      "id": "syncdatacollector_get_rowtip",
+      "label": "Get-RowTip()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "get-rowtip()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L3956"
+    },
+    {
+      "id": "syncdatacollector_invoke_collectoraction",
+      "label": "Invoke-CollectorAction()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "invoke-collectoraction()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4568"
+    },
+    {
+      "id": "syncdatacollector_load_collectortoui",
+      "label": "Load-CollectorToUi()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "load-collectortoui()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4407"
+    },
+    {
+      "id": "syncdatacollector_parse_utc",
+      "label": "Parse-Utc()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "parse-utc()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L1619"
+    },
+    {
+      "id": "syncdatacollector_reset_checkgate",
+      "label": "Reset-CheckGate()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "reset-checkgate()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4530"
+    },
+    {
+      "id": "syncdatacollector_set_busy",
+      "label": "Set-Busy()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "set-busy()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4553"
+    },
+    {
+      "id": "syncdatacollector_show_compareplan",
+      "label": "Show-ComparePlan()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "show-compareplan()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4132"
+    },
+    {
+      "id": "syncdatacollector_split_relpath",
+      "label": "Split-RelPath()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "split-relpath()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L3967"
+    },
+    {
+      "id": "syncdatacollector_test_rescueeligible",
+      "label": "Test-RescueEligible()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "test-rescueeligible()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L3902"
+    },
+    {
+      "id": "syncdatacollector_test_rescuemark",
+      "label": "Test-RescueMark()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "test-rescuemark()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L3911"
+    },
+    {
+      "id": "syncdatacollector_test_syncallowed",
+      "label": "Test-SyncAllowed()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "test-syncallowed()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4523"
+    },
+    {
+      "id": "syncdatacollector_toggle_rescuemark",
+      "label": "Toggle-RescueMark()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "toggle-rescuemark()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4706"
+    },
+    {
+      "id": "syncdatacollector_update_actionbuttons",
+      "label": "Update-ActionButtons()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "update-actionbuttons()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4536"
+    },
+    {
+      "id": "syncdatacollector_update_comparehint",
+      "label": "Update-CompareHint()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "update-comparehint()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4091"
+    },
+    {
+      "id": "syncdatacollector_update_comparerow",
+      "label": "Update-CompareRow()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "update-comparerow()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4214"
+    },
+    {
+      "id": "syncdatacollector_update_detectedcollector",
+      "label": "Update-DetectedCollector()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "update-detectedcollector()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4460"
+    },
+    {
+      "id": "syncdatacollector_write_log",
+      "label": "Write-Log()",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "write-log()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L3859"
     },
     {
       "id": "syncdatacollector_ensure_exportfolder",
@@ -926,18 +1050,29 @@
       "file_type": "code",
       "norm_label": "ensure-exportfolder()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2630"
+      "source_location": "L2717"
     },
     {
-      "id": "syncdatacollector_get_collectorbyserial",
-      "label": "Get-CollectorBySerial()",
+      "id": "syncdatacollector_expand_envvars",
+      "label": "Expand-EnvVars()",
       "_origin": "ast",
       "community": 4,
       "community_name": "Invoke-CollectorSync",
       "file_type": "code",
-      "norm_label": "get-collectorbyserial()",
+      "norm_label": "expand-envvars()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2291"
+      "source_location": "L510"
+    },
+    {
+      "id": "syncdatacollector_expand_pathtokens",
+      "label": "Expand-PathTokens()",
+      "_origin": "ast",
+      "community": 4,
+      "community_name": "Invoke-CollectorSync",
+      "file_type": "code",
+      "norm_label": "expand-pathtokens()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L471"
     },
     {
       "id": "syncdatacollector_get_collectordeviceroot",
@@ -948,7 +1083,18 @@
       "file_type": "code",
       "norm_label": "get-collectordeviceroot()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2338"
+      "source_location": "L2406"
+    },
+    {
+      "id": "syncdatacollector_get_collectorfoldername",
+      "label": "Get-CollectorFolderName()",
+      "_origin": "ast",
+      "community": 4,
+      "community_name": "Invoke-CollectorSync",
+      "file_type": "code",
+      "norm_label": "get-collectorfoldername()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2378"
     },
     {
       "id": "syncdatacollector_get_collectorlabel",
@@ -959,18 +1105,7 @@
       "file_type": "code",
       "norm_label": "get-collectorlabel()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2298"
-    },
-    {
-      "id": "syncdatacollector_get_connectedcollectors",
-      "label": "Get-ConnectedCollectors()",
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "Invoke-CollectorSync",
-      "file_type": "code",
-      "norm_label": "get-connectedcollectors()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2815"
+      "source_location": "L2366"
     },
     {
       "id": "syncdatacollector_get_exportroutes",
@@ -981,18 +1116,40 @@
       "file_type": "code",
       "norm_label": "get-exportroutes()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2150"
+      "source_location": "L2218"
     },
     {
-      "id": "syncdatacollector_get_volumedevices",
-      "label": "Get-VolumeDevices()",
+      "id": "syncdatacollector_get_jobcleanupplan",
+      "label": "Get-JobCleanupPlan()",
       "_origin": "ast",
       "community": 4,
       "community_name": "Invoke-CollectorSync",
       "file_type": "code",
-      "norm_label": "get-volumedevices()",
+      "norm_label": "get-jobcleanupplan()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L982"
+      "source_location": "L1427"
+    },
+    {
+      "id": "syncdatacollector_get_juliandate",
+      "label": "Get-JulianDate()",
+      "_origin": "ast",
+      "community": 4,
+      "community_name": "Invoke-CollectorSync",
+      "file_type": "code",
+      "norm_label": "get-juliandate()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L405"
+    },
+    {
+      "id": "syncdatacollector_get_monthfolder",
+      "label": "Get-MonthFolder()",
+      "_origin": "ast",
+      "community": 4,
+      "community_name": "Invoke-CollectorSync",
+      "file_type": "code",
+      "norm_label": "get-monthfolder()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L451"
     },
     {
       "id": "syncdatacollector_get_volumeserial",
@@ -1003,18 +1160,7 @@
       "file_type": "code",
       "norm_label": "get-volumeserial()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L999"
-    },
-    {
-      "id": "syncdatacollector_invoke_collectoraction",
-      "label": "Invoke-CollectorAction()",
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "Invoke-CollectorSync",
-      "file_type": "code",
-      "norm_label": "invoke-collectoraction()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4469"
+      "source_location": "L1007"
     },
     {
       "id": "syncdatacollector_invoke_collectorsync",
@@ -1025,7 +1171,7 @@
       "file_type": "code",
       "norm_label": "invoke-collectorsync()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2658"
+      "source_location": "L2745"
     },
     {
       "id": "syncdatacollector_new_legprofile",
@@ -1036,7 +1182,7 @@
       "file_type": "code",
       "norm_label": "new-legprofile()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2349"
+      "source_location": "L2417"
     },
     {
       "id": "syncdatacollector_resolve_volumeroot",
@@ -1047,7 +1193,18 @@
       "file_type": "code",
       "norm_label": "resolve-volumeroot()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1018"
+      "source_location": "L1026"
+    },
+    {
+      "id": "syncdatacollector_split_datedroot",
+      "label": "Split-DatedRoot()",
+      "_origin": "ast",
+      "community": 4,
+      "community_name": "Invoke-CollectorSync",
+      "file_type": "code",
+      "norm_label": "split-datedroot()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L435"
     },
     {
       "id": "syncdatacollector_test_collectorreachable",
@@ -1058,7 +1215,7 @@
       "file_type": "code",
       "norm_label": "test-collectorreachable()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1871"
+      "source_location": "L1879"
     },
     {
       "id": "syncdatacollector_test_volumecollector",
@@ -1069,29 +1226,18 @@
       "file_type": "code",
       "norm_label": "test-volumecollector()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1009"
+      "source_location": "L1017"
     },
     {
-      "id": "syncdatacollector_update_detectedcollector",
-      "label": "Update-DetectedCollector()",
+      "id": "syncdatacollector_update_datelabel",
+      "label": "Update-DateLabel()",
       "_origin": "ast",
       "community": 4,
       "community_name": "Invoke-CollectorSync",
       "file_type": "code",
-      "norm_label": "update-detectedcollector()",
+      "norm_label": "update-datelabel()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4361"
-    },
-    {
-      "id": "syncdatacollector_write_log",
-      "label": "Write-Log()",
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "Invoke-CollectorSync",
-      "file_type": "code",
-      "norm_label": "write-log()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3760"
+      "source_location": "L5036"
     },
     {
       "id": "syncdatacollector_format_utc",
@@ -1102,7 +1248,7 @@
       "file_type": "code",
       "norm_label": "format-utc()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1606"
+      "source_location": "L1614"
     },
     {
       "id": "syncdatacollector_get_devicefriendlyname",
@@ -1113,7 +1259,7 @@
       "file_type": "code",
       "norm_label": "get-devicefriendlyname()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1650"
+      "source_location": "L1658"
     },
     {
       "id": "syncdatacollector_get_devicelabel",
@@ -1124,7 +1270,7 @@
       "file_type": "code",
       "norm_label": "get-devicelabel()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1686"
+      "source_location": "L1694"
     },
     {
       "id": "syncdatacollector_get_syncstateentries",
@@ -1135,7 +1281,7 @@
       "file_type": "code",
       "norm_label": "get-syncstateentries()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1699"
+      "source_location": "L1707"
     },
     {
       "id": "syncdatacollector_get_syncstateentry",
@@ -1146,7 +1292,7 @@
       "file_type": "code",
       "norm_label": "get-syncstateentry()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1706"
+      "source_location": "L1714"
     },
     {
       "id": "syncdatacollector_invoke_synccheck",
@@ -1157,7 +1303,7 @@
       "file_type": "code",
       "norm_label": "invoke-synccheck()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1919"
+      "source_location": "L1927"
     },
     {
       "id": "syncdatacollector_load_syncstate",
@@ -1168,7 +1314,7 @@
       "file_type": "code",
       "norm_label": "load-syncstate()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1628"
+      "source_location": "L1636"
     },
     {
       "id": "syncdatacollector_new_devicemarker",
@@ -1179,18 +1325,7 @@
       "file_type": "code",
       "norm_label": "new-devicemarker()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1733"
-    },
-    {
-      "id": "syncdatacollector_parse_utc",
-      "label": "Parse-Utc()",
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "Invoke-SyncCheck",
-      "file_type": "code",
-      "norm_label": "parse-utc()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1611"
+      "source_location": "L1741"
     },
     {
       "id": "syncdatacollector_remove_syncstateentry",
@@ -1201,7 +1336,7 @@
       "file_type": "code",
       "norm_label": "remove-syncstateentry()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1715"
+      "source_location": "L1723"
     },
     {
       "id": "syncdatacollector_save_syncstate",
@@ -1212,7 +1347,7 @@
       "file_type": "code",
       "norm_label": "save-syncstate()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1642"
+      "source_location": "L1650"
     },
     {
       "id": "syncdatacollector_set_syncstateentry",
@@ -1223,7 +1358,7 @@
       "file_type": "code",
       "norm_label": "set-syncstateentry()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1724"
+      "source_location": "L1732"
     },
     {
       "id": "syncdatacollector_update_syncrecords",
@@ -1234,7 +1369,7 @@
       "file_type": "code",
       "norm_label": "update-syncrecords()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1794"
+      "source_location": "L1802"
     },
     {
       "id": "syncdatacollector_write_devicemarker",
@@ -1245,315 +1380,106 @@
       "file_type": "code",
       "norm_label": "write-devicemarker()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1770"
+      "source_location": "L1778"
     },
     {
       "id": "syncdatacollector_confirm_mappeddrive",
       "label": "Confirm-MappedDrive()",
       "_origin": "ast",
       "community": 6,
-      "community_name": "Expand-EnvVars",
+      "community_name": "Confirm-PathDrive",
       "file_type": "code",
       "norm_label": "confirm-mappeddrive()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L637"
+      "source_location": "L645"
     },
     {
       "id": "syncdatacollector_confirm_mappeddrives",
       "label": "Confirm-MappedDrives()",
       "_origin": "ast",
       "community": 6,
-      "community_name": "Expand-EnvVars",
+      "community_name": "Confirm-PathDrive",
       "file_type": "code",
       "norm_label": "confirm-mappeddrives()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L648"
+      "source_location": "L656"
     },
     {
       "id": "syncdatacollector_confirm_pathdrive",
       "label": "Confirm-PathDrive()",
       "_origin": "ast",
       "community": 6,
-      "community_name": "Expand-EnvVars",
+      "community_name": "Confirm-PathDrive",
       "file_type": "code",
       "norm_label": "confirm-pathdrive()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L659"
+      "source_location": "L667"
     },
     {
       "id": "syncdatacollector_ensure_mappeddrive",
       "label": "Ensure-MappedDrive()",
       "_origin": "ast",
       "community": 6,
-      "community_name": "Expand-EnvVars",
+      "community_name": "Confirm-PathDrive",
       "file_type": "code",
       "norm_label": "ensure-mappeddrive()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L582"
-    },
-    {
-      "id": "syncdatacollector_expand_envvars",
-      "label": "Expand-EnvVars()",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "Expand-EnvVars",
-      "file_type": "code",
-      "norm_label": "expand-envvars()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L502"
-    },
-    {
-      "id": "syncdatacollector_get_collectorfoldername",
-      "label": "Get-CollectorFolderName()",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "Expand-EnvVars",
-      "file_type": "code",
-      "norm_label": "get-collectorfoldername()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2310"
+      "source_location": "L590"
     },
     {
       "id": "syncdatacollector_get_driveletter",
       "label": "Get-DriveLetter()",
       "_origin": "ast",
       "community": 6,
-      "community_name": "Expand-EnvVars",
+      "community_name": "Confirm-PathDrive",
       "file_type": "code",
       "norm_label": "get-driveletter()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L510"
+      "source_location": "L518"
     },
     {
       "id": "syncdatacollector_get_drivemapentry",
       "label": "Get-DriveMapEntry()",
       "_origin": "ast",
       "community": 6,
-      "community_name": "Expand-EnvVars",
+      "community_name": "Confirm-PathDrive",
       "file_type": "code",
       "norm_label": "get-drivemapentry()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L533"
+      "source_location": "L541"
     },
     {
       "id": "syncdatacollector_get_onedriveroots",
       "label": "Get-OneDriveRoots()",
       "_origin": "ast",
       "community": 6,
-      "community_name": "Expand-EnvVars",
+      "community_name": "Confirm-PathDrive",
       "file_type": "code",
       "norm_label": "get-onedriveroots()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L518"
+      "source_location": "L526"
     },
     {
       "id": "syncdatacollector_get_substtarget",
       "label": "Get-SubstTarget()",
       "_origin": "ast",
       "community": 6,
-      "community_name": "Expand-EnvVars",
+      "community_name": "Confirm-PathDrive",
       "file_type": "code",
       "norm_label": "get-substtarget()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L566"
+      "source_location": "L574"
     },
     {
       "id": "syncdatacollector_resolve_drivemaptarget",
       "label": "Resolve-DriveMapTarget()",
       "_origin": "ast",
       "community": 6,
-      "community_name": "Expand-EnvVars",
+      "community_name": "Confirm-PathDrive",
       "file_type": "code",
       "norm_label": "resolve-drivemaptarget()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L543"
-    },
-    {
-      "id": "syncdatacollector_expand_pathtokens",
-      "label": "Expand-PathTokens()",
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "expand-pathtokens()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L463"
-    },
-    {
-      "id": "syncdatacollector_get_destrel",
-      "label": "Get-DestRel()",
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "get-destrel()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1210"
-    },
-    {
-      "id": "syncdatacollector_get_fsinventory",
-      "label": "Get-FsInventory()",
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "get-fsinventory()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1150"
-    },
-    {
-      "id": "syncdatacollector_get_jobcleanupplan",
-      "label": "Get-JobCleanupPlan()",
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "get-jobcleanupplan()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1419"
-    },
-    {
-      "id": "syncdatacollector_get_juliandate",
-      "label": "Get-JulianDate()",
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "get-juliandate()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L397"
-    },
-    {
-      "id": "syncdatacollector_get_julianfromname",
-      "label": "Get-JulianFromName()",
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "get-julianfromname()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L409"
-    },
-    {
-      "id": "syncdatacollector_get_monthfolder",
-      "label": "Get-MonthFolder()",
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "get-monthfolder()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L443"
-    },
-    {
-      "id": "syncdatacollector_get_mtpinventory",
-      "label": "Get-MtpInventory()",
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "get-mtpinventory()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1113"
-    },
-    {
-      "id": "syncdatacollector_get_pruneset",
-      "label": "Get-PruneSet()",
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "get-pruneset()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1540"
-    },
-    {
-      "id": "syncdatacollector_get_targetinventory",
-      "label": "Get-TargetInventory()",
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "get-targetinventory()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1304"
-    },
-    {
-      "id": "syncdatacollector_invoke_sync",
-      "label": "Invoke-Sync()",
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "invoke-sync()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2859"
-    },
-    {
-      "id": "syncdatacollector_resolve_nooverwritedest",
-      "label": "Resolve-NoOverwriteDest()",
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "resolve-nooverwritedest()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L710"
-    },
-    {
-      "id": "syncdatacollector_split_datedroot",
-      "label": "Split-DatedRoot()",
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "split-datedroot()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L427"
-    },
-    {
-      "id": "syncdatacollector_target_getinfo",
-      "label": "Target-GetInfo()",
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "target-getinfo()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L690"
-    },
-    {
-      "id": "syncdatacollector_test_alreadyfiled",
-      "label": "Test-AlreadyFiled()",
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "test-alreadyfiled()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1351"
-    },
-    {
-      "id": "syncdatacollector_test_jobremovable",
-      "label": "Test-JobRemovable()",
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "test-jobremovable()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1384"
-    },
-    {
-      "id": "syncdatacollector_update_datelabel",
-      "label": "Update-DateLabel()",
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "update-datelabel()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4937"
+      "source_location": "L551"
     },
     {
       "id": "readme",
@@ -1577,7 +1503,7 @@
       "node_kind": "heading",
       "norm_label": "check is required before sync",
       "source_file": "README.md",
-      "source_location": "L846"
+      "source_location": "L875"
     },
     {
       "id": "readme_configuration_reference",
@@ -1589,7 +1515,43 @@
       "node_kind": "heading",
       "norm_label": "configuration reference",
       "source_file": "README.md",
-      "source_location": "L1030"
+      "source_location": "L1059"
+    },
+    {
+      "id": "readme_defaults",
+      "label": "Defaults",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "Sync DataCollector",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "defaults",
+      "source_file": "README.md",
+      "source_location": "L427"
+    },
+    {
+      "id": "readme_everyday_mode_and_the_advanced_tick_box",
+      "label": "Everyday mode, and the Advanced tick-box",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "Sync DataCollector",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "everyday mode, and the advanced tick-box",
+      "source_file": "README.md",
+      "source_location": "L411"
+    },
+    {
+      "id": "readme_export_routes_filing_different_file_types_in_different_places",
+      "label": "Export routes: filing different file types in different places",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "Sync DataCollector",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "export routes: filing different file types in different places",
+      "source_file": "README.md",
+      "source_location": "L488"
     },
     {
       "id": "readme_exports_are_never_destroyed",
@@ -1601,7 +1563,7 @@
       "node_kind": "heading",
       "norm_label": "exports are never destroyed",
       "source_file": "README.md",
-      "source_location": "L618"
+      "source_location": "L647"
     },
     {
       "id": "readme_features",
@@ -1628,6 +1590,18 @@
       "source_location": "L231"
     },
     {
+      "id": "readme_filing_by_when_the_work_was_done_not_when_you_pulled_it",
+      "label": "Filing by when the work was done, not when you pulled it",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "Sync DataCollector",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "filing by when the work was done, not when you pulled it",
+      "source_file": "README.md",
+      "source_location": "L538"
+    },
+    {
       "id": "readme_how_mtp_works_here_and_why_it_s_reliable",
       "label": "How MTP works here (and why it's reliable)",
       "_origin": "ast",
@@ -1649,7 +1623,19 @@
       "node_kind": "heading",
       "norm_label": "keeping a file the collector has and the design folder doesn't",
       "source_file": "README.md",
-      "source_location": "L868"
+      "source_location": "L897"
+    },
+    {
+      "id": "readme_keeping_exports_from_different_collectors_apart",
+      "label": "Keeping exports from different collectors apart",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "Sync DataCollector",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "keeping exports from different collectors apart",
+      "source_file": "README.md",
+      "source_location": "L458"
     },
     {
       "id": "readme_keeping_superseded_designs_off_the_collector",
@@ -1661,7 +1647,7 @@
       "node_kind": "heading",
       "norm_label": "keeping superseded designs off the collector",
       "source_file": "README.md",
-      "source_location": "L686"
+      "source_location": "L715"
     },
     {
       "id": "readme_knowing_when_a_collector_is_out_of_date",
@@ -1673,7 +1659,7 @@
       "node_kind": "heading",
       "norm_label": "knowing when a collector is out of date",
       "source_file": "README.md",
-      "source_location": "L761"
+      "source_location": "L790"
     },
     {
       "id": "readme_license",
@@ -1685,7 +1671,7 @@
       "node_kind": "heading",
       "norm_label": "license",
       "source_file": "README.md",
-      "source_location": "L1125"
+      "source_location": "L1155"
     },
     {
       "id": "readme_main_screen",
@@ -1709,7 +1695,31 @@
       "node_kind": "heading",
       "norm_label": "mirror mode: letting the tool own the destination folder",
       "source_file": "README.md",
-      "source_location": "L725"
+      "source_location": "L754"
+    },
+    {
+      "id": "readme_more_than_one_folder_going_out_survey_control",
+      "label": "More than one folder going out: survey control",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "Sync DataCollector",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "more than one folder going out: survey control",
+      "source_file": "README.md",
+      "source_location": "L325"
+    },
+    {
+      "id": "readme_projects_and_collectors",
+      "label": "Projects and collectors",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "Sync DataCollector",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "projects and collectors",
+      "source_file": "README.md",
+      "source_location": "L303"
     },
     {
       "id": "readme_pulling_field_data_off_collectors_reverse_sync",
@@ -1745,7 +1755,7 @@
       "node_kind": "heading",
       "norm_label": "recognising a file the office has since moved",
       "source_file": "README.md",
-      "source_location": "L658"
+      "source_location": "L687"
     },
     {
       "id": "readme_requirements",
@@ -1769,7 +1779,7 @@
       "node_kind": "heading",
       "norm_label": "roadmap",
       "source_file": "README.md",
-      "source_location": "L1117"
+      "source_location": "L1147"
     },
     {
       "id": "readme_several_collectors_one_device_name",
@@ -1781,7 +1791,7 @@
       "node_kind": "heading",
       "norm_label": "several collectors, one device name",
       "source_file": "README.md",
-      "source_location": "L910"
+      "source_location": "L939"
     },
     {
       "id": "readme_sync_datacollector",
@@ -1808,6 +1818,18 @@
       "source_location": "L246"
     },
     {
+      "id": "readme_the_app_rides_along",
+      "label": "The app rides along",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "Sync DataCollector",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "the app rides along",
+      "source_file": "README.md",
+      "source_location": "L390"
+    },
+    {
       "id": "readme_the_compare_view",
       "label": "The compare view",
       "_origin": "ast",
@@ -1817,7 +1839,7 @@
       "node_kind": "heading",
       "norm_label": "the compare view",
       "source_file": "README.md",
-      "source_location": "L795"
+      "source_location": "L824"
     },
     {
       "id": "readme_the_exception_files_that_are_still_being_worked_in",
@@ -1829,7 +1851,7 @@
       "node_kind": "heading",
       "norm_label": "the exception: files that are still being worked in",
       "source_file": "README.md",
-      "source_location": "L629"
+      "source_location": "L658"
     },
     {
       "id": "readme_the_one_folder_mirroring_must_never_be_pointed_at",
@@ -1841,7 +1863,7 @@
       "node_kind": "heading",
       "norm_label": "the one folder mirroring must never be pointed at",
       "source_file": "README.md",
-      "source_location": "L595"
+      "source_location": "L624"
     },
     {
       "id": "readme_the_s_drive_maps_itself",
@@ -1853,7 +1875,7 @@
       "node_kind": "heading",
       "norm_label": "the `s:` drive maps itself",
       "source_file": "README.md",
-      "source_location": "L983"
+      "source_location": "L1012"
     },
     {
       "id": "readme_the_stick_is_a_self_contained_kit",
@@ -1889,7 +1911,7 @@
       "node_kind": "heading",
       "norm_label": "tidying old jobs off the collector",
       "source_file": "README.md",
-      "source_location": "L543"
+      "source_location": "L572"
     },
     {
       "id": "readme_troubleshooting",
@@ -1901,7 +1923,19 @@
       "node_kind": "heading",
       "norm_label": "troubleshooting",
       "source_file": "README.md",
-      "source_location": "L1077"
+      "source_location": "L1107"
+    },
+    {
+      "id": "readme_usb_sticks_as_collectors",
+      "label": "USB sticks as collectors",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "Sync DataCollector",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "usb sticks as collectors",
+      "source_file": "README.md",
+      "source_location": "L354"
     },
     {
       "id": "readme_what_gets_written_and_where",
@@ -1913,7 +1947,7 @@
       "node_kind": "heading",
       "norm_label": "what gets written, and where",
       "source_file": "README.md",
-      "source_location": "L964"
+      "source_location": "L993"
     },
     {
       "id": "syncdatacollector_convertfrom_legacyprofiles",
@@ -1935,7 +1969,7 @@
       "file_type": "code",
       "norm_label": "copy-tabletconfigtovolume()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2589"
+      "source_location": "L2676"
     },
     {
       "id": "syncdatacollector_get_defaultconfig",
@@ -1949,15 +1983,15 @@
       "source_location": "L139"
     },
     {
-      "id": "syncdatacollector_get_deviceprojectsubpath",
-      "label": "Get-DeviceProjectSubPath()",
+      "id": "syncdatacollector_get_extradesigns",
+      "label": "Get-ExtraDesigns()",
       "_origin": "ast",
       "community": 9,
       "community_name": "Load-Config",
       "file_type": "code",
-      "norm_label": "get-deviceprojectsubpath()",
+      "norm_label": "get-extradesigns()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2331"
+      "source_location": "L2145"
     },
     {
       "id": "syncdatacollector_load_config",
@@ -1979,7 +2013,7 @@
       "file_type": "code",
       "norm_label": "new-collector()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2251"
+      "source_location": "L2319"
     },
     {
       "id": "syncdatacollector_new_drivemap",
@@ -2001,7 +2035,18 @@
       "file_type": "code",
       "norm_label": "new-exportroute()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2119"
+      "source_location": "L2187"
+    },
+    {
+      "id": "syncdatacollector_new_extradesign",
+      "label": "New-ExtraDesign()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "Load-Config",
+      "file_type": "code",
+      "norm_label": "new-extradesign()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2126"
     },
     {
       "id": "syncdatacollector_new_mtpsettings",
@@ -2034,7 +2079,7 @@
       "file_type": "code",
       "norm_label": "new-project()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2090"
+      "source_location": "L2098"
     },
     {
       "id": "syncdatacollector_new_tabletconfig",
@@ -2045,7 +2090,7 @@
       "file_type": "code",
       "norm_label": "new-tabletconfig()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2533"
+      "source_location": "L2609"
     },
     {
       "id": "syncdatacollector_new_tabletexportroutes",
@@ -2056,7 +2101,7 @@
       "file_type": "code",
       "norm_label": "new-tabletexportroutes()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2510"
+      "source_location": "L2586"
     },
     {
       "id": "syncdatacollector_register_collector",
@@ -2067,18 +2112,7 @@
       "file_type": "code",
       "norm_label": "register-collector()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2845"
-    },
-    {
-      "id": "syncdatacollector_split_mtppath",
-      "label": "Split-MtpPath()",
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "Load-Config",
-      "file_type": "code",
-      "norm_label": "split-mtppath()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L365"
+      "source_location": "L2944"
     }
   ],
   "links": [
@@ -2090,7 +2124,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4306",
+      "source_location": "L4405",
       "weight": 1.0
     },
     {
@@ -2101,7 +2135,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4213",
+      "source_location": "L4312",
       "weight": 1.0
     },
     {
@@ -2112,7 +2146,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4214",
+      "source_location": "L4313",
       "weight": 1.0
     },
     {
@@ -2123,7 +2157,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4344",
+      "source_location": "L4443",
       "weight": 1.0
     },
     {
@@ -2134,7 +2168,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4346",
+      "source_location": "L4445",
       "weight": 1.0
     },
     {
@@ -2145,7 +2179,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L639",
+      "source_location": "L647",
       "weight": 1.0
     },
     {
@@ -2156,7 +2190,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L652",
+      "source_location": "L660",
       "weight": 1.0
     },
     {
@@ -2167,7 +2201,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L653",
+      "source_location": "L661",
       "weight": 1.0
     },
     {
@@ -2178,7 +2212,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L661",
+      "source_location": "L669",
       "weight": 1.0
     },
     {
@@ -2189,7 +2223,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L661",
+      "source_location": "L669",
       "weight": 1.0
     },
     {
@@ -2200,7 +2234,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L664",
+      "source_location": "L672",
       "weight": 1.0
     },
     {
@@ -2211,7 +2245,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L665",
+      "source_location": "L673",
       "weight": 1.0
     },
     {
@@ -2233,7 +2267,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2474",
+      "source_location": "L2550",
       "weight": 1.0
     },
     {
@@ -2244,7 +2278,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L765",
+      "source_location": "L773",
       "weight": 1.0
     },
     {
@@ -2255,7 +2289,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L768",
+      "source_location": "L776",
       "weight": 1.0
     },
     {
@@ -2266,7 +2300,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L770",
+      "source_location": "L778",
       "weight": 1.0
     },
     {
@@ -2277,7 +2311,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L785",
+      "source_location": "L793",
       "weight": 1.0
     },
     {
@@ -2288,7 +2322,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2597",
+      "source_location": "L2684",
       "weight": 1.0
     },
     {
@@ -2299,7 +2333,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2633",
+      "source_location": "L2720",
       "weight": 1.0
     },
     {
@@ -2310,7 +2344,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2635",
+      "source_location": "L2722",
       "weight": 1.0
     },
     {
@@ -2321,7 +2355,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L584",
+      "source_location": "L592",
       "weight": 1.0
     },
     {
@@ -2332,7 +2366,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L592",
+      "source_location": "L600",
       "weight": 1.0
     },
     {
@@ -2343,7 +2377,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L600",
+      "source_location": "L608",
       "weight": 1.0
     },
     {
@@ -2354,7 +2388,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L609",
+      "source_location": "L617",
       "weight": 1.0
     },
     {
@@ -2365,7 +2399,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L611",
+      "source_location": "L619",
       "weight": 1.0
     },
     {
@@ -2376,7 +2410,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L470",
+      "source_location": "L478",
       "weight": 1.0
     },
     {
@@ -2387,7 +2421,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L472",
+      "source_location": "L480",
       "weight": 1.0
     },
     {
@@ -2398,7 +2432,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L474",
+      "source_location": "L482",
       "weight": 1.0
     },
     {
@@ -2409,7 +2443,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1670",
+      "source_location": "L1678",
       "weight": 1.0
     },
     {
@@ -2420,7 +2454,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3893",
+      "source_location": "L3992",
       "weight": 1.0
     },
     {
@@ -2431,7 +2465,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4271",
+      "source_location": "L4370",
       "weight": 1.0
     },
     {
@@ -2442,7 +2476,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4273",
+      "source_location": "L4372",
       "weight": 1.0
     },
     {
@@ -2453,7 +2487,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2343",
+      "source_location": "L2411",
       "weight": 1.0
     },
     {
@@ -2464,7 +2498,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2344",
+      "source_location": "L2412",
       "weight": 1.0
     },
     {
@@ -2475,7 +2509,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2346",
+      "source_location": "L2414",
       "weight": 1.0
     },
     {
@@ -2486,7 +2520,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2312",
+      "source_location": "L2380",
       "weight": 1.0
     },
     {
@@ -2497,7 +2531,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2300",
+      "source_location": "L2368",
       "weight": 1.0
     },
     {
@@ -2508,7 +2542,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2302",
+      "source_location": "L2370",
       "weight": 1.0
     },
     {
@@ -2519,7 +2553,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2819",
+      "source_location": "L2918",
       "weight": 1.0
     },
     {
@@ -2530,7 +2564,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2820",
+      "source_location": "L2919",
       "weight": 1.0
     },
     {
@@ -2541,7 +2575,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2824",
+      "source_location": "L2923",
       "weight": 1.0
     },
     {
@@ -2552,7 +2586,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2834",
+      "source_location": "L2933",
       "weight": 1.0
     },
     {
@@ -2618,7 +2652,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2248",
+      "source_location": "L2316",
       "weight": 1.0
     },
     {
@@ -2629,7 +2663,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1689",
+      "source_location": "L1697",
       "weight": 1.0
     },
     {
@@ -2640,7 +2674,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2333",
+      "source_location": "L2401",
       "weight": 1.0
     },
     {
@@ -2651,7 +2685,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L535",
+      "source_location": "L543",
       "weight": 1.0
     },
     {
@@ -2662,7 +2696,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2159",
+      "source_location": "L2227",
       "weight": 1.0
     },
     {
@@ -2673,7 +2707,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1422",
+      "source_location": "L1430",
       "weight": 1.0
     },
     {
@@ -2684,7 +2718,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1427",
+      "source_location": "L1435",
       "weight": 1.0
     },
     {
@@ -2695,7 +2729,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1455",
+      "source_location": "L1463",
       "weight": 1.0
     },
     {
@@ -2706,7 +2740,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1459",
+      "source_location": "L1467",
       "weight": 1.0
     },
     {
@@ -2717,7 +2751,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1471",
+      "source_location": "L1479",
       "weight": 1.0
     },
     {
@@ -2728,7 +2762,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1471",
+      "source_location": "L1479",
       "weight": 1.0
     },
     {
@@ -2739,7 +2773,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1472",
+      "source_location": "L1480",
       "weight": 1.0
     },
     {
@@ -2750,7 +2784,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1473",
+      "source_location": "L1481",
       "weight": 1.0
     },
     {
@@ -2761,7 +2795,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1482",
+      "source_location": "L1490",
       "weight": 1.0
     },
     {
@@ -2772,7 +2806,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1492",
+      "source_location": "L1500",
       "weight": 1.0
     },
     {
@@ -2783,7 +2817,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1501",
+      "source_location": "L1509",
       "weight": 1.0
     },
     {
@@ -2794,7 +2828,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2206",
+      "source_location": "L2274",
       "weight": 1.0
     },
     {
@@ -2805,7 +2839,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1028",
+      "source_location": "L1036",
       "weight": 1.0
     },
     {
@@ -2816,7 +2850,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L963",
+      "source_location": "L971",
       "weight": 1.0
     },
     {
@@ -2827,7 +2861,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1100",
+      "source_location": "L1108",
       "weight": 1.0
     },
     {
@@ -2838,7 +2872,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1102",
+      "source_location": "L1110",
       "weight": 1.0
     },
     {
@@ -2849,7 +2883,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1116",
+      "source_location": "L1124",
       "weight": 1.0
     },
     {
@@ -2860,7 +2894,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1552",
+      "source_location": "L1560",
       "weight": 1.0
     },
     {
@@ -2871,7 +2905,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1563",
+      "source_location": "L1571",
       "weight": 1.0
     },
     {
@@ -2882,7 +2916,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3835",
+      "source_location": "L3934",
       "weight": 1.0
     },
     {
@@ -2893,7 +2927,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L568",
+      "source_location": "L576",
       "weight": 1.0
     },
     {
@@ -2904,7 +2938,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1701",
+      "source_location": "L1709",
       "weight": 1.0
     },
     {
@@ -2915,7 +2949,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1708",
+      "source_location": "L1716",
       "weight": 1.0
     },
     {
@@ -2926,7 +2960,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1309",
+      "source_location": "L1317",
       "weight": 1.0
     },
     {
@@ -2937,7 +2971,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1313",
+      "source_location": "L1321",
       "weight": 1.0
     },
     {
@@ -2948,7 +2982,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4258",
+      "source_location": "L4357",
       "weight": 1.0
     },
     {
@@ -2959,7 +2993,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4260",
+      "source_location": "L4359",
       "weight": 1.0
     },
     {
@@ -2970,7 +3004,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4262",
+      "source_location": "L4361",
       "weight": 1.0
     },
     {
@@ -2992,7 +3026,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4473",
+      "source_location": "L4572",
       "weight": 1.0
     },
     {
@@ -3003,7 +3037,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4474",
+      "source_location": "L4573",
       "weight": 1.0
     },
     {
@@ -3014,7 +3048,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4476",
+      "source_location": "L4575",
       "weight": 1.0
     },
     {
@@ -3025,7 +3059,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4484",
+      "source_location": "L4583",
       "weight": 1.0
     },
     {
@@ -3036,7 +3070,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4490",
+      "source_location": "L4589",
       "weight": 1.0
     },
     {
@@ -3047,7 +3081,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4511",
+      "source_location": "L4610",
       "weight": 1.0
     },
     {
@@ -3058,7 +3092,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4516",
+      "source_location": "L4615",
       "weight": 1.0
     },
     {
@@ -3069,7 +3103,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4545",
+      "source_location": "L4644",
       "weight": 1.0
     },
     {
@@ -3080,7 +3114,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4554",
+      "source_location": "L4653",
       "weight": 1.0
     },
     {
@@ -3091,7 +3125,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2668",
+      "source_location": "L2755",
       "weight": 1.0
     },
     {
@@ -3102,7 +3136,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2676",
+      "source_location": "L2763",
       "weight": 1.0
     },
     {
@@ -3113,7 +3147,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2677",
+      "source_location": "L2764",
       "weight": 1.0
     },
     {
@@ -3124,7 +3158,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2678",
+      "source_location": "L2765",
       "weight": 1.0
     },
     {
@@ -3135,7 +3169,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2685",
+      "source_location": "L2772",
       "weight": 1.0
     },
     {
@@ -3146,7 +3180,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2687",
+      "source_location": "L2774",
       "weight": 1.0
     },
     {
@@ -3157,7 +3191,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2688",
+      "source_location": "L2775",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector_invoke_collectorsync",
+      "target": "syncdatacollector_get_extradesigns",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2788",
       "weight": 1.0
     },
     {
@@ -3168,7 +3213,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2700",
+      "source_location": "L2796",
       "weight": 1.0
     },
     {
@@ -3179,7 +3224,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2705",
+      "source_location": "L2801",
       "weight": 1.0
     },
     {
@@ -3190,7 +3235,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2706",
+      "source_location": "L2802",
       "weight": 1.0
     },
     {
@@ -3201,7 +3246,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2760",
+      "source_location": "L2858",
       "weight": 1.0
     },
     {
@@ -3212,7 +3257,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2777",
+      "source_location": "L2876",
       "weight": 1.0
     },
     {
@@ -3223,7 +3268,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2784",
+      "source_location": "L2883",
       "weight": 1.0
     },
     {
@@ -3234,7 +3279,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L815",
+      "source_location": "L823",
       "weight": 1.0
     },
     {
@@ -3245,7 +3290,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L816",
+      "source_location": "L824",
       "weight": 1.0
     },
     {
@@ -3256,7 +3301,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L817",
+      "source_location": "L825",
       "weight": 1.0
     },
     {
@@ -3267,7 +3312,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1526",
+      "source_location": "L1534",
       "weight": 1.0
     },
     {
@@ -3278,7 +3323,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2893",
+      "source_location": "L2992",
       "weight": 1.0
     },
     {
@@ -3289,7 +3334,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2909",
+      "source_location": "L3008",
       "weight": 1.0
     },
     {
@@ -3300,7 +3345,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2909",
+      "source_location": "L3008",
       "weight": 1.0
     },
     {
@@ -3311,7 +3356,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2983",
+      "source_location": "L3082",
       "weight": 1.0
     },
     {
@@ -3322,7 +3367,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2985",
+      "source_location": "L3084",
       "weight": 1.0
     },
     {
@@ -3333,7 +3378,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2989",
+      "source_location": "L3088",
       "weight": 1.0
     },
     {
@@ -3344,7 +3389,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3011",
+      "source_location": "L3110",
       "weight": 1.0
     },
     {
@@ -3355,7 +3400,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3038",
+      "source_location": "L3137",
       "weight": 1.0
     },
     {
@@ -3366,7 +3411,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3046",
+      "source_location": "L3145",
       "weight": 1.0
     },
     {
@@ -3377,7 +3422,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3050",
+      "source_location": "L3149",
       "weight": 1.0
     },
     {
@@ -3388,7 +3433,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3054",
+      "source_location": "L3153",
       "weight": 1.0
     },
     {
@@ -3399,7 +3444,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3070",
+      "source_location": "L3169",
       "weight": 1.0
     },
     {
@@ -3410,7 +3455,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3096",
+      "source_location": "L3195",
       "weight": 1.0
     },
     {
@@ -3421,7 +3466,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3115",
+      "source_location": "L3214",
       "weight": 1.0
     },
     {
@@ -3432,7 +3477,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3133",
+      "source_location": "L3232",
       "weight": 1.0
     },
     {
@@ -3443,7 +3488,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3148",
+      "source_location": "L3247",
       "weight": 1.0
     },
     {
@@ -3454,7 +3499,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3187",
+      "source_location": "L3286",
       "weight": 1.0
     },
     {
@@ -3465,7 +3510,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3229",
+      "source_location": "L3328",
       "weight": 1.0
     },
     {
@@ -3476,7 +3521,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3353",
+      "source_location": "L3452",
       "weight": 1.0
     },
     {
@@ -3487,7 +3532,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3368",
+      "source_location": "L3467",
       "weight": 1.0
     },
     {
@@ -3498,7 +3543,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3386",
+      "source_location": "L3485",
       "weight": 1.0
     },
     {
@@ -3509,7 +3554,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1934",
+      "source_location": "L1942",
       "weight": 1.0
     },
     {
@@ -3520,7 +3565,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1942",
+      "source_location": "L1950",
       "weight": 1.0
     },
     {
@@ -3531,7 +3576,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1949",
+      "source_location": "L1957",
       "weight": 1.0
     },
     {
@@ -3542,7 +3587,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1950",
+      "source_location": "L1958",
       "weight": 1.0
     },
     {
@@ -3553,7 +3598,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1954",
+      "source_location": "L1962",
       "weight": 1.0
     },
     {
@@ -3564,7 +3609,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1955",
+      "source_location": "L1963",
       "weight": 1.0
     },
     {
@@ -3575,7 +3620,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1957",
+      "source_location": "L1965",
       "weight": 1.0
     },
     {
@@ -3586,7 +3631,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1959",
+      "source_location": "L1967",
       "weight": 1.0
     },
     {
@@ -3597,7 +3642,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1970",
+      "source_location": "L1978",
       "weight": 1.0
     },
     {
@@ -3608,7 +3653,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1987",
+      "source_location": "L1995",
       "weight": 1.0
     },
     {
@@ -3619,7 +3664,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2008",
+      "source_location": "L2016",
       "weight": 1.0
     },
     {
@@ -3630,7 +3675,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2018",
+      "source_location": "L2026",
       "weight": 1.0
     },
     {
@@ -3641,7 +3686,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2019",
+      "source_location": "L2027",
       "weight": 1.0
     },
     {
@@ -3652,7 +3697,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4324",
+      "source_location": "L4423",
       "weight": 1.0
     },
     {
@@ -3663,7 +3708,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4336",
+      "source_location": "L4435",
       "weight": 1.0
     },
     {
@@ -3701,13 +3746,24 @@
     },
     {
       "source": "syncdatacollector_load_config",
+      "target": "syncdatacollector_new_extradesign",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L263",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector_load_config",
       "target": "syncdatacollector_new_project",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L259",
+      "source_location": "L267",
       "weight": 1.0
     },
     {
@@ -3718,7 +3774,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L273",
+      "source_location": "L281",
       "weight": 1.0
     },
     {
@@ -3729,7 +3785,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L274",
+      "source_location": "L282",
       "weight": 1.0
     },
     {
@@ -3740,7 +3796,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L285",
+      "source_location": "L293",
       "weight": 1.0
     },
     {
@@ -3751,7 +3807,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L302",
+      "source_location": "L310",
       "weight": 1.0
     },
     {
@@ -3762,7 +3818,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L306",
+      "source_location": "L314",
       "weight": 1.0
     },
     {
@@ -3773,7 +3829,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L325",
+      "source_location": "L333",
       "weight": 1.0
     },
     {
@@ -3795,7 +3851,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2352",
+      "source_location": "L2420",
       "weight": 1.0
     },
     {
@@ -3806,7 +3862,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2355",
+      "source_location": "L2423",
       "weight": 1.0
     },
     {
@@ -3817,7 +3873,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2363",
+      "source_location": "L2431",
       "weight": 1.0
     },
     {
@@ -3828,7 +3884,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2379",
+      "source_location": "L2455",
       "weight": 1.0
     },
     {
@@ -3839,7 +3895,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2398",
+      "source_location": "L2474",
       "weight": 1.0
     },
     {
@@ -3850,7 +3906,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2419",
+      "source_location": "L2495",
       "weight": 1.0
     },
     {
@@ -3861,7 +3917,29 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2536",
+      "source_location": "L2612",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector_new_tabletconfig",
+      "target": "syncdatacollector_get_extradesigns",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2642",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector_new_tabletconfig",
+      "target": "syncdatacollector_new_extradesign",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2644",
       "weight": 1.0
     },
     {
@@ -3872,7 +3950,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2562",
+      "source_location": "L2648",
       "weight": 1.0
     },
     {
@@ -3883,7 +3961,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2566",
+      "source_location": "L2652",
       "weight": 1.0
     },
     {
@@ -3894,7 +3972,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2568",
+      "source_location": "L2655",
       "weight": 1.0
     },
     {
@@ -3905,7 +3983,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2583",
+      "source_location": "L2670",
       "weight": 1.0
     },
     {
@@ -3916,7 +3994,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2522",
+      "source_location": "L2598",
       "weight": 1.0
     },
     {
@@ -3927,7 +4005,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1755",
+      "source_location": "L1763",
       "weight": 1.0
     },
     {
@@ -3938,7 +4016,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1761",
+      "source_location": "L1769",
       "weight": 1.0
     },
     {
@@ -3949,7 +4027,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2850",
+      "source_location": "L2949",
       "weight": 1.0
     },
     {
@@ -3960,7 +4038,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1717",
+      "source_location": "L1725",
       "weight": 1.0
     },
     {
@@ -3971,7 +4049,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1721",
+      "source_location": "L1729",
       "weight": 1.0
     },
     {
@@ -3982,7 +4060,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4434",
+      "source_location": "L4533",
       "weight": 1.0
     },
     {
@@ -3993,7 +4071,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3965",
+      "source_location": "L4064",
       "weight": 1.0
     },
     {
@@ -4004,7 +4082,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1039",
+      "source_location": "L1047",
       "weight": 1.0
     },
     {
@@ -4015,7 +4093,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2217",
+      "source_location": "L2285",
       "weight": 1.0
     },
     {
@@ -4026,7 +4104,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L547",
+      "source_location": "L555",
       "weight": 1.0
     },
     {
@@ -4037,7 +4115,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L556",
+      "source_location": "L564",
       "weight": 1.0
     },
     {
@@ -4048,7 +4126,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1072",
+      "source_location": "L1080",
       "weight": 1.0
     },
     {
@@ -4059,7 +4137,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1075",
+      "source_location": "L1083",
       "weight": 1.0
     },
     {
@@ -4070,7 +4148,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1079",
+      "source_location": "L1087",
       "weight": 1.0
     },
     {
@@ -4081,7 +4159,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L727",
+      "source_location": "L735",
       "weight": 1.0
     },
     {
@@ -4092,7 +4170,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1020",
+      "source_location": "L1028",
       "weight": 1.0
     },
     {
@@ -4103,7 +4181,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1022",
+      "source_location": "L1030",
       "weight": 1.0
     },
     {
@@ -4114,7 +4192,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1276",
+      "source_location": "L1284",
       "weight": 1.0
     },
     {
@@ -4125,7 +4203,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4464",
+      "source_location": "L4563",
       "weight": 1.0
     },
     {
@@ -4136,7 +4214,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4465",
+      "source_location": "L4564",
       "weight": 1.0
     },
     {
@@ -4147,7 +4225,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4356",
+      "source_location": "L4455",
       "weight": 1.0
     },
     {
@@ -4158,7 +4236,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1726",
+      "source_location": "L1734",
       "weight": 1.0
     },
     {
@@ -4169,7 +4247,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1730",
+      "source_location": "L1738",
       "weight": 1.0
     },
     {
@@ -4180,7 +4258,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4078",
+      "source_location": "L4177",
       "weight": 1.0
     },
     {
@@ -4191,7 +4269,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4081",
+      "source_location": "L4180",
       "weight": 1.0
     },
     {
@@ -4202,7 +4280,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4085",
+      "source_location": "L4184",
       "weight": 1.0
     },
     {
@@ -4213,7 +4291,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4086",
+      "source_location": "L4185",
       "weight": 1.0
     },
     {
@@ -4224,7 +4302,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4097",
+      "source_location": "L4196",
       "weight": 1.0
     },
     {
@@ -4235,7 +4313,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4101",
+      "source_location": "L4200",
       "weight": 1.0
     },
     {
@@ -4246,7 +4324,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4108",
+      "source_location": "L4207",
       "weight": 1.0
     },
     {
@@ -4257,7 +4335,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4109",
+      "source_location": "L4208",
       "weight": 1.0
     },
     {
@@ -4279,7 +4357,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1340",
+      "source_location": "L1348",
       "weight": 1.0
     },
     {
@@ -4290,7 +4368,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1342",
+      "source_location": "L1350",
       "weight": 1.0
     },
     {
@@ -4301,7 +4379,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1324",
+      "source_location": "L1332",
       "weight": 1.0
     },
     {
@@ -4312,7 +4390,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1327",
+      "source_location": "L1335",
       "weight": 1.0
     },
     {
@@ -4323,7 +4401,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L684",
+      "source_location": "L692",
       "weight": 1.0
     },
     {
@@ -4334,7 +4412,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L697",
+      "source_location": "L705",
       "weight": 1.0
     },
     {
@@ -4345,7 +4423,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1879",
+      "source_location": "L1887",
       "weight": 1.0
     },
     {
@@ -4356,7 +4434,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1890",
+      "source_location": "L1898",
       "weight": 1.0
     },
     {
@@ -4367,7 +4445,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1891",
+      "source_location": "L1899",
       "weight": 1.0
     },
     {
@@ -4378,7 +4456,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1898",
+      "source_location": "L1906",
       "weight": 1.0
     },
     {
@@ -4389,7 +4467,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1401",
+      "source_location": "L1409",
       "weight": 1.0
     },
     {
@@ -4400,7 +4478,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4612",
+      "source_location": "L4711",
       "weight": 1.0
     },
     {
@@ -4411,7 +4489,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4617",
+      "source_location": "L4716",
       "weight": 1.0
     },
     {
@@ -4422,7 +4500,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4623",
+      "source_location": "L4722",
       "weight": 1.0
     },
     {
@@ -4433,7 +4511,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4627",
+      "source_location": "L4726",
       "weight": 1.0
     },
     {
@@ -4444,7 +4522,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4440",
+      "source_location": "L4539",
       "weight": 1.0
     },
     {
@@ -4455,7 +4533,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3994",
+      "source_location": "L4093",
       "weight": 1.0
     },
     {
@@ -4466,7 +4544,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4005",
+      "source_location": "L4104",
       "weight": 1.0
     },
     {
@@ -4477,7 +4555,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3916",
+      "source_location": "L4015",
       "weight": 1.0
     },
     {
@@ -4488,7 +4566,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4118",
+      "source_location": "L4217",
       "weight": 1.0
     },
     {
@@ -4499,7 +4577,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4119",
+      "source_location": "L4218",
       "weight": 1.0
     },
     {
@@ -4510,7 +4588,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4139",
+      "source_location": "L4238",
       "weight": 1.0
     },
     {
@@ -4521,7 +4599,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4143",
+      "source_location": "L4242",
       "weight": 1.0
     },
     {
@@ -4532,7 +4610,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4144",
+      "source_location": "L4243",
       "weight": 1.0
     },
     {
@@ -4543,7 +4621,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4151",
+      "source_location": "L4250",
       "weight": 1.0
     },
     {
@@ -4554,7 +4632,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4939",
+      "source_location": "L5038",
       "weight": 1.0
     },
     {
@@ -4565,7 +4643,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4939",
+      "source_location": "L5038",
       "weight": 1.0
     },
     {
@@ -4576,7 +4654,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4280",
+      "source_location": "L4379",
       "weight": 1.0
     },
     {
@@ -4587,7 +4665,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4280",
+      "source_location": "L4379",
       "weight": 1.0
     },
     {
@@ -4598,7 +4676,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4280",
+      "source_location": "L4379",
       "weight": 1.0
     },
     {
@@ -4609,7 +4687,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4365",
+      "source_location": "L4464",
       "weight": 1.0
     },
     {
@@ -4620,7 +4698,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4369",
+      "source_location": "L4468",
       "weight": 1.0
     },
     {
@@ -4631,7 +4709,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4375",
+      "source_location": "L4474",
       "weight": 1.0
     },
     {
@@ -4642,7 +4720,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4408",
+      "source_location": "L4507",
       "weight": 1.0
     },
     {
@@ -4653,7 +4731,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4409",
+      "source_location": "L4508",
       "weight": 1.0
     },
     {
@@ -4664,7 +4742,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4412",
+      "source_location": "L4511",
       "weight": 1.0
     },
     {
@@ -4675,7 +4753,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4413",
+      "source_location": "L4512",
       "weight": 1.0
     },
     {
@@ -4686,7 +4764,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4417",
+      "source_location": "L4516",
       "weight": 1.0
     },
     {
@@ -4697,7 +4775,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1798",
+      "source_location": "L1806",
       "weight": 1.0
     },
     {
@@ -4708,7 +4786,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1804",
+      "source_location": "L1812",
       "weight": 1.0
     },
     {
@@ -4719,7 +4797,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1817",
+      "source_location": "L1825",
       "weight": 1.0
     },
     {
@@ -4730,7 +4808,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1824",
+      "source_location": "L1832",
       "weight": 1.0
     },
     {
@@ -4741,7 +4819,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1841",
+      "source_location": "L1849",
       "weight": 1.0
     },
     {
@@ -4752,7 +4830,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1842",
+      "source_location": "L1850",
       "weight": 1.0
     },
     {
@@ -4763,7 +4841,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1843",
+      "source_location": "L1851",
       "weight": 1.0
     },
     {
@@ -4774,7 +4852,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1853",
+      "source_location": "L1861",
       "weight": 1.0
     },
     {
@@ -4785,7 +4863,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1859",
+      "source_location": "L1867",
       "weight": 1.0
     },
     {
@@ -4796,7 +4874,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1784",
+      "source_location": "L1792",
       "weight": 1.0
     },
     {
@@ -4840,7 +4918,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L509",
+      "source_location": "L538",
       "weight": 1.0
     },
     {
@@ -4851,7 +4929,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L629",
+      "source_location": "L658",
       "weight": 1.0
     },
     {
@@ -4862,7 +4940,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L795",
+      "source_location": "L824",
       "weight": 1.0
     },
     {
@@ -4873,7 +4951,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L846",
+      "source_location": "L875",
       "weight": 1.0
     },
     {
@@ -4884,7 +4962,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L868",
+      "source_location": "L897",
       "weight": 1.0
     },
     {
@@ -4895,7 +4973,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L910",
+      "source_location": "L939",
       "weight": 1.0
     },
     {
@@ -4906,12 +4984,12 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L964",
+      "source_location": "L993",
       "weight": 1.0
     },
     {
       "source": "readme_projects_and_collectors",
-      "target": "readme_usb_sticks_as_collectors",
+      "target": "readme_more_than_one_folder_going_out_survey_control",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -4922,13 +5000,24 @@
     },
     {
       "source": "readme_projects_and_collectors",
+      "target": "readme_usb_sticks_as_collectors",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L354",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_projects_and_collectors",
       "target": "readme_everyday_mode_and_the_advanced_tick_box",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L382",
+      "source_location": "L411",
       "weight": 1.0
     },
     {
@@ -4939,7 +5028,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L398",
+      "source_location": "L427",
       "weight": 1.0
     },
     {
@@ -4950,7 +5039,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L429",
+      "source_location": "L458",
       "weight": 1.0
     },
     {
@@ -4961,18 +5050,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L459",
+      "source_location": "L488",
       "weight": 1.0
     },
     {
       "source": "readme_sync_datacollector",
-      "target": "readme_configuration_reference",
+      "target": "readme_the_s_drive_maps_itself",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L1030",
+      "source_location": "L1012",
       "weight": 1.0
     },
     {
@@ -4988,13 +5077,24 @@
     },
     {
       "source": "readme_sync_datacollector",
+      "target": "readme_configuration_reference",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L1059",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_sync_datacollector",
       "target": "readme_troubleshooting",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L1077",
+      "source_location": "L1107",
       "weight": 1.0
     },
     {
@@ -5005,7 +5105,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L1117",
+      "source_location": "L1147",
       "weight": 1.0
     },
     {
@@ -5016,7 +5116,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L1125",
+      "source_location": "L1155",
       "weight": 1.0
     },
     {
@@ -5104,7 +5204,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L543",
+      "source_location": "L572",
       "weight": 1.0
     },
     {
@@ -5115,7 +5215,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L686",
+      "source_location": "L715",
       "weight": 1.0
     },
     {
@@ -5126,7 +5226,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L725",
+      "source_location": "L754",
       "weight": 1.0
     },
     {
@@ -5137,18 +5237,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L761",
-      "weight": 1.0
-    },
-    {
-      "source": "readme_sync_datacollector",
-      "target": "readme_the_s_drive_maps_itself",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "README.md",
-      "source_location": "L983",
+      "source_location": "L790",
       "weight": 1.0
     },
     {
@@ -5192,7 +5281,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L595",
+      "source_location": "L624",
       "weight": 1.0
     },
     {
@@ -5203,7 +5292,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L618",
+      "source_location": "L647",
       "weight": 1.0
     },
     {
@@ -5214,7 +5303,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L658",
+      "source_location": "L687",
       "weight": 1.0
     },
     {
@@ -5225,7 +5314,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L361",
+      "source_location": "L390",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_get_volumeserial",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L1007",
       "weight": 1.0
     },
     {
@@ -5236,7 +5336,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1009",
+      "source_location": "L1017",
       "weight": 1.0
     },
     {
@@ -5247,7 +5347,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1018",
+      "source_location": "L1026",
       "weight": 1.0
     },
     {
@@ -5258,7 +5358,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1027",
+      "source_location": "L1035",
       "weight": 1.0
     },
     {
@@ -5269,7 +5369,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1037",
+      "source_location": "L1045",
       "weight": 1.0
     },
     {
@@ -5280,7 +5380,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1062",
+      "source_location": "L1070",
       "weight": 1.0
     },
     {
@@ -5291,7 +5391,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1096",
+      "source_location": "L1104",
       "weight": 1.0
     },
     {
@@ -5302,7 +5402,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1113",
+      "source_location": "L1121",
       "weight": 1.0
     },
     {
@@ -5324,7 +5424,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1150",
+      "source_location": "L1158",
       "weight": 1.0
     },
     {
@@ -5335,7 +5435,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1166",
+      "source_location": "L1174",
       "weight": 1.0
     },
     {
@@ -5346,7 +5446,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1210",
+      "source_location": "L1218",
       "weight": 1.0
     },
     {
@@ -5357,7 +5457,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1230",
+      "source_location": "L1238",
       "weight": 1.0
     },
     {
@@ -5379,7 +5479,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1304",
+      "source_location": "L1312",
       "weight": 1.0
     },
     {
@@ -5390,7 +5490,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1318",
+      "source_location": "L1326",
       "weight": 1.0
     },
     {
@@ -5401,7 +5501,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1334",
+      "source_location": "L1342",
       "weight": 1.0
     },
     {
@@ -5412,18 +5512,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1351",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_test_jobremovable",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1384",
+      "source_location": "L1359",
       "weight": 1.0
     },
     {
@@ -5439,13 +5528,24 @@
     },
     {
       "source": "syncdatacollector",
+      "target": "syncdatacollector_test_jobremovable",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L1392",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
       "target": "syncdatacollector_get_jobcleanupplan",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1419",
+      "source_location": "L1427",
       "weight": 1.0
     },
     {
@@ -5456,7 +5556,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1514",
+      "source_location": "L1522",
       "weight": 1.0
     },
     {
@@ -5467,7 +5567,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1540",
+      "source_location": "L1548",
       "weight": 1.0
     },
     {
@@ -5478,7 +5578,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1606",
+      "source_location": "L1614",
       "weight": 1.0
     },
     {
@@ -5489,7 +5589,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1611",
+      "source_location": "L1619",
       "weight": 1.0
     },
     {
@@ -5500,7 +5600,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1622",
+      "source_location": "L1630",
       "weight": 1.0
     },
     {
@@ -5511,7 +5611,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1628",
+      "source_location": "L1636",
       "weight": 1.0
     },
     {
@@ -5522,7 +5622,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1642",
+      "source_location": "L1650",
       "weight": 1.0
     },
     {
@@ -5533,7 +5633,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1650",
+      "source_location": "L1658",
       "weight": 1.0
     },
     {
@@ -5544,7 +5644,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1658",
+      "source_location": "L1666",
       "weight": 1.0
     },
     {
@@ -5555,7 +5655,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1668",
+      "source_location": "L1676",
       "weight": 1.0
     },
     {
@@ -5566,7 +5666,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1686",
+      "source_location": "L1694",
       "weight": 1.0
     },
     {
@@ -5577,7 +5677,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1699",
+      "source_location": "L1707",
       "weight": 1.0
     },
     {
@@ -5588,7 +5688,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1706",
+      "source_location": "L1714",
       "weight": 1.0
     },
     {
@@ -5599,7 +5699,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1715",
+      "source_location": "L1723",
       "weight": 1.0
     },
     {
@@ -5610,7 +5710,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1724",
+      "source_location": "L1732",
       "weight": 1.0
     },
     {
@@ -5621,7 +5721,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1733",
+      "source_location": "L1741",
       "weight": 1.0
     },
     {
@@ -5632,7 +5732,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1747",
+      "source_location": "L1755",
       "weight": 1.0
     },
     {
@@ -5643,7 +5743,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1770",
+      "source_location": "L1778",
       "weight": 1.0
     },
     {
@@ -5665,7 +5765,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1794",
+      "source_location": "L1802",
       "weight": 1.0
     },
     {
@@ -5676,7 +5776,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1871",
+      "source_location": "L1879",
       "weight": 1.0
     },
     {
@@ -5687,7 +5787,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1919",
+      "source_location": "L1927",
       "weight": 1.0
     },
     {
@@ -5709,7 +5809,29 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2090",
+      "source_location": "L2098",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_new_extradesign",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2126",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_get_extradesigns",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2145",
       "weight": 1.0
     },
     {
@@ -5720,7 +5842,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2119",
+      "source_location": "L2187",
       "weight": 1.0
     },
     {
@@ -5731,7 +5853,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2150",
+      "source_location": "L2218",
       "weight": 1.0
     },
     {
@@ -5742,7 +5864,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2177",
+      "source_location": "L2245",
       "weight": 1.0
     },
     {
@@ -5753,7 +5875,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2202",
+      "source_location": "L2270",
       "weight": 1.0
     },
     {
@@ -5764,7 +5886,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2215",
+      "source_location": "L2283",
       "weight": 1.0
     },
     {
@@ -5775,7 +5897,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2245",
+      "source_location": "L2313",
       "weight": 1.0
     },
     {
@@ -5786,7 +5908,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2251",
+      "source_location": "L2319",
       "weight": 1.0
     },
     {
@@ -5797,7 +5919,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2282",
+      "source_location": "L2350",
       "weight": 1.0
     },
     {
@@ -5808,7 +5930,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2291",
+      "source_location": "L2359",
       "weight": 1.0
     },
     {
@@ -5819,7 +5941,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2298",
+      "source_location": "L2366",
       "weight": 1.0
     },
     {
@@ -5830,7 +5952,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2310",
+      "source_location": "L2378",
       "weight": 1.0
     },
     {
@@ -5841,7 +5963,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2331",
+      "source_location": "L2399",
       "weight": 1.0
     },
     {
@@ -5852,7 +5974,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2338",
+      "source_location": "L2406",
       "weight": 1.0
     },
     {
@@ -5863,7 +5985,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2349",
+      "source_location": "L2417",
       "weight": 1.0
     },
     {
@@ -5874,7 +5996,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2446",
+      "source_location": "L2522",
       "weight": 1.0
     },
     {
@@ -5885,7 +6007,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2510",
+      "source_location": "L2586",
       "weight": 1.0
     },
     {
@@ -5896,7 +6018,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2533",
+      "source_location": "L2609",
       "weight": 1.0
     },
     {
@@ -5907,7 +6029,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2589",
+      "source_location": "L2676",
       "weight": 1.0
     },
     {
@@ -5918,7 +6040,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2630",
+      "source_location": "L2717",
       "weight": 1.0
     },
     {
@@ -5929,7 +6051,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2658",
+      "source_location": "L2745",
       "weight": 1.0
     },
     {
@@ -5940,7 +6062,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2815",
+      "source_location": "L2914",
       "weight": 1.0
     },
     {
@@ -5951,7 +6073,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2845",
+      "source_location": "L2944",
       "weight": 1.0
     },
     {
@@ -5962,7 +6084,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2859",
+      "source_location": "L2958",
       "weight": 1.0
     },
     {
@@ -5973,7 +6095,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L328",
+      "source_location": "L336",
       "weight": 1.0
     },
     {
@@ -5984,7 +6106,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L342",
+      "source_location": "L350",
       "weight": 1.0
     },
     {
@@ -5995,7 +6117,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L353",
+      "source_location": "L361",
       "weight": 1.0
     },
     {
@@ -6006,7 +6128,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L365",
+      "source_location": "L373",
       "weight": 1.0
     },
     {
@@ -6017,7 +6139,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L371",
+      "source_location": "L379",
       "weight": 1.0
     },
     {
@@ -6028,7 +6150,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3760",
+      "source_location": "L3859",
       "weight": 1.0
     },
     {
@@ -6039,7 +6161,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3789",
+      "source_location": "L3888",
       "weight": 1.0
     },
     {
@@ -6050,7 +6172,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3803",
+      "source_location": "L3902",
       "weight": 1.0
     },
     {
@@ -6061,7 +6183,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3812",
+      "source_location": "L3911",
       "weight": 1.0
     },
     {
@@ -6072,18 +6194,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3823",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_get_rowtip",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3857",
+      "source_location": "L3922",
       "weight": 1.0
     },
     {
@@ -6094,7 +6205,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L386",
+      "source_location": "L394",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_get_rowtip",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L3956",
       "weight": 1.0
     },
     {
@@ -6105,7 +6227,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3868",
+      "source_location": "L3967",
       "weight": 1.0
     },
     {
@@ -6116,7 +6238,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3876",
+      "source_location": "L3975",
       "weight": 1.0
     },
     {
@@ -6127,7 +6249,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3890",
+      "source_location": "L3989",
       "weight": 1.0
     },
     {
@@ -6138,7 +6260,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3903",
+      "source_location": "L4002",
       "weight": 1.0
     },
     {
@@ -6149,18 +6271,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3922",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_resize_comparecolumns",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3959",
+      "source_location": "L4021",
       "weight": 1.0
     },
     {
@@ -6171,7 +6282,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L397",
+      "source_location": "L405",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_resize_comparecolumns",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4058",
       "weight": 1.0
     },
     {
@@ -6182,7 +6304,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3992",
+      "source_location": "L4091",
       "weight": 1.0
     },
     {
@@ -6193,7 +6315,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4033",
+      "source_location": "L4132",
       "weight": 1.0
     },
     {
@@ -6204,7 +6326,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L409",
+      "source_location": "L417",
       "weight": 1.0
     },
     {
@@ -6215,7 +6337,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4115",
+      "source_location": "L4214",
       "weight": 1.0
     },
     {
@@ -6226,7 +6348,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4166",
+      "source_location": "L4265",
       "weight": 1.0
     },
     {
@@ -6237,7 +6359,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4187",
+      "source_location": "L4286",
       "weight": 1.0
     },
     {
@@ -6248,7 +6370,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4211",
+      "source_location": "L4310",
       "weight": 1.0
     },
     {
@@ -6259,7 +6381,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4220",
+      "source_location": "L4319",
       "weight": 1.0
     },
     {
@@ -6270,7 +6392,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4232",
+      "source_location": "L4331",
       "weight": 1.0
     },
     {
@@ -6281,29 +6403,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4241",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_get_uisettings",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4257",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_format_settings",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4268",
+      "source_location": "L4340",
       "weight": 1.0
     },
     {
@@ -6314,7 +6414,29 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L427",
+      "source_location": "L435",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_get_uisettings",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4356",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_format_settings",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4367",
       "weight": 1.0
     },
     {
@@ -6325,7 +6447,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4277",
+      "source_location": "L4376",
       "weight": 1.0
     },
     {
@@ -6336,7 +6458,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4290",
+      "source_location": "L4389",
       "weight": 1.0
     },
     {
@@ -6347,7 +6469,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4308",
+      "source_location": "L4407",
       "weight": 1.0
     },
     {
@@ -6358,7 +6480,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4339",
+      "source_location": "L4438",
       "weight": 1.0
     },
     {
@@ -6369,7 +6491,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4351",
+      "source_location": "L4450",
       "weight": 1.0
     },
     {
@@ -6380,18 +6502,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4361",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_test_syncallowed",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4424",
+      "source_location": "L4460",
       "weight": 1.0
     },
     {
@@ -6402,7 +6513,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L443",
+      "source_location": "L451",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_test_syncallowed",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4523",
       "weight": 1.0
     },
     {
@@ -6413,7 +6535,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4431",
+      "source_location": "L4530",
       "weight": 1.0
     },
     {
@@ -6424,7 +6546,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4437",
+      "source_location": "L4536",
       "weight": 1.0
     },
     {
@@ -6435,7 +6557,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4454",
+      "source_location": "L4553",
       "weight": 1.0
     },
     {
@@ -6446,7 +6568,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4469",
+      "source_location": "L4568",
       "weight": 1.0
     },
     {
@@ -6457,7 +6579,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4567",
+      "source_location": "L4666",
       "weight": 1.0
     },
     {
@@ -6468,7 +6590,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4607",
+      "source_location": "L4706",
       "weight": 1.0
     },
     {
@@ -6479,7 +6601,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L463",
+      "source_location": "L471",
       "weight": 1.0
     },
     {
@@ -6490,7 +6612,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4937",
+      "source_location": "L5036",
       "weight": 1.0
     },
     {
@@ -6501,7 +6623,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L502",
+      "source_location": "L510",
       "weight": 1.0
     },
     {
@@ -6512,7 +6634,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L510",
+      "source_location": "L518",
       "weight": 1.0
     },
     {
@@ -6523,7 +6645,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L518",
+      "source_location": "L526",
       "weight": 1.0
     },
     {
@@ -6545,7 +6667,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L533",
+      "source_location": "L541",
       "weight": 1.0
     },
     {
@@ -6556,7 +6678,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L543",
+      "source_location": "L551",
       "weight": 1.0
     },
     {
@@ -6567,7 +6689,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L566",
+      "source_location": "L574",
       "weight": 1.0
     },
     {
@@ -6578,7 +6700,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L582",
+      "source_location": "L590",
       "weight": 1.0
     },
     {
@@ -6600,7 +6722,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L637",
+      "source_location": "L645",
       "weight": 1.0
     },
     {
@@ -6611,7 +6733,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L648",
+      "source_location": "L656",
       "weight": 1.0
     },
     {
@@ -6622,7 +6744,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L659",
+      "source_location": "L667",
       "weight": 1.0
     },
     {
@@ -6633,7 +6755,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L676",
+      "source_location": "L684",
       "weight": 1.0
     },
     {
@@ -6644,7 +6766,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L690",
+      "source_location": "L698",
       "weight": 1.0
     },
     {
@@ -6666,7 +6788,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L710",
+      "source_location": "L718",
       "weight": 1.0
     },
     {
@@ -6677,7 +6799,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L741",
+      "source_location": "L749",
       "weight": 1.0
     },
     {
@@ -6688,7 +6810,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L763",
+      "source_location": "L771",
       "weight": 1.0
     },
     {
@@ -6699,7 +6821,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L783",
+      "source_location": "L791",
       "weight": 1.0
     },
     {
@@ -6710,7 +6832,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L808",
+      "source_location": "L816",
       "weight": 1.0
     },
     {
@@ -6732,7 +6854,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L843",
+      "source_location": "L851",
       "weight": 1.0
     },
     {
@@ -6743,7 +6865,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L937",
+      "source_location": "L945",
       "weight": 1.0
     },
     {
@@ -6754,7 +6876,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L943",
+      "source_location": "L951",
       "weight": 1.0
     },
     {
@@ -6765,7 +6887,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L961",
+      "source_location": "L969",
       "weight": 1.0
     },
     {
@@ -6776,21 +6898,10 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L982",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_get_volumeserial",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L999",
+      "source_location": "L990",
       "weight": 1.0
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "4f01a9b01b7d6f483df05e5f452eda1d0684ac57"
+  "built_at_commit": "be13fa9ded8508a81209cbe4c0caa124cc3efa01"
 }

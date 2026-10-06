@@ -35,3 +35,4 @@ graphify-out/needs_update
 # Keep them locally; do not publish them.
 .mcp.json
 .vscode/tasks.json
+Sync Datacollector README.pdf

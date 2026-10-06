@@ -10,6 +10,15 @@
       "deviceProjectPath": "Internal shared storage\\Trimble Data\\Projects\\Example project",
       "_tabletProjectPath_note": "Optional. The project's full path on a Windows tablet, when it is named differently there than on the controllers - renaming it on the tablet is not safe, jobs reference their files by path. Goes only into the tablet config written onto the stick. Empty = tabletDataRoot + the controllers' path.",
       "tabletProjectPath": "",
+      "_extraDesign_note": "Optional. More office folders pushed to the devices, each mirrored into its OWN folder under the project (subPath) - never inside the design folder, whose mirror would delete it. Survey control is the usual one.",
+      "extraDesign": [
+        {
+          "name": "Survey control",
+          "source": "S:\\01-OUTPUT\\01-Survey Control",
+          "subPath": "01-Survey Control",
+          "extensions": [ ".csv", ".jxl" ]
+        }
+      ],
       "exportRoutes": [
         {
           "_note": "The trailing fixed segment (a company folder here) sits under the dated part, so files land in <year>\\<month>\\OURCO. Duplicate detection still scopes to the whole month, so a file someone later moved into a different company's folder is not pulled again.",
