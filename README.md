@@ -97,6 +97,9 @@ WinForms GUI that runs on stock Windows (PowerShell 5.1 + .NET Framework 4.x).
 - **One copy at a time** — starting the app while it is already open, from any folder, brings
   up the open window instead and says where that copy is running from. Two windows would be two
   engines working the same folders, and a stray copy is easy to come by on a stick.
+- **The title bar says which copy this is** — e.g. `Sync Data Collector  -  D:\  (USB stick)`
+  or `…  -  C:\Tools\SyncDataCollector`. The stick, the office and a tablet can each run their
+  own copy with its own `config.json`, so where it runs from is worth seeing at a glance.
 - **Reliable MTP** — see below.
 
 ---

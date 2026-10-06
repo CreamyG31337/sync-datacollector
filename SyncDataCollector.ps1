@@ -3560,8 +3560,30 @@ if ($env:SDC_SMOKETEST -ne '1') {
 trap { Show-ConsoleWindow; break }
 if ($env:SDC_SMOKETEST -ne '1' -and $env:SDC_HIDECONSOLE -ne '0') { Hide-ConsoleWindow }
 
+# Where this copy runs from, for the title bar. The stick carries the app, the office
+# runs its own, and a tablet can have a local clone too -- each with a different
+# config.json beside it -- so which copy is open has to be visible at a glance.
+# Removable volumes say so, because "D:\" alone does not tell anyone it is the stick.
+function Get-AppLocationLabel {
+    param([string]$Dir)
+    $dir = ([string]$Dir).TrimEnd('\')
+    if (-not $dir) { return '' }
+    $label = $dir
+    if ($label -match '^[A-Za-z]:$') { $label += '\' }
+    try {
+        $drive = New-Object System.IO.DriveInfo ([System.IO.Path]::GetPathRoot($dir))
+        if ($drive.DriveType -eq [System.IO.DriveType]::Removable) { $label += '  (USB stick)' }
+    }
+    catch { }
+    return $label
+}
+
 $form = New-Object System.Windows.Forms.Form
+# Keep the plain name first: the already-open check activates the window by a title
+# that starts with 'Sync Data Collector'.
 $form.Text = 'Sync Data Collector'
+$appWhere = Get-AppLocationLabel $ScriptDir
+if ($appWhere) { $form.Text += "  -  $appWhere" }
 # Laid out at 830 wide, then widened once every control is in place (see the
 # startup block): the right-hand buttons are anchored, so letting the anchors do
 # the widening keeps them flush without re-coordinating every Location by hand.
