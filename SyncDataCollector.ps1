@@ -279,10 +279,12 @@ function Load-Config {
                     $pr = if ($_.PSObject.Properties['prune']) { [bool]$_.prune } else { $true }
                     $xc = if ($_.PSObject.Properties['exportCollision'] -and $_.exportCollision) { [string]$_.exportCollision } else { 'prefix' }
                     $jr = if ($_.PSObject.Properties['jobRetentionDays']) { [int]$_.jobRetentionDays } else { (Get-Defaults).jobRetentionDays }
+                    $rp = if ($_.PSObject.Properties['proofReceipt']) { [string]$_.proofReceipt } else { '' }
                     New-Collector -Serial $_.serial -Name $_.name -Model $_.model -Type $_.type `
                         -DesignSubPath $_.designSubPath -ExportSubPath $_.exportSubPath `
                         -DesignExtensions @($_.designExtensions) -ExportExtensions @($_.exportExtensions) `
-                        -ExcludeFolders $ec -Prune $pr -ExportCollision $xc -JobRetentionDays $jr
+                        -ExcludeFolders $ec -Prune $pr -ExportCollision $xc -JobRetentionDays $jr `
+                        -ProofReceipt $rp
                 })
             }
             # Shared baseline for collector settings. Always normalised to a
@@ -1390,76 +1392,147 @@ function Test-AlreadyFiled {
 }
 
 # --------------------------------------------------------------------------
-# Job tidy-up
+# Tidy: clearing old field data off a collector
 #
-# A controller accumulates .job files until it runs out of room. Old ones are
-# clutter; recent ones are the crew's working set, and a job nobody can replace
-# is the worst thing this tool could destroy. So removal answers to three
-# separate conditions, and every one of them must say yes.
+# A collector accumulates jobs and exports until it runs out of room. Old ones are
+# clutter; recent ones are the crew's working set, and work nobody can replace is
+# the worst thing this tool could destroy. So removal answers to two separate
+# conditions, and both must say yes:
+#
+#   1. It is PROVEN to be in OneDrive -- the same name and byte count, found under
+#      the OneDrive folder its export route files it into. Not merely "copied
+#      somewhere": a copy on a USB stick is a courier, not a backup.
+#   2. The date in its NAME is older than the retention window. 26-219-ABC.job is
+#      day 219's work. The file's timestamp is not consulted: opening an old job in
+#      Trimble Access rewrites it, which says nothing about whether the work in it
+#      is current. No date in the name, no removal -- 2100-25-CONTROL.job is a job
+#      the crew reopens.
+#
+# The rule is the same on every kind of collector; only where the proof is read
+# from differs. The office PC reads OneDrive itself, for an MTP controller and a USB
+# stick alike. A tablet cannot see OneDrive, so it reads the receipt the office
+# leaves on the stick (below).
+#
+# A scan is one unit: a .jxl and its "<name> Files" folder go together or not at
+# all, and only when every file in that folder is proven as well.
 # --------------------------------------------------------------------------
+
+# --------------------------------------------------------------------------
+# OneDrive receipt
+#
+# Each time the office syncs a stick into OneDrive, it records on the stick every
+# file there that it can SEE in OneDrive, by name and size. The tablet's Tidy trusts
+# that and nothing else -- not the copies on the stick, which could be lost before
+# the office ever imports them.
+#
+# Entries outlive the files. The office clears a stick once its files are proven,
+# and the tablet -- still holding its own copies -- reads the receipt on its next
+# visit, so an entry has to be there after the stick's copy is gone. They expire
+# after ReceiptKeepDays to keep the file small; nothing waits on a collector that long.
+#
+# Names and sizes only: no OneDrive paths, so nothing about the office's storage
+# layout travels on the stick.
+# --------------------------------------------------------------------------
+$script:ReceiptName     = '_OneDriveReceipt.json'
+$script:ReceiptKeepDays = 400
+
+function Get-ProofKey {
+    param([string]$Leaf, [long]$Length)
+    return (([string]$Leaf).ToLowerInvariant() + '|' + $Length)
+}
+
+# @{ Exists; Index = @{ 'name|size' -> confirmed-at (UTC text) }; Updated }. A receipt
+# that will not parse throws: Tidy then refuses, which is the safe way to fail.
+function Read-ProofReceipt {
+    param([string]$Path)
+    $idx = @{}
+    if (-not $Path -or -not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        return @{ Exists = $false; Index = $idx; Updated = '' }
+    }
+    $j = Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($j.PSObject.Properties['files'] -and $j.files) {
+        foreach ($p in $j.files.PSObject.Properties) { $idx[[string]$p.Name] = [string]$p.Value }
+    }
+    $upd = ''
+    if ($j.PSObject.Properties['updated']) { $upd = [string]$j.updated }
+    return @{ Exists = $true; Index = $idx; Updated = $upd }
+}
+
+function Write-ProofReceipt {
+    param([string]$Path, [hashtable]$Index, [string]$Updated)
+    $files = [ordered]@{}
+    foreach ($k in @($Index.Keys | Sort-Object)) { $files[$k] = $Index[$k] }
+    $doc = [ordered]@{
+        _note   = ('Written by Sync DataCollector on the office PC. Files from this stick it has confirmed ' +
+                   'are in OneDrive, as name|size -> when. A tablet only tidies what is listed here. Do not edit.')
+        version = 1
+        updated = $Updated
+        files   = $files
+    }
+    # Written beside the old one and swapped in, so a stick pulled mid-write leaves
+    # the previous receipt rather than half of a new one.
+    $tmp = $Path + '.tmp'
+    ($doc | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath $tmp -Encoding UTF8
+    Move-Item -LiteralPath $tmp -Destination $Path -Force
+}
+
+# A copy on a removable volume is a USB stick, and a stick is never OneDrive. This
+# is what stops a tablet with a stale config -- one written before receipts existed,
+# whose routes still point at the stick -- from counting the stick as its backup.
+function Test-RemovablePath {
+    param([string]$Path)
+    try {
+        $root = [System.IO.Path]::GetPathRoot([string]$Path)
+        if (-not $root) { return $false }
+        return ((New-Object System.IO.DriveInfo $root).DriveType -eq [System.IO.DriveType]::Removable)
+    }
+    catch { return $false }
+}
 
 # Pure decision, deliberately: this is the one place in the app that decides to
 # destroy field data, so it takes plain values and can be exercised without a
 # device. $Now is injectable for the same reason.
-function Test-JobRemovable {
+function Test-TidyRemovable {
     param(
         [string]$Leaf,
-        $MtimeUtc,
         [int]$RetentionDays,
-        [string]$BackupPath,        # '' when no verified copy was found
+        [string]$Proof,             # '' when it is not proven to be in OneDrive
         $Now = $null
     )
-    $now = if ($Now) { ([datetime]$Now).ToUniversalTime() } else { (Get-Date).ToUniversalTime() }
-    $cut = $now.AddDays(-$RetentionDays)
+    $now = if ($Now) { [datetime]$Now } else { Get-Date }
 
-    # 1. There has to be a copy somewhere else. No backup, no deletion, ever --
-    #    this is the condition that makes the whole feature safe rather than clever.
-    if (-not $BackupPath) { return @{ Remove = $false; Why = 'no backup copy found' } }
+    # 1. Proven to be in OneDrive. No proof, no deletion, ever -- this is the
+    #    condition that makes the whole feature safe rather than clever.
+    if (-not $Proof) { return @{ Remove = $false; Why = 'not confirmed in OneDrive yet' } }
 
-    # 2. A date in the name is what marks a job as one day's work. A generic name
-    #    (2100-25-CONTROL) is a job the crew reopens, and age says nothing about it.
+    # 2. A date in the name, older than the window. The name is what the surveyor
+    #    called the day's work; the timestamp only says who last opened it.
     $named = Get-JulianFromName $Leaf
-    if (-not $named) { return @{ Remove = $false; Why = 'no date in the name - a job that gets reused' } }
-
-    # 3. Both clocks must agree it is old. The julian says when the work was done,
-    #    the timestamp says when the file was last touched; either one being inside
-    #    the window keeps the file. An old survey reopened yesterday is in use.
-    if ($null -eq $MtimeUtc) { return @{ Remove = $false; Why = 'no timestamp to judge its age by' } }
-    $m = ([datetime]$MtimeUtc).ToUniversalTime()
-    $days = [int][Math]::Floor(($now - $m).TotalDays)
-    if ($m -gt $cut) { return @{ Remove = $false; Why = "modified $days day(s) ago" } }
-    if ($named.ToUniversalTime() -gt $cut) { return @{ Remove = $false; Why = 'the date in its name is inside the window' } }
-
-    return @{ Remove = $true; Why = "$days day(s) old, backed up" }
+    if (-not $named) { return @{ Remove = $false; Why = 'no date in the name' } }
+    $days = [int][Math]::Floor(($now.Date - $named.Date).TotalDays)
+    if ($days -le $RetentionDays) {
+        return @{ Remove = $false; Why = "dated $days day(s) ago - inside the $RetentionDays-day window" }
+    }
+    return @{ Remove = $true; Why = "dated $days day(s) ago, in OneDrive" }
 }
 
-# Work out what a tidy-up would do, without doing any of it. Returns one row per
-# .job on the collector -- kept ones included, with the reason -- so the dialog can
-# show the whole picture rather than only the casualties.
-function Get-JobCleanupPlan {
-    param($Ctx, $Project, $Collector, [int]$RetentionDays, [scriptblock]$OnLog)
+# Work out what a tidy would do, without doing any of it. One unit per job, export
+# or scan on the collector -- kept ones included, with the reason -- so the dialog
+# can show the whole picture rather than only the casualties. The files it reads
+# are the ones the export routes pull, chosen the same way the sync chooses them.
+function Get-TidyPlan {
+    param($Ctx, $Project, $Collector, [int]$RetentionDays, [scriptblock]$OnLog, $Now = $null)
 
-    $route = @(@(Get-ExportRoutes $Project $Collector) | Where-Object { @($_.extensions) -contains '.job' })[0]
-    if (-not $route) {
-        throw ('Nothing backs up .job files for this collector, so none can be confirmed safe to delete. ' +
-               'Add an export route that carries .job before tidying.')
+    $routes = @(Get-ExportRoutes $Project $Collector)
+    if (-not $routes.Count) {
+        throw 'No export routes are set up for this collector, so nothing can be confirmed safe to delete.'
     }
     $devRoot = Get-CollectorDeviceRoot $Project $Collector
     if (-not $devRoot) { throw 'The collector is not connected.' }
-
-    # Jobs live where the .job route reads from -- the project folder, normally.
-    $src = $devRoot
-    if ([string]$route.from -ne 'root') {
-        $sub = ([string]$Collector.exportSubPath).Trim('\')
-        if ($sub) { $src = $devRoot + '\' + $sub }
-    }
     $kind = if ([string]$Collector.type -eq 'mtp') { 'mtp' } else { 'fs' }
-
-    & $OnLog "Reading jobs from $src ..." 'INFO'
-    $files = @()
     if ($kind -eq 'mtp') {
         # A locked or charging-only controller still enumerates, but exposes no
-        # storage -- which reads as "no jobs here". Harmless for a delete (nothing
+        # storage -- which reads as "nothing here". Harmless for a delete (nothing
         # would go), but it would report a clean tidy on a device never actually
         # read. Say what happened instead.
         $storage = 0
@@ -1469,90 +1542,278 @@ function Get-JobCleanupPlan {
         }
         catch { $storage = 0 }
         if ($storage -le 0) {
-            throw ("The collector is connected but exposing no storage, so its jobs cannot be read. " +
+            throw ("The collector is connected but exposing no storage, so it cannot be read. " +
                    "Unlock the screen and set the USB connection to file transfer, then try again.")
         }
-        $inv = Get-MtpInventory $Ctx $src
-        foreach ($m in $inv.Files) { $files += @{ Rel = $m.Rel; Length = $m.Length; MtimeUtc = $m.MtimeUtc; Item = $m.Item } }
     }
-    else {
-        $inv = Get-FsInventory $src
-        foreach ($m in $inv.Files) { $files += @{ Rel = $m.Rel; Length = $m.Length; MtimeUtc = $m.MtimeUtc; Item = $null } }
-    }
-    # Top-level only. A .job nested under a scan folder or inside 02-Design is
-    # something else's business, and tidying is not the place to find out whose.
-    $jobs = @($files | Where-Object {
-        ([System.IO.Path]::GetExtension([string]$_.Rel)).ToLowerInvariant() -eq '.job' -and
-        ([string]$_.Rel).IndexOf('\') -lt 0
-    })
 
-    # Index the whole backup tree by name and size, so a file counts as saved
-    # wherever it was filed -- by month, or moved by hand afterwards.
-    $base = (Split-DatedRoot (Expand-EnvVars ([string]$route.root))).Base
-    $base = (Expand-PathTokens $base).Trim().TrimEnd('\')
-    Confirm-PathDrive $base $OnLog
-    $have = @{}
-    if (Test-Path -LiteralPath $base) {
-        foreach ($f in @(Get-ChildItem -LiteralPath $base -Recurse -File -Force -ErrorAction SilentlyContinue)) {
-            $have[$f.Name.ToLowerInvariant() + '|' + $f.Length] = $f.FullName
+    # Where proof comes from. A collector with a receipt -- a tablet -- trusts that
+    # and nothing else, least of all the copies on the stick its routes write to.
+    $receiptPath = ''
+    if ($Collector.PSObject.Properties['proofReceipt'] -and [string]$Collector.proofReceipt) {
+        $receiptPath = (Expand-PathTokens ([string]$Collector.proofReceipt)).Trim()
+    }
+    $receipt = $null
+    if ($receiptPath) {
+        $receipt = Read-ProofReceipt $receiptPath
+        if ($receipt.Exists) {
+            & $OnLog "OneDrive receipt: $($receipt.Index.Count) confirmed file(s), last updated $($receipt.Updated)  ($receiptPath)." 'INFO'
+        }
+        else {
+            & $OnLog ("No OneDrive receipt at $receiptPath - the office has not confirmed anything from this stick yet, " +
+                      "so nothing can be removed.") 'WARN'
         }
     }
-    & $OnLog "Backup index: $($have.Count) file(s) under $base." 'INFO'
 
-    $label = Get-CollectorFolderName $Collector
-    $coll  = [string]$route.collision
-    if (-not $coll) { $coll = 'prefix' }
+    $label  = Get-CollectorFolderName $Collector
+    $isVol  = Test-VolumeCollector $Collector
+    $invs   = @{}     # one read per source folder
+    $idxs   = @{}     # one OneDrive index per backup root
+    $seen   = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+    $units  = @()
+    $proofLabels = @()
 
-    $rows = @()
-    foreach ($j in $jobs) {
-        # Two names to try. The backup carries whatever name the pull gave it, and
-        # that has not always been today's: earlier runs filed under deviceSubfolder,
-        # which leaves the filename bare. Accept either form -- the size has to match
-        # regardless, and that is what makes a name match mean something.
-        $destRel = Get-DestRel ([string]$j.Rel) 'pull' $coll $label
-        $li = $destRel.LastIndexOf('\')
-        $leaf = if ($li -ge 0) { $destRel.Substring($li + 1) } else { $destRel }
-        $bare = [System.IO.Path]::GetFileName([string]$j.Rel)
-        $backup = ''
-        foreach ($n in @($leaf, $bare)) {
-            $key = $n.ToLowerInvariant() + '|' + [long]$j.Length
-            if ($have.ContainsKey($key)) { $backup = [string]$have[$key]; break }
+    foreach ($route in $routes) {
+        $exts = @(@($route.extensions) | ForEach-Object { ([string]$_).ToLowerInvariant() })
+        if (-not $exts.Count) { continue }
+        $fromRoot = ([string]$route.from -eq 'root')
+        $src = $devRoot
+        if (-not $fromRoot) {
+            $sub = ([string]$Collector.exportSubPath).Trim('\')
+            if ($sub) { $src = $devRoot + '\' + $sub }
         }
-        $d = Test-JobRemovable ([string]$j.Rel) $j.MtimeUtc $RetentionDays $backup
-        $rows += [pscustomobject]@{
-            Rel = [string]$j.Rel; Length = [long]$j.Length; MtimeUtc = $j.MtimeUtc
-            Item = $j.Item; Backup = $backup; Remove = [bool]$d.Remove; Why = [string]$d.Why
-            Path = $src + '\' + [string]$j.Rel
+
+        $ik = $src.ToLowerInvariant()
+        if (-not $invs.ContainsKey($ik)) {
+            & $OnLog "Reading $src ..." 'INFO'
+            $raw = @{ Files = @(); Dirs = @() }
+            if ($kind -eq 'mtp') { $raw = Get-MtpInventory $Ctx $src }
+            elseif (Test-Path -LiteralPath $src -PathType Container) { $raw = Get-FsInventory $src }
+            $recs = @()
+            foreach ($m in @($raw.Files)) {
+                $item = $null
+                if ($m.ContainsKey('Item')) { $item = $m.Item }
+                $recs += @{ Rel = [string]$m.Rel; Length = [long]$m.Length; MtimeUtc = $m.MtimeUtc; Item = $item
+                            Ext = ([System.IO.Path]::GetExtension([string]$m.Rel)).ToLowerInvariant() }
+            }
+            $invs[$ik] = @{ Files = $recs; Dirs = @($raw.Dirs) }
+        }
+        $inv = $invs[$ik]
+
+        # Which files this route carries. From the project folder, top level only: a
+        # .job nested under a scan folder or 02-Design is somebody else's business.
+        # From the export folder, exactly what the sync pulls -- scan folders included.
+        if ($fromRoot) {
+            $files = @($inv.Files | Where-Object { $exts -contains $_.Ext -and $_.Rel.IndexOf('\') -lt 0 })
+        }
+        else {
+            $files = @((Select-SyncSet $inv.Files $inv.Dirs $exts $false @($Collector.excludeFolders)).Files)
+        }
+
+        # A scan's folder belongs to its .jxl, so map each folder to the scan first.
+        $comp = @{}
+        foreach ($f in $files) {
+            if ($f.Ext -ne '.jxl') { continue }
+            $li = $f.Rel.LastIndexOf('\')
+            $dir = if ($li -ge 0) { $f.Rel.Substring(0, $li) } else { '' }
+            $base = [System.IO.Path]::GetFileNameWithoutExtension($f.Rel)
+            $cRel = if ($dir) { "$dir\$base Files" } else { "$base Files" }
+            $comp[$cRel.ToLowerInvariant() + '\'] = @{ Anchor = $f.Rel; Dir = $cRel }
+        }
+
+        # The proof index for this route.
+        $coll = [string]$route.collision
+        # A stick's own naming wins over the route's, as it does when it is synced.
+        if ($isVol -and [string]$Collector.exportCollision) { $coll = [string]$Collector.exportCollision }
+        if (-not $coll) { $coll = 'prefix' }
+        $have = @{}; $fromReceipt = $false
+        if ($receipt) {
+            $have = $receipt.Index; $fromReceipt = $true
+            $proofLabels += 'the OneDrive receipt on the stick'
+        }
+        else {
+            $base = (Split-DatedRoot (Expand-EnvVars ([string]$route.root))).Base
+            $base = (Expand-PathTokens $base).Trim().TrimEnd('\')
+            if (-not $base -or (Test-RemovablePath $base)) {
+                & $OnLog ("Route '$($route.name)' files onto $base, a USB stick rather than OneDrive - " +
+                          "nothing it carries counts as backed up.") 'WARN'
+            }
+            else {
+                Confirm-PathDrive $base $OnLog
+                $bk = $base.ToLowerInvariant()
+                if (-not $idxs.ContainsKey($bk)) {
+                    $ix = @{}
+                    if (Test-Path -LiteralPath $base) {
+                        foreach ($bf in @(Get-ChildItem -LiteralPath $base -Recurse -File -Force -ErrorAction SilentlyContinue)) {
+                            $ix[(Get-ProofKey $bf.Name ([long]$bf.Length))] = $bf.FullName
+                        }
+                    }
+                    & $OnLog "OneDrive index: $($ix.Count) file(s) under $base." 'INFO'
+                    $idxs[$bk] = $ix
+                }
+                $have = $idxs[$bk]
+                $proofLabels += $base
+            }
+        }
+
+        # Proof per file. Two names to try: the one the pull gave it, and the bare
+        # one an older deviceSubfolder run left. The size has to match either way,
+        # and that is what makes a name match mean something.
+        $byUnit = [ordered]@{}
+        foreach ($f in $files) {
+            $path = $src + '\' + $f.Rel
+            if (-not $seen.Add($path)) { continue }
+            $destRel = Get-DestRel $f.Rel 'pull' $coll $label
+            $dli = $destRel.LastIndexOf('\')
+            $dLeaf = if ($dli -ge 0) { $destRel.Substring($dli + 1) } else { $destRel }
+            $bli = $f.Rel.LastIndexOf('\')
+            $bare = if ($bli -ge 0) { $f.Rel.Substring($bli + 1) } else { $f.Rel }
+            $proof = ''; $proofPath = ''
+            foreach ($n in @($dLeaf, $bare)) {
+                $k = Get-ProofKey $n ([long]$f.Length)
+                if ($have.ContainsKey($k)) {
+                    if ($fromReceipt) { $proof = 'confirmed by the office ' + [string]$have[$k] }
+                    else { $proof = [string]$have[$k]; $proofPath = $proof }
+                    break
+                }
+            }
+            $unitKey = $f.Rel; $compDir = ''
+            $rl = $f.Rel.ToLowerInvariant()
+            foreach ($cp in $comp.Keys) {
+                if ($rl.StartsWith($cp)) { $unitKey = $comp[$cp].Anchor; break }
+            }
+            if ($f.Ext -eq '.jxl') {
+                foreach ($cp in $comp.Keys) { if ($comp[$cp].Anchor -eq $f.Rel) { $compDir = $comp[$cp].Dir } }
+            }
+            if (-not $byUnit.Contains($unitKey)) { $byUnit[$unitKey] = @{ Files = @(); CompDir = '' } }
+            $byUnit[$unitKey].Files += [pscustomobject]@{
+                Rel = $f.Rel; Path = $path; Length = [long]$f.Length; Item = $f.Item
+                Proof = $proof; ProofPath = $proofPath; IsAnchor = ($f.Rel -eq $unitKey)
+            }
+            if ($compDir) { $byUnit[$unitKey].CompDir = $compDir }
+        }
+
+        foreach ($uk in $byUnit.Keys) {
+            $members = @($byUnit[$uk].Files)
+            $anchor = @($members | Where-Object { $_.IsAnchor })[0]
+            if (-not $anchor) { continue }     # scan files whose .jxl another route already took
+            $unproven = @($members | Where-Object { -not $_.Proof })
+            $aLeaf = $uk; $ali = $uk.LastIndexOf('\'); if ($ali -ge 0) { $aLeaf = $uk.Substring($ali + 1) }
+            $useProof = if ($unproven.Count) { '' } else { [string]$anchor.Proof }
+            $d = Test-TidyRemovable $aLeaf $RetentionDays $useProof $Now
+            $why = [string]$d.Why
+            if ($unproven.Count -and $anchor.Proof) {
+                $why = "$($unproven.Count) file(s) in its scan folder not confirmed in OneDrive yet"
+            }
+            $cDir = ''
+            if ($byUnit[$uk].CompDir) { $cDir = $src + '\' + $byUnit[$uk].CompDir }
+            $units += [pscustomobject]@{
+                Route = [string]$route.name; Rel = $uk; Path = $anchor.Path; Length = $anchor.Length
+                Proof = [string]$anchor.Proof; Files = $members; CompanionDir = $cDir
+                Remove = [bool]$d.Remove; Why = $why
+            }
         }
     }
-    return @{ Rows = @($rows); Source = $src; BackupRoot = $base; Kind = $kind }
+    $pl = (@($proofLabels | Select-Object -Unique) -join '; ')
+    return @{ Units = @($units); Source = $devRoot; ProofLabel = $pl; Kind = $kind; Receipt = ($null -ne $receipt) }
 }
 
-# Carry out a plan that has already been shown and agreed to. Re-checks the backup
-# immediately before each delete: the plan may have been on screen for a while, and
+# Carry out a plan that has already been shown and agreed to. Re-checks every OneDrive
+# copy immediately before deleting: the plan may have been on screen for a while, and
 # nothing here is worth a race.
-function Invoke-JobCleanup {
+function Invoke-TidyCleanup {
     param($Ctx, $Plan, [scriptblock]$OnLog)
-    $done = 0; $failed = 0
-    foreach ($row in @($Plan.Rows | Where-Object { $_.Remove })) {
+    $units = 0; $files = 0; $failed = 0
+    foreach ($u in @($Plan.Units | Where-Object { $_.Remove })) {
         try {
-            if (-not $row.Backup -or -not (Test-Path -LiteralPath $row.Backup)) {
-                throw 'its backup copy is no longer there'
+            foreach ($f in @($u.Files)) {
+                if (-not $f.ProofPath) { continue }      # a receipt entry does not move
+                if (-not (Test-Path -LiteralPath $f.ProofPath)) { throw "the OneDrive copy of $($f.Rel) is no longer there" }
+                $b = Get-Item -LiteralPath $f.ProofPath
+                if ([long]$b.Length -ne [long]$f.Length) {
+                    throw "the OneDrive copy of $($f.Rel) is a different size now ($($b.Length) vs $($f.Length))"
+                }
             }
-            $b = Get-Item -LiteralPath $row.Backup
-            if ([long]$b.Length -ne [long]$row.Length) {
-                throw ("the backup is a different size now ($($b.Length) vs $($row.Length))")
-            }
-            Target-DeleteFile $Ctx $Plan.Kind $row.Path $row.Item
-            $done++
-            & $OnLog ("REMOVED  $($row.Rel)   (saved at $($row.Backup))") 'COPY'
         }
         catch {
             $failed++
-            & $OnLog ("KEPT     $($row.Rel)  ::  $($_.Exception.Message)") 'ERROR'
+            & $OnLog ("KEPT     $($u.Rel)  ::  $($_.Exception.Message)") 'ERROR'
+            continue
+        }
+        # Scan folder first, the .jxl last: if anything fails part-way, the .jxl is
+        # still there to say what the folder was.
+        $order = @(@($u.Files | Where-Object { -not $_.IsAnchor }) + @($u.Files | Where-Object { $_.IsAnchor }))
+        $ok = $true
+        foreach ($f in $order) {
+            try { Target-DeleteFile $Ctx $Plan.Kind $f.Path $f.Item; $files++ }
+            catch {
+                $ok = $false; $failed++
+                & $OnLog ("KEPT     $($f.Rel)  ::  $($_.Exception.Message)") 'ERROR'
+                break
+            }
+        }
+        if ($ok -and $u.CompanionDir) {
+            # Only empty folders should be left. Anything that is not -- a file that
+            # arrived after the plan -- was never proven, so the folder stays.
+            try {
+                if ($Ctx.ContainsKey('FolderCache')) { $Ctx.FolderCache.Clear() }
+                $left = Get-TargetInventory $Ctx $Plan.Kind $u.CompanionDir
+                if (@($left.Files).Count -eq 0) { Target-DeleteDir $Ctx $Plan.Kind $u.CompanionDir }
+                else { & $OnLog ("Scan folder kept, $(@($left.Files).Count) file(s) appeared in it: $($u.CompanionDir)") 'WARN' }
+            }
+            catch { & $OnLog ("Could not remove the scan folder $($u.CompanionDir) :: $($_.Exception.Message)") 'WARN' }
+        }
+        if ($ok) {
+            $units++
+            $more = ''
+            if (@($u.Files).Count -gt 1) { $more = " + $(@($u.Files).Count - 1) file(s) in its scan folder" }
+            & $OnLog ("REMOVED  $($u.Rel)$more   ($($u.Proof))") 'COPY'
         }
     }
-    return @{ Removed = $done; Failed = $failed }
+    return @{ Removed = $units; Files = $files; Failed = $failed }
+}
+
+# Office side: after this PC has synced a stick into OneDrive, record on the stick
+# every file there that it can now see in OneDrive. Built from the same plan Tidy
+# uses -- same file selection, same name-and-size proof -- so the receipt can never
+# vouch for anything Tidy on this PC would not.
+function Update-ProofReceipt {
+    param($Project, $Collector, [scriptblock]$OnLog, $Now = $null)
+    if (-not (Test-VolumeCollector $Collector)) { return }
+    $vol = Resolve-VolumeRoot ([string]$Collector.serial)
+    if (-not $vol) { return }
+    $path = Join-Path $vol $script:ReceiptName
+    $ctx  = @{ DeviceName = [string]$Collector.model; Settings = $script:Config.mtp; FolderCache = @{} }
+    $plan = Get-TidyPlan $ctx $Project $Collector (Get-JobRetentionDays $Collector) $OnLog $Now
+
+    $old = @{ Exists = $false; Index = @{}; Updated = '' }
+    try { $old = Read-ProofReceipt $path }
+    catch { & $OnLog "The OneDrive receipt on the stick could not be read, starting a new one :: $($_.Exception.Message)" 'WARN' }
+
+    $nowUtc = if ($Now) { ([datetime]$Now).ToUniversalTime() } else { (Get-Date).ToUniversalTime() }
+    $stamp  = Format-Utc $nowUtc
+    $idx = @{}; $expired = 0
+    foreach ($k in @($old.Index.Keys)) {
+        $t = Parse-Utc ([string]$old.Index[$k])
+        if ($t -and ($nowUtc - $t).TotalDays -gt $script:ReceiptKeepDays) { $expired++; continue }
+        $idx[$k] = $old.Index[$k]
+    }
+    $added = 0
+    foreach ($u in @($plan.Units)) {
+        foreach ($f in @($u.Files)) {
+            if (-not $f.ProofPath) { continue }
+            $li = $f.Rel.LastIndexOf('\')
+            $leaf = if ($li -ge 0) { $f.Rel.Substring($li + 1) } else { $f.Rel }
+            $k = Get-ProofKey $leaf ([long]$f.Length)
+            if (-not $idx.ContainsKey($k)) { $idx[$k] = $stamp; $added++ }
+        }
+    }
+    if ($added -eq 0 -and $expired -eq 0 -and $old.Exists) {
+        & $OnLog "OneDrive receipt on the stick is current ($($idx.Count) file(s))." 'INFO'
+        return
+    }
+    Write-ProofReceipt $path $idx $stamp
+    & $OnLog "OneDrive receipt on the stick updated: $added newly confirmed, $expired expired, $($idx.Count) in total." 'INFO'
 }
 
 # What is at the destination that the source does not account for.
@@ -2263,7 +2524,7 @@ function New-CollectorDefaults {
         [string[]]$ExcludeFolders = @('SUPERSEDED'),
         [bool]$Prune = $true,                # the design folder is owned by the tool
         [string]$ExportCollision = 'prefix', # prefix | deviceSubfolder | overwrite
-        [int]$JobRetentionDays = 7           # how much recent work Tidy jobs never touches
+        [int]$JobRetentionDays = 7           # how many days of dated work Tidy never touches
     )
     [pscustomobject]@{
         designSubPath    = $DesignSubPath
@@ -2341,7 +2602,11 @@ function New-Collector {
         [string[]]$ExcludeFolders = (Get-Defaults).excludeFolders,
         [bool]$Prune = (Get-Defaults).prune,
         [string]$ExportCollision = (Get-Defaults).exportCollision,
-        [int]$JobRetentionDays = (Get-Defaults).jobRetentionDays
+        [int]$JobRetentionDays = (Get-Defaults).jobRetentionDays,
+        # Where Tidy reads its proof that a file is in OneDrive, for a collector that
+        # cannot see OneDrive itself -- a tablet, reading the receipt the office left
+        # on the stick. Empty (every office collector) = look in OneDrive directly.
+        [string]$ProofReceipt = ''
     )
     [pscustomobject]@{
         serial           = $Serial
@@ -2356,6 +2621,7 @@ function New-Collector {
         prune            = $Prune
         exportCollision  = $ExportCollision
         jobRetentionDays = $JobRetentionDays
+        proofReceipt     = $ProofReceipt
     }
 }
 
@@ -2705,7 +2971,9 @@ function New-TabletConfig {
         -ExportExtensions @($Collector.exportExtensions) `
         -ExcludeFolders @($Collector.excludeFolders) `
         -Prune ([bool]$Collector.prune) `
-        -ExportCollision 'prefix'
+        -ExportCollision 'prefix' `
+        -JobRetentionDays (Get-JobRetentionDays $Collector) `
+        -ProofReceipt ('{apphome}\' + $script:ReceiptName)
 
     return [pscustomobject]@{
         _note         = 'Generated by Sync DataCollector on the office PC. Edits here are overwritten on the next sync to this stick.'
@@ -2858,6 +3126,18 @@ function Invoke-CollectorSync {
     $copied = 0; $pruned = 0; $kept = 0; $failed = 0; $legErrors = @(); $lines = @()
     $legPlans = @()
 
+    # A tablet reads the office's receipt off the stick, so its export legs can skip
+    # what the office has already confirmed in OneDrive and cleared off the stick. An
+    # unreadable receipt only costs a re-copy, so it is not worth failing the run for.
+    $provenIdx = $null
+    if ($Collector.PSObject.Properties['proofReceipt'] -and [string]$Collector.proofReceipt) {
+        try {
+            $rc = Read-ProofReceipt ((Expand-PathTokens ([string]$Collector.proofReceipt)).Trim())
+            if ($rc.Exists -and $rc.Index.Count) { $provenIdx = $rc.Index }
+        }
+        catch { & $OnLog "The OneDrive receipt on the stick could not be read :: $($_.Exception.Message)" 'WARN' }
+    }
+
     # One engine row -> one compare-view row. The engine thinks in source and
     # destination, which flip between the legs; the view is always PC-on-the-left,
     # collector-on-the-right. On a pull the collector is the source, so sides swap.
@@ -2904,6 +3184,9 @@ function Invoke-CollectorSync {
         if ($script:CancelRequested) { & $OnLog 'Cancelled by user.' 'WARN'; break }
         & $OnLog "--- $($leg.Title) ---" 'INFO'
         $p = New-LegProfile $Project $Collector ([string]$leg.Kind) $leg.Route
+        if ($provenIdx -and [string]$leg.Kind -eq 'export') {
+            $p | Add-Member -NotePropertyName provenIndex -NotePropertyValue $provenIdx -Force
+        }
         # Engine rows arrive in engine terms; map each one before it reaches the UI.
         # GetNewClosure, and deliberately different names: Invoke-Sync has its own
         # $OnItem parameter, so a plain scriptblock would resolve $OnItem dynamically
@@ -2945,6 +3228,14 @@ function Invoke-CollectorSync {
             & $OnLog ("$($leg.Key) leg FAILED :: $($_.Exception.Message)") 'ERROR'
             & $OnLog 'Carrying on with the next leg.' 'WARN'
         }
+    }
+
+    # The stick is now in OneDrive as far as it is going to get this run, so say so on
+    # the stick: the receipt is the only proof a tablet will ever see. After the legs,
+    # so it reflects what this run actually filed; never on a check, which writes nothing.
+    if (-not $CheckOnly -and -not $script:CancelRequested -and (Test-VolumeCollector $Collector)) {
+        try { Update-ProofReceipt $Project $Collector $OnLog }
+        catch { & $OnLog "Could not update the OneDrive receipt on the stick :: $($_.Exception.Message)" 'WARN' }
     }
 
     $summary = "$label - " + ($lines -join '  |  ')
@@ -3114,6 +3405,13 @@ function Invoke-Sync {
     # keep overwriting: the design source is the authority there.
     $neverOverwrite = ($direction -eq 'pull')
     if ($Profile.PSObject.Properties['neverOverwrite']) { $neverOverwrite = [bool]$Profile.neverOverwrite }
+
+    # Files the office has already confirmed in OneDrive (name|size, from the receipt
+    # on the stick). Pull only, and only ever set on a tablet's legs.
+    $provenIndex = $null
+    if ($direction -eq 'pull' -and $Profile.PSObject.Properties['provenIndex'] -and $Profile.provenIndex) {
+        $provenIndex = $Profile.provenIndex
+    }
 
     $ctx = @{ DeviceName = $deviceName; Settings = $script:Config.mtp; FolderCache = @{} }
     # A folder collector has no hardware serial to read, so record it under the id it
@@ -3330,6 +3628,18 @@ function Invoke-Sync {
                     if ($filed) {
                         $need = $false
                         $reason = 'already filed at ' + ($filed -replace [regex]::Escape($dstPath + '\'), '')
+                    }
+                }
+
+                # Not on the stick because the office has already confirmed it in
+                # OneDrive and cleared it off. Copying it back would only send it
+                # round again; Tidy will take it off this collector instead.
+                if ($need -and $di.Length -lt 0 -and $provenIndex) {
+                    $dli = $destRel.LastIndexOf('\')
+                    $dleaf = if ($dli -ge 0) { $destRel.Substring($dli + 1) } else { $destRel }
+                    if ($provenIndex.ContainsKey((Get-ProofKey $dleaf ([long]$rec.Length)))) {
+                        $need = $false
+                        $reason = 'already in OneDrive (office receipt)'
                     }
                 }
 
@@ -3967,15 +4277,16 @@ $btnCancel = New-Object System.Windows.Forms.Button
 $btnCancel.Text = 'Cancel'; $btnCancel.Location = '314,512'; $btnCancel.Size = '85,38'; $btnCancel.Enabled = $false
 $form.Controls.Add($btnCancel)
 
-# Deliberately its own button, not part of Sync. Sync pushes design out and pulls
-# field data back; it does not destroy work on the collector. Tidying does, so it
-# is a thing you ask for, on a day you mean it.
+# Sync itself never destroys work on the collector. Tidy does, so it is its own step
+# with its own confirmation -- run automatically after every Sync, so clearing old
+# work is part of the one routine, and available here on its own as well.
 $btnTidy = New-Object System.Windows.Forms.Button
-$btnTidy.Text = 'Tidy jobs...'; $btnTidy.Location = '406,512'; $btnTidy.Size = '110,38'
+$btnTidy.Text = 'Tidy...'; $btnTidy.Location = '406,512'; $btnTidy.Size = '110,38'
 $form.Controls.Add($btnTidy)
 # Set here, not up with the other tooltips: $tip is built before this button is,
 # and SetToolTip on a control that does not exist yet throws at startup.
-$tip.SetToolTip($btnTidy, 'Remove old job files from the collector - but only ones already backed up.' + [Environment]::NewLine +
+$tip.SetToolTip($btnTidy, 'Remove old jobs and exports from the collector - only ones confirmed in OneDrive,' + [Environment]::NewLine +
+    'and dated (in the name) older than the retention window. Runs after every Sync too.' + [Environment]::NewLine +
     'Shows you exactly what would go, and what it is keeping, before anything happens.')
 
 $progress = New-Object System.Windows.Forms.ProgressBar
@@ -4824,6 +5135,7 @@ function Invoke-CollectorAction {
         Update-CompareRow $row
         [System.Windows.Forms.Application]::DoEvents()
     }
+    $runTidy = $false
     try {
         $r = if ($CheckOnly) {
             Invoke-CollectorSync -Project $script:CurrentProject -Collector $script:CurrentCollector `
@@ -4856,6 +5168,11 @@ function Invoke-CollectorAction {
         # Rebuild from the finished plan: the live ticks were per-file, this is the
         # authoritative record, and it re-sorts everything back into leg order.
         Show-ComparePlan @($r.LegPlans) (Get-CollectorLabel $script:CurrentCollector)
+        # A finished sync is followed by a tidy, so clearing old work is part of the
+        # one routine rather than a step somebody has to remember. It decides from
+        # OneDrive (or the office's receipt), not from what this run copied, so a
+        # failed leg does not make it unsafe -- but a cancel means stop.
+        $runTidy = (-not $CheckOnly) -and (-not $script:CancelRequested)
     }
     catch {
         $lblStatus.Text = 'Error: ' + $_.Exception.Message
@@ -4866,6 +5183,7 @@ function Invoke-CollectorAction {
         Set-Busy $false
         Update-DetectedCollector $false
     }
+    if ($runTidy) { Invoke-TidyAction $true }
 }
 
 
@@ -5161,67 +5479,90 @@ $btnCancel.Add_Click({ $script:CancelRequested = $true; $lblStatus.Text = 'Cance
 $btnCheck.Add_Click({ Invoke-CollectorAction $true })
 $btnSync.Add_Click({ Invoke-CollectorAction $false })
 
-$btnTidy.Add_Click({
+# Tidy, from the button or straight after a Sync. Both show the same list and ask the
+# same question before anything goes; after a Sync, a tidy with nothing to remove just
+# says so in the status line rather than popping up a dialog nobody needs.
+function Invoke-TidyAction {
+    param([bool]$AfterSync = $false)
     if ($script:IsSyncing) { return }
     if (-not $script:CurrentCollector) { return }
-    Commit-UiToProject
-    Commit-UiToCollector
+    if (-not $AfterSync) {
+        Commit-UiToProject
+        Commit-UiToCollector
+    }
     $days = Get-JobRetentionDays $script:CurrentCollector
     Set-Busy $true
-    $lblStatus.Text = 'Checking which jobs are safe to remove...'
-    $tabsOut.SelectedTab = $tabLog
+    $lblStatus.Text = 'Checking what is safe to remove...'
+    if (-not $AfterSync) { $tabsOut.SelectedTab = $tabLog }
     $onLog = { param($m,$l) Write-Log $m $l; [System.Windows.Forms.Application]::DoEvents() }
     try {
         $label = Get-CollectorLabel $script:CurrentCollector
-        Write-Log "===== TIDY JOBS  $label  (keeping the last $days day(s)) =====" 'INFO'
+        Write-Log "===== TIDY  $label  (keeping work dated in the last $days day(s)) =====" 'INFO'
         $ctx = @{ DeviceName = [string]$script:CurrentCollector.model; Settings = $script:Config.mtp; FolderCache = @{} }
         if ([string]$script:CurrentCollector.type -eq 'mtp') {
             Ensure-MtpInterop
             $dev = Resolve-CollectorDevice ([string]$script:CurrentCollector.model) '' ${function:Choose-DeviceDialog}
             $ctx.DeviceItem = $dev.Item; $ctx.DeviceSerial = $dev.Serial
         }
-        $plan = Get-JobCleanupPlan $ctx $script:CurrentProject $script:CurrentCollector $days $onLog
-        $go   = @($plan.Rows | Where-Object { $_.Remove })
-        $keep = @($plan.Rows | Where-Object { -not $_.Remove })
+        $plan = Get-TidyPlan $ctx $script:CurrentProject $script:CurrentCollector $days $onLog
+        $go   = @($plan.Units | Where-Object { $_.Remove })
+        $keep = @($plan.Units | Where-Object { -not $_.Remove })
+        $scanNote = {
+            param($u)
+            $n = @($u.Files).Count - 1
+            if ($n -gt 0) { return " (+ $n file(s) in its scan folder)" }
+            return ''
+        }
 
-        foreach ($r in $keep) { Write-Log ("keep     $($r.Rel)  ::  $($r.Why)") 'SKIP' }
-        foreach ($r in $go)   { Write-Log ("would remove  $($r.Rel)  ::  $($r.Why)") 'WARN' }
+        foreach ($u in $keep) { Write-Log ("keep     $($u.Rel)$(& $scanNote $u)  ::  $($u.Why)") 'SKIP' }
+        foreach ($u in $go)   { Write-Log ("would remove  $($u.Rel)$(& $scanNote $u)  ::  $($u.Why)") 'WARN' }
 
         if ($go.Count -eq 0) {
-            $lblStatus.Text = "Nothing to tidy - all $($plan.Rows.Count) job(s) are being kept."
-            [System.Windows.Forms.MessageBox]::Show(
-                ("Nothing to remove.`r`n`r`nAll $($plan.Rows.Count) job file(s) on $label are being kept - " +
-                 "either they are inside the last $days day(s), they have no date in the name, or no backup copy was found."),
-                'Tidy jobs', 'OK', 'Information') | Out-Null
+            $lblStatus.Text = "Nothing to tidy - all $($plan.Units.Count) item(s) on $label are being kept."
+            if (-not $AfterSync) {
+                [System.Windows.Forms.MessageBox]::Show(
+                    ("Nothing to remove.`r`n`r`nAll $($plan.Units.Count) item(s) on $label are being kept - either the " +
+                     "date in the name is inside the last $days day(s), there is no date in the name, or it is not " +
+                     "confirmed in OneDrive yet. The Log tab lists each one with its reason."),
+                    'Tidy', 'OK', 'Information') | Out-Null
+            }
             return
         }
-        # Name every file, both lists. A count alone is not something anyone can agree
+        # Name every item, both lists. A count alone is not something anyone can agree
         # to, and the kept list is what shows the rules actually working.
-        $lines = @("Remove $($go.Count) job file(s) from $label ?", '',
-                   "Each one is older than $days day(s) AND has a verified backup copy.", '')
-        # Name the copy that vouches for each deletion, not just the count. A backup
-        # is matched by name and size, and the name it was filed under has changed
-        # over the years -- so the one thing worth being able to eyeball is exactly
-        # which file is standing in for the one about to go.
-        foreach ($r in ($go | Sort-Object Rel)) {
-            $where = [string]$r.Backup
-            if ($where -and $plan.BackupRoot) { $where = $where.Replace($plan.BackupRoot + '\', '') }
-            $lines += ("   {0}`r`n        {1}  ->  saved as {2}" -f $r.Rel, $r.Why, $where)
+        $lines = @()
+        if ($AfterSync) { $lines += 'Sync finished. Tidy found old work that is safe to clear.'; $lines += '' }
+        $lines += "Remove $($go.Count) item(s) from $label ?"
+        $lines += ''
+        $lines += "Each one is dated (in its name) more than $days day(s) ago AND is confirmed in OneDrive."
+        $lines += ''
+        # Name the copy that vouches for each deletion. It is matched by name and size,
+        # so which file is standing in for the one about to go is worth eyeballing.
+        $shown = 0
+        foreach ($u in ($go | Sort-Object Rel)) {
+            if ($shown -ge 20) { break }
+            $where = [string]$u.Proof
+            foreach ($root in @(([string]$plan.ProofLabel) -split '; ')) {
+                if ($root -and $where.StartsWith($root + '\')) { $where = $where.Substring($root.Length + 1) }
+            }
+            $lines += ("   {0}{1}`r`n        {2}  ->  {3}" -f $u.Rel, (& $scanNote $u), $u.Why, $where)
+            $shown++
         }
+        if ($go.Count -gt $shown) { $lines += "   ... and $($go.Count - $shown) more (all listed in the Log tab)" }
         if ($keep.Count) {
             $lines += ''
             $lines += "Keeping $($keep.Count):"
-            foreach ($r in ($keep | Sort-Object Rel | Select-Object -First 12)) { $lines += ("   {0}   - {1}" -f $r.Rel, $r.Why) }
+            foreach ($u in ($keep | Sort-Object Rel | Select-Object -First 12)) { $lines += ("   {0}   - {1}" -f $u.Rel, $u.Why) }
             if ($keep.Count -gt 12) { $lines += "   ... and $($keep.Count - 12) more (all listed in the Log tab)" }
         }
         $lines += ''
-        $lines += "Backups were confirmed under $($plan.BackupRoot)."
+        $lines += "Proof read from: $($plan.ProofLabel)."
         $lines += 'This cannot be undone on the collector.'
-        $answer = [System.Windows.Forms.MessageBox]::Show(($lines -join "`r`n"), 'Tidy jobs', 'YesNo', 'Warning', 'Button2')
+        $answer = [System.Windows.Forms.MessageBox]::Show(($lines -join "`r`n"), 'Tidy', 'YesNo', 'Warning', 'Button2')
         if ($answer -ne 'Yes') { $lblStatus.Text = 'Tidy cancelled - nothing removed.'; Write-Log 'Tidy cancelled by user.' 'INFO'; return }
 
-        $res = Invoke-JobCleanup $ctx $plan $onLog
-        $msg = "Removed $($res.Removed) job file(s) from $label"
+        $res = Invoke-TidyCleanup $ctx $plan $onLog
+        $msg = "Removed $($res.Removed) item(s), $($res.Files) file(s), from $label"
         if ($res.Failed -gt 0) { $msg += ", $($res.Failed) kept back (see the Log)" }
         $lblStatus.Text = $msg + '.'
         Write-Log ("----- $msg -----") 'INFO'
@@ -5229,13 +5570,15 @@ $btnTidy.Add_Click({
     catch {
         $lblStatus.Text = 'Tidy failed: ' + $_.Exception.Message
         Write-Log ('TIDY FAILED: ' + $_.Exception.Message) 'ERROR'
-        [System.Windows.Forms.MessageBox]::Show($_.Exception.Message, 'Tidy jobs', 'OK', 'Error') | Out-Null
+        [System.Windows.Forms.MessageBox]::Show($_.Exception.Message, 'Tidy', 'OK', 'Error') | Out-Null
     }
     finally {
         Set-Busy $false
         Update-DetectedCollector $false
     }
-})
+}
+
+$btnTidy.Add_Click({ Invoke-TidyAction $false })
 
 $chkAdvanced.Add_CheckedChanged({
     Set-AdvancedMode ([bool]$chkAdvanced.Checked)

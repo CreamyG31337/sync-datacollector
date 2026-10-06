@@ -104,6 +104,10 @@ WinForms GUI that runs on stock Windows (PowerShell 5.1 + .NET Framework 4.x).
 - **The title bar says which copy this is** — e.g. `Sync Data Collector  -  D:\  (USB stick)`
   or `…  -  C:\Tools\SyncDataCollector`. The stick, the office and a tablet can each run their
   own copy with its own `config.json`, so where it runs from is worth seeing at a glance.
+- **Old work clears itself, but only once it is in OneDrive** — after every Sync, Tidy offers
+  to remove jobs and exports dated (in their name) more than a week ago that are proven to be
+  in OneDrive. A tablet, which cannot see OneDrive, trusts a receipt the office writes onto the
+  stick. See [Tidying old work](#tidying-old-work-off-the-collector).
 - **Reliable MTP** — see below.
 
 ---
@@ -591,26 +595,35 @@ Filed by date: 40 from the julian in the filename, 14 from the file timestamp.
 doesn't ask for it. It only applies to pulls, and only to a destination that actually has
 `{year}` / `{month}` / `{julian}` / `{date}` in it.
 
-## Tidying old jobs off the collector
+## Tidying old work off the collector
 
-A controller fills up with `.job` files. **Tidy jobs…** removes the old ones — and it is a
-separate button on purpose. Sync pushes design out and pulls field data back; it does not
-destroy work on the collector. Tidying does, so it is something you ask for on a day you mean
-it, not a side effect of the daily round trip.
+A collector fills up with jobs and exports. **Tidy** clears the old ones, and it runs
+**automatically after every Sync** — so clearing the controller is part of the one routine,
+not a step somebody has to remember. It always shows its list and asks before anything goes,
+and the **Tidy…** button runs it on its own too. Sync itself never deletes anything on the
+collector; only Tidy does.
 
-A job is removed only when **all three** of these are true. Any one of them failing keeps the
-file:
+It covers what the export routes carry: `.job` files in the project folder, and everything in
+`Exports` — a scan's `.jxl` together with its `<name> Files` folder.
 
-1. **It has a verified backup copy.** Same byte count, found anywhere under the backup root.
-   No copy, no deletion — this is the condition the whole feature rests on. The filename is
-   matched under **either** naming era: `TSC5-01_26-219-ABC.job` as `prefix` writes it today,
-   or a bare `26-219-ABC.job` as an older `deviceSubfolder` run left it. The size has to match
-   either way, and that is what makes a name match mean anything.
-2. **It has a date in its filename.** `26-219-ABC.job` is one day's work. `2100-25-CONTROL.job`
-   is a job the crew reopens, and its age says nothing about whether it is wanted.
-3. **Both clocks agree it is old.** The julian in the name says when the work was done; the
-   timestamp says when the file was last touched. Either one inside the retention window keeps
-   the file — an old survey reopened yesterday is in use.
+Something is removed only when **both** of these are true:
+
+1. **It is proven to be in OneDrive.** Same name and same byte count, found under the OneDrive
+   folder its export route files it into. A copy on a USB stick does not count — a stick is a
+   courier, and can be lost before the office imports it. The filename is matched under
+   **either** naming era: `TSC5-01_26-219-ABC.job` as `prefix` writes it today, or a bare
+   `26-219-ABC.job` as an older `deviceSubfolder` run left it. The size has to match either
+   way, and that is what makes a name match mean anything.
+2. **The date in its name is older than the window.** `26-219-ABC.job` is day 219's work. The
+   file's timestamp is not used: opening an old job in Trimble Access rewrites it, which says
+   nothing about whether the work in it is current. **No date in the name, no removal** —
+   `2100-25-CONTROL.job` is a job the crew reopens, and `CORE HOLE WITH BOOTLEG.csv` stays until
+   someone removes it by hand.
+
+A scan is one unit: the `.jxl` and its scan folder go together, and only when **every** file in
+the folder is proven too. A job opened since it was backed up has a new size, so it is not
+proven until the next sync carries the new version — erring, as everything here does, on the
+side of keeping data.
 
 `jobRetentionDays` sets the window, default **7**. A zero or negative value falls back to the
 default rather than being read as "delete everything backed up".
@@ -619,29 +632,61 @@ Before anything happens you get the full list — what would go, *and* what is b
 the reason for each, so you can see the rules working:
 
 ```
-Remove 2 job file(s) from TSC5-02 ?
+Remove 2 item(s) from TSC5-02 ?
 
-Each one is older than 7 day(s) AND has a verified backup copy.
+Each one is dated (in its name) more than 7 day(s) ago AND is confirmed in OneDrive.
 
    26-100-ABC.job
-        60 day(s) old, backed up  ->  saved as 2026\08-AUG\TSC5-01_26-100-ABC.job
-   26-120-GHI.job
-        40 day(s) old, backed up  ->  saved as 2025\12-DEC\26-120-GHI.job
+        dated 60 day(s) ago, in OneDrive  ->  2026\08-AUG\TSC5-02_26-100-ABC.job
+   26-210-WALL SCAN.jxl (+ 141 file(s) in its scan folder)
+        dated 69 day(s) ago, in OneDrive  ->  2026\07-JUL\26-210-WALL SCAN.jxl
 
 Keeping 4:
-   2100-25-CONTROL.job   - no date in the name - a job that gets reused
-   26-130-XYZ.job        - no backup copy found
-   26-240-DEF.job        - modified 2 day(s) ago
-   26-246-DEF-UTM.job    - the date in its name is inside the window
+   2100-25-CONTROL.job   - no date in the name
+   26-130-XYZ.job        - not confirmed in OneDrive yet
+   26-211-LLO SCAN.jxl   - 3 file(s) in its scan folder not confirmed in OneDrive yet
+   26-276-DEF.job        - dated 3 day(s) ago - inside the 7-day window
 ```
 
-Every backup is **re-checked at the moment of deletion**, not just when the plan was drawn —
-the dialog may have sat on screen a while, and a backup that has moved or changed size aborts
-that one file rather than the run.
+After a Sync, a tidy that finds nothing to remove just says so on the status line.
 
-Two scope limits worth knowing: only `.job` files sitting directly in the project folder are
-considered (anything nested under a scan folder or `02-Design` is somebody else's business),
-and a collector that is connected but locked is refused outright rather than read as empty.
+Every OneDrive copy is **re-checked at the moment of deletion**, not just when the plan was
+drawn — the dialog may have sat on screen a while, and a copy that has moved or changed size
+keeps that item rather than stopping the run. A scan folder is removed only once it is empty,
+so a file that appeared in it after the plan was drawn keeps the folder. A collector that is
+connected but locked is refused outright rather than read as empty.
+
+### The same result on every collector: the OneDrive receipt
+
+Where the proof comes from depends on who can see OneDrive:
+
+| Collector | Tidy runs on | Proof read from |
+|---|---|---|
+| Android controller (MTP) | office PC | OneDrive, directly |
+| USB stick | office PC | OneDrive, directly — this is what clears the stick |
+| Windows tablet | the tablet | **`_OneDriveReceipt.json` on the stick**, written by the office |
+
+A tablet never signs in to anything, so it cannot look. Instead, every time the office syncs a
+stick into OneDrive it records on the stick each file there that it can now see in OneDrive,
+by name and size. The tablet's Tidy trusts that receipt and nothing else. So a full round trip
+looks like:
+
+1. **Tablet — Sync**, then Tidy: copies to the stick; clears what the receipt proves is in
+   OneDrive and dated older than the window.
+2. **Office — Sync the stick**, then Tidy: files the stick into OneDrive and updates the
+   receipt; clears from the stick what is proven in OneDrive and old.
+
+Entries outlive the files: the office clears the stick, but the tablet still holds its own
+copies and needs the entry on its next visit. They expire after about a year. The receipt holds
+names and sizes only — no OneDrive paths — so nothing about the office's storage layout travels.
+And when the office has already cleared a file off the stick, the tablet's Sync does not copy it
+back: the compare view reads `already in OneDrive (office receipt)`, and Tidy takes it off the
+tablet instead.
+
+The safety nets: no receipt on the stick yet means a tablet removes nothing; an unreadable
+receipt stops Tidy outright; and a route whose destination is on a removable drive never counts
+as proof, so a tablet still running a config from before receipts existed cannot mistake the
+stick for OneDrive.
 
 ### The one folder mirroring must never be pointed at
 
@@ -1089,7 +1134,8 @@ root can be written `%OneDriveCommercial%\…` where a drive letter is not wante
 | `projects[].designSource` | Where the drawings live on the PC, e.g. `S:\02-DESIGN`. Supports the same tokens as `exportRoot`. |
 | `projects[].exportRoot` | Where pulled field data is filed when no routes are set. Supports `{year}` `{month}` `{julian}` `{date}` `{apphome}`, and `%ENVVAR%`. `{apphome}` is the folder the app is running from — use it when the app runs off a USB stick, so no drive letter is baked in. `{month}` is zero-padded (`08-AUG`) so a year's folders sort in calendar order. |
 | `projects[].exportRoutes` | Optional list. Empty means "everything under `exportRoot`". Each route is one pull leg: `name`, `from` (`export` = the collector's `exportSubPath`, `root` = the project folder on the device), `extensions`, `root` (same tokens as `exportRoot`), `collision` (`prefix` / `deviceSubfolder` / `overwrite`) and `dateFrom`. |
-| `collectors[].jobRetentionDays` | Days of recent jobs **Tidy jobs…** never touches (default 7). It only removes a `.job` that is older than this *and* carries a date in its filename *and* has a verified backup copy. A value below 1 falls back to the default. |
+| `collectors[].jobRetentionDays` | Days of recent work **Tidy** never touches (default 7). It only removes a job or export whose filename date is older than this *and* that is confirmed in OneDrive. A value below 1 falls back to the default. |
+| `collectors[].proofReceipt` | Generated for tablets only: where Tidy reads its proof that a file is in OneDrive (`{apphome}\_OneDriveReceipt.json`, on the stick). Empty on every office collector, which checks OneDrive directly. |
 | `projects[].exportRoutes[].supersede` | `false` (default) keeps a differing same-named file beside the original as `name (ORIG).ext`. `true` lets a newer copy replace the backup — for routes carrying files still being worked in, such as `.job`. Never set it on a route carrying exports. |
 | `projects[].exportRoutes[].dateFrom` | `run` (default) dates the destination folder from when the sync runs. `file` dates it from the julian in each filename, falling back to that file's modified time — so exports pulled months later still land in the month they were surveyed. |
 | `projects[].deviceProjectPath` | The project folder **on the collector**. For MTP the first segment is the device storage. For a `"folder"` collector that first segment is replaced by wherever the volume is currently mounted, so one project path serves both kinds. |

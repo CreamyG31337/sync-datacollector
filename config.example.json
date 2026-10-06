@@ -77,7 +77,7 @@
     "excludeFolders": [ "SUPERSEDED" ],
     "prune": true,
     "exportCollision": "prefix",
-    "_jobRetentionDays_note": "Days of recent jobs the 'Tidy jobs' button must never touch. It only ever removes a .job that is older than this AND has a date in its filename AND has a verified backup copy - all three, or it stays.",
+    "_jobRetentionDays_note": "Days of recent work Tidy (run after every Sync, or from its button) must never touch. It only ever removes a job or export whose filename date is older than this AND that is confirmed in OneDrive by name and size - both, or it stays. No date in the name means it is never removed.",
     "jobRetentionDays": 7
   },
 
