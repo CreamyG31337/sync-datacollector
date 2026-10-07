@@ -81,17 +81,6 @@
       "source_location": "L1218"
     },
     {
-      "id": "syncdatacollector_get_deviceprojectsubpath",
-      "label": "Get-DeviceProjectSubPath()",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "get-deviceprojectsubpath()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2399"
-    },
-    {
       "id": "syncdatacollector_get_fsinventory",
       "label": "Get-FsInventory()",
       "_origin": "ast",
@@ -101,28 +90,6 @@
       "norm_label": "get-fsinventory()",
       "source_file": "SyncDataCollector.ps1",
       "source_location": "L1158"
-    },
-    {
-      "id": "syncdatacollector_get_jobcleanupplan",
-      "label": "Get-JobCleanupPlan()",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "get-jobcleanupplan()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1427"
-    },
-    {
-      "id": "syncdatacollector_get_julianfromname",
-      "label": "Get-JulianFromName()",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "get-julianfromname()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L417"
     },
     {
       "id": "syncdatacollector_get_mtpinfo",
@@ -235,28 +202,6 @@
       "source_location": "L718"
     },
     {
-      "id": "syncdatacollector_split_datedroot",
-      "label": "Split-DatedRoot()",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "split-datedroot()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L435"
-    },
-    {
-      "id": "syncdatacollector_split_mtppath",
-      "label": "Split-MtpPath()",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "split-mtppath()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L373"
-    },
-    {
       "id": "syncdatacollector_target_deletedir",
       "label": "Target-DeleteDir()",
       "_origin": "ast",
@@ -312,17 +257,6 @@
       "source_location": "L1359"
     },
     {
-      "id": "syncdatacollector_test_jobremovable",
-      "label": "Test-JobRemovable()",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "Invoke-Sync",
-      "file_type": "code",
-      "norm_label": "test-jobremovable()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1392"
-    },
-    {
       "id": "readme_defaults",
       "label": "Defaults",
       "_origin": "ast",
@@ -332,7 +266,7 @@
       "node_kind": "heading",
       "norm_label": "defaults",
       "source_file": "README.md",
-      "source_location": "L434"
+      "source_location": "L438"
     },
     {
       "id": "readme_everyday_mode_and_the_advanced_tick_box",
@@ -344,7 +278,7 @@
       "node_kind": "heading",
       "norm_label": "everyday mode, and the advanced tick-box",
       "source_file": "README.md",
-      "source_location": "L418"
+      "source_location": "L422"
     },
     {
       "id": "readme_export_routes_filing_different_file_types_in_different_places",
@@ -356,7 +290,7 @@
       "node_kind": "heading",
       "norm_label": "export routes: filing different file types in different places",
       "source_file": "README.md",
-      "source_location": "L495"
+      "source_location": "L499"
     },
     {
       "id": "readme_filing_by_when_the_work_was_done_not_when_you_pulled_it",
@@ -368,7 +302,7 @@
       "node_kind": "heading",
       "norm_label": "filing by when the work was done, not when you pulled it",
       "source_file": "README.md",
-      "source_location": "L545"
+      "source_location": "L549"
     },
     {
       "id": "readme_keeping_exports_from_different_collectors_apart",
@@ -380,7 +314,7 @@
       "node_kind": "heading",
       "norm_label": "keeping exports from different collectors apart",
       "source_file": "README.md",
-      "source_location": "L465"
+      "source_location": "L469"
     },
     {
       "id": "readme_more_than_one_folder_going_out_survey_control",
@@ -392,7 +326,7 @@
       "node_kind": "heading",
       "norm_label": "more than one folder going out: survey control",
       "source_file": "README.md",
-      "source_location": "L332"
+      "source_location": "L336"
     },
     {
       "id": "readme_projects_and_collectors",
@@ -404,7 +338,7 @@
       "node_kind": "heading",
       "norm_label": "projects and collectors",
       "source_file": "README.md",
-      "source_location": "L310"
+      "source_location": "L314"
     },
     {
       "id": "readme_the_app_rides_along",
@@ -416,7 +350,7 @@
       "node_kind": "heading",
       "norm_label": "the app rides along",
       "source_file": "README.md",
-      "source_location": "L397"
+      "source_location": "L401"
     },
     {
       "id": "readme_usb_sticks_as_collectors",
@@ -428,7 +362,84 @@
       "node_kind": "heading",
       "norm_label": "usb sticks as collectors",
       "source_file": "README.md",
-      "source_location": "L361"
+      "source_location": "L365"
+    },
+    {
+      "id": "syncdatacollector_get_collectorbyserial",
+      "label": "Get-CollectorBySerial()",
+      "_origin": "ast",
+      "community": 10,
+      "community_name": "Get-ConnectedCollectors",
+      "file_type": "code",
+      "norm_label": "get-collectorbyserial()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2359"
+    },
+    {
+      "id": "syncdatacollector_get_connectedcollectors",
+      "label": "Get-ConnectedCollectors()",
+      "_origin": "ast",
+      "community": 10,
+      "community_name": "Get-ConnectedCollectors",
+      "file_type": "code",
+      "norm_label": "get-connectedcollectors()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2918"
+    },
+    {
+      "id": "syncdatacollector_get_mtpdevicenames",
+      "label": "Get-MtpDeviceNames()",
+      "_origin": "ast",
+      "community": 10,
+      "community_name": "Get-ConnectedCollectors",
+      "file_type": "code",
+      "norm_label": "get-mtpdevicenames()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L1035"
+    },
+    {
+      "id": "syncdatacollector_get_mtpdevices",
+      "label": "Get-MtpDevices()",
+      "_origin": "ast",
+      "community": 10,
+      "community_name": "Get-ConnectedCollectors",
+      "file_type": "code",
+      "norm_label": "get-mtpdevices()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L969"
+    },
+    {
+      "id": "syncdatacollector_get_shellapp",
+      "label": "Get-ShellApp()",
+      "_origin": "ast",
+      "community": 10,
+      "community_name": "Get-ConnectedCollectors",
+      "file_type": "code",
+      "norm_label": "get-shellapp()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L945"
+    },
+    {
+      "id": "syncdatacollector_get_volumedevices",
+      "label": "Get-VolumeDevices()",
+      "_origin": "ast",
+      "community": 10,
+      "community_name": "Get-ConnectedCollectors",
+      "file_type": "code",
+      "norm_label": "get-volumedevices()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L990"
+    },
+    {
+      "id": "syncdatacollector_resolve_collectordevice",
+      "label": "Resolve-CollectorDevice()",
+      "_origin": "ast",
+      "community": 10,
+      "community_name": "Get-ConnectedCollectors",
+      "file_type": "code",
+      "norm_label": "resolve-collectordevice()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L1045"
     },
     {
       "id": "claude",
@@ -479,6 +490,193 @@
       "source_location": "L1"
     },
     {
+      "id": "syncdatacollector_commit_uitoproject",
+      "label": "Commit-UiToProject()",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "commit-uitoproject()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4484"
+    },
+    {
+      "id": "syncdatacollector_invoke_collectoraction",
+      "label": "Invoke-CollectorAction()",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "invoke-collectoraction()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4712"
+    },
+    {
+      "id": "syncdatacollector_parse_utc",
+      "label": "Parse-Utc()",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "parse-utc()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L1619"
+    },
+    {
+      "id": "syncdatacollector_set_pinnedcollector",
+      "label": "Set-PinnedCollector()",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "set-pinnedcollector()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4594"
+    },
+    {
+      "id": "syncdatacollector_set_pref",
+      "label": "Set-Pref()",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "set-pref()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L361"
+    },
+    {
+      "id": "syncdatacollector_update_detectedcollector",
+      "label": "Update-DetectedCollector()",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "Invoke-CollectorAction",
+      "file_type": "code",
+      "norm_label": "update-detectedcollector()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4604"
+    },
+    {
+      "id": "syncdatacollector_get_rowlook",
+      "label": "Get-RowLook()",
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "Get-RowLook",
+      "file_type": "code",
+      "norm_label": "get-rowlook()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4066"
+    },
+    {
+      "id": "syncdatacollector_test_rescueeligible",
+      "label": "Test-RescueEligible()",
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "Get-RowLook",
+      "file_type": "code",
+      "norm_label": "test-rescueeligible()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4046"
+    },
+    {
+      "id": "syncdatacollector_test_rescuemark",
+      "label": "Test-RescueMark()",
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "Get-RowLook",
+      "file_type": "code",
+      "norm_label": "test-rescuemark()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4055"
+    },
+    {
+      "id": "syncdatacollector_toggle_rescuemark",
+      "label": "Toggle-RescueMark()",
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "Get-RowLook",
+      "file_type": "code",
+      "norm_label": "toggle-rescuemark()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4850"
+    },
+    {
+      "id": "syncdatacollector_update_comparehint",
+      "label": "Update-CompareHint()",
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "Get-RowLook",
+      "file_type": "code",
+      "norm_label": "update-comparehint()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4235"
+    },
+    {
+      "id": "syncdatacollector_write_log",
+      "label": "Write-Log()",
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "Get-RowLook",
+      "file_type": "code",
+      "norm_label": "write-log()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4003"
+    },
+    {
+      "id": "syncdatacollector_load_collectortoui",
+      "label": "Load-CollectorToUi()",
+      "_origin": "ast",
+      "community": 15,
+      "community_name": "Load-CollectorToUi",
+      "file_type": "code",
+      "norm_label": "load-collectortoui()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4551"
+    },
+    {
+      "id": "syncdatacollector_reset_checkgate",
+      "label": "Reset-CheckGate()",
+      "_origin": "ast",
+      "community": 15,
+      "community_name": "Load-CollectorToUi",
+      "file_type": "code",
+      "norm_label": "reset-checkgate()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4674"
+    },
+    {
+      "id": "syncdatacollector_set_busy",
+      "label": "Set-Busy()",
+      "_origin": "ast",
+      "community": 15,
+      "community_name": "Load-CollectorToUi",
+      "file_type": "code",
+      "norm_label": "set-busy()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4697"
+    },
+    {
+      "id": "syncdatacollector_test_syncallowed",
+      "label": "Test-SyncAllowed()",
+      "_origin": "ast",
+      "community": 15,
+      "community_name": "Load-CollectorToUi",
+      "file_type": "code",
+      "norm_label": "test-syncallowed()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4667"
+    },
+    {
+      "id": "syncdatacollector_update_actionbuttons",
+      "label": "Update-ActionButtons()",
+      "_origin": "ast",
+      "community": 15,
+      "community_name": "Load-CollectorToUi",
+      "file_type": "code",
+      "norm_label": "update-actionbuttons()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4680"
+    },
+    {
       "id": "syncdatacollector",
       "label": "SyncDataCollector.ps1",
       "_origin": "ast",
@@ -488,50 +686,6 @@
       "norm_label": "syncdatacollector.ps1",
       "source_file": "SyncDataCollector.ps1",
       "source_location": "L1"
-    },
-    {
-      "id": "syncdatacollector_apply_settingstoui",
-      "label": "Apply-SettingsToUi()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "apply-settingstoui()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4444"
-    },
-    {
-      "id": "syncdatacollector_choose_devicedialog",
-      "label": "Choose-DeviceDialog()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "choose-devicedialog()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4365"
-    },
-    {
-      "id": "syncdatacollector_commit_uitocollector",
-      "label": "Commit-UiToCollector()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "commit-uitocollector()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4493"
-    },
-    {
-      "id": "syncdatacollector_format_settings",
-      "label": "Format-Settings()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "format-settings()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4422"
     },
     {
       "id": "syncdatacollector_get_activeproject",
@@ -553,18 +707,7 @@
       "file_type": "code",
       "norm_label": "get-applocationlabel()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3600"
-    },
-    {
-      "id": "syncdatacollector_get_collectorbyserial",
-      "label": "Get-CollectorBySerial()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "get-collectorbyserial()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2359"
+      "source_location": "L3689"
     },
     {
       "id": "syncdatacollector_get_comparecolumnwidths",
@@ -575,18 +718,7 @@
       "file_type": "code",
       "norm_label": "get-comparecolumnwidths()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4076"
-    },
-    {
-      "id": "syncdatacollector_get_connectedcollectors",
-      "label": "Get-ConnectedCollectors()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "get-connectedcollectors()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2918"
+      "source_location": "L4165"
     },
     {
       "id": "syncdatacollector_get_consolewindow",
@@ -600,48 +732,15 @@
       "source_location": "L53"
     },
     {
-      "id": "syncdatacollector_get_defaults",
-      "label": "Get-Defaults()",
+      "id": "syncdatacollector_get_julianfromname",
+      "label": "Get-JulianFromName()",
       "_origin": "ast",
       "community": 2,
       "community_name": "SyncDataCollector.ps1",
       "file_type": "code",
-      "norm_label": "get-defaults()",
+      "norm_label": "get-julianfromname()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2313"
-    },
-    {
-      "id": "syncdatacollector_get_jobretentiondays",
-      "label": "Get-JobRetentionDays()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "get-jobretentiondays()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2270"
-    },
-    {
-      "id": "syncdatacollector_get_mtpdevicenames",
-      "label": "Get-MtpDeviceNames()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "get-mtpdevicenames()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1035"
-    },
-    {
-      "id": "syncdatacollector_get_mtpdevices",
-      "label": "Get-MtpDevices()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "get-mtpdevices()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L969"
+      "source_location": "L417"
     },
     {
       "id": "syncdatacollector_get_pref",
@@ -655,39 +754,6 @@
       "source_location": "L350"
     },
     {
-      "id": "syncdatacollector_get_shellapp",
-      "label": "Get-ShellApp()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "get-shellapp()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L945"
-    },
-    {
-      "id": "syncdatacollector_get_uisettings",
-      "label": "Get-UiSettings()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "get-uisettings()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4411"
-    },
-    {
-      "id": "syncdatacollector_get_volumedevices",
-      "label": "Get-VolumeDevices()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "get-volumedevices()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L990"
-    },
-    {
       "id": "syncdatacollector_hide_consolewindow",
       "label": "Hide-ConsoleWindow()",
       "_origin": "ast",
@@ -699,6 +765,28 @@
       "source_location": "L62"
     },
     {
+      "id": "syncdatacollector_invoke_git",
+      "label": "Invoke-Git()",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "SyncDataCollector.ps1",
+      "file_type": "code",
+      "norm_label": "invoke-git()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L3606"
+    },
+    {
+      "id": "syncdatacollector_invoke_selfupdate",
+      "label": "Invoke-SelfUpdate()",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "SyncDataCollector.ps1",
+      "file_type": "code",
+      "norm_label": "invoke-selfupdate()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L3628"
+    },
+    {
       "id": "syncdatacollector_load_projecttoui",
       "label": "Load-ProjectToUi()",
       "_origin": "ast",
@@ -707,40 +795,7 @@
       "file_type": "code",
       "norm_label": "load-projecttoui()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4386"
-    },
-    {
-      "id": "syncdatacollector_new_collectordefaults",
-      "label": "New-CollectorDefaults()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "new-collectordefaults()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2245"
-    },
-    {
-      "id": "syncdatacollector_parse_extensions",
-      "label": "Parse-Extensions()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "parse-extensions()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L379"
-    },
-    {
-      "id": "syncdatacollector_parse_folderlist",
-      "label": "Parse-FolderList()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "parse-folderlist()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L394"
+      "source_location": "L4475"
     },
     {
       "id": "syncdatacollector_prompt_text",
@@ -751,7 +806,7 @@
       "file_type": "code",
       "norm_label": "prompt-text()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4320"
+      "source_location": "L4409"
     },
     {
       "id": "syncdatacollector_refresh_projectlist",
@@ -762,7 +817,7 @@
       "file_type": "code",
       "norm_label": "refresh-projectlist()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4374"
+      "source_location": "L4463"
     },
     {
       "id": "syncdatacollector_resize_comparecolumns",
@@ -773,29 +828,7 @@
       "file_type": "code",
       "norm_label": "resize-comparecolumns()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4113"
-    },
-    {
-      "id": "syncdatacollector_resolve_collectordevice",
-      "label": "Resolve-CollectorDevice()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "resolve-collectordevice()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1045"
-    },
-    {
-      "id": "syncdatacollector_resolve_defaults",
-      "label": "Resolve-Defaults()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "resolve-defaults()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2283"
+      "source_location": "L4202"
     },
     {
       "id": "syncdatacollector_save_config",
@@ -809,28 +842,6 @@
       "source_location": "L336"
     },
     {
-      "id": "syncdatacollector_select_fromlist",
-      "label": "Select-FromList()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "select-fromlist()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4341"
-    },
-    {
-      "id": "syncdatacollector_select_syncset",
-      "label": "Select-SyncSet()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "select-syncset()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1238"
-    },
-    {
       "id": "syncdatacollector_set_advancedmode",
       "label": "Set-AdvancedMode()",
       "_origin": "ast",
@@ -839,7 +850,7 @@
       "file_type": "code",
       "norm_label": "set-advancedmode()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4721"
+      "source_location": "L4810"
     },
     {
       "id": "syncdatacollector_set_devicefriendlyname",
@@ -853,28 +864,6 @@
       "source_location": "L1666"
     },
     {
-      "id": "syncdatacollector_set_pinnedcollector",
-      "label": "Set-PinnedCollector()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "set-pinnedcollector()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4505"
-    },
-    {
-      "id": "syncdatacollector_set_pref",
-      "label": "Set-Pref()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "set-pref()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L361"
-    },
-    {
       "id": "syncdatacollector_show_consolewindow",
       "label": "Show-ConsoleWindow()",
       "_origin": "ast",
@@ -886,15 +875,15 @@
       "source_location": "L70"
     },
     {
-      "id": "syncdatacollector_test_landxml",
-      "label": "Test-LandXml()",
+      "id": "syncdatacollector_test_jobremovable",
+      "label": "Test-JobRemovable()",
       "_origin": "ast",
       "community": 2,
       "community_name": "SyncDataCollector.ps1",
       "file_type": "code",
-      "norm_label": "test-landxml()",
+      "norm_label": "test-jobremovable()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1174"
+      "source_location": "L1392"
     },
     {
       "id": "syncdatacollector_update_comparelayout",
@@ -905,36 +894,14 @@
       "file_type": "code",
       "norm_label": "update-comparelayout()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4057"
-    },
-    {
-      "id": "syncdatacollector_update_defaultsindicator",
-      "label": "Update-DefaultsIndicator()",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "SyncDataCollector.ps1",
-      "file_type": "code",
-      "norm_label": "update-defaultsindicator()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4431"
-    },
-    {
-      "id": "syncdatacollector_commit_uitoproject",
-      "label": "Commit-UiToProject()",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Invoke-CollectorAction",
-      "file_type": "code",
-      "norm_label": "commit-uitoproject()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4395"
+      "source_location": "L4146"
     },
     {
       "id": "syncdatacollector_format_local",
       "label": "Format-Local()",
       "_origin": "ast",
       "community": 3,
-      "community_name": "Invoke-CollectorAction",
+      "community_name": "Show-ComparePlan",
       "file_type": "code",
       "norm_label": "format-local()",
       "source_file": "SyncDataCollector.ps1",
@@ -945,242 +912,77 @@
       "label": "Format-RowTime()",
       "_origin": "ast",
       "community": 3,
-      "community_name": "Invoke-CollectorAction",
+      "community_name": "Show-ComparePlan",
       "file_type": "code",
       "norm_label": "format-rowtime()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4044"
+      "source_location": "L4133"
     },
     {
       "id": "syncdatacollector_format_size",
       "label": "Format-Size()",
       "_origin": "ast",
       "community": 3,
-      "community_name": "Invoke-CollectorAction",
+      "community_name": "Show-ComparePlan",
       "file_type": "code",
       "norm_label": "format-size()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4030"
+      "source_location": "L4119"
     },
     {
       "id": "syncdatacollector_get_rowkey",
       "label": "Get-RowKey()",
       "_origin": "ast",
       "community": 3,
-      "community_name": "Invoke-CollectorAction",
+      "community_name": "Show-ComparePlan",
       "file_type": "code",
       "norm_label": "get-rowkey()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3943"
-    },
-    {
-      "id": "syncdatacollector_get_rowlook",
-      "label": "Get-RowLook()",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Invoke-CollectorAction",
-      "file_type": "code",
-      "norm_label": "get-rowlook()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3977"
+      "source_location": "L4032"
     },
     {
       "id": "syncdatacollector_get_rowtip",
       "label": "Get-RowTip()",
       "_origin": "ast",
       "community": 3,
-      "community_name": "Invoke-CollectorAction",
+      "community_name": "Show-ComparePlan",
       "file_type": "code",
       "norm_label": "get-rowtip()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4011"
-    },
-    {
-      "id": "syncdatacollector_invoke_collectoraction",
-      "label": "Invoke-CollectorAction()",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Invoke-CollectorAction",
-      "file_type": "code",
-      "norm_label": "invoke-collectoraction()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4623"
-    },
-    {
-      "id": "syncdatacollector_load_collectortoui",
-      "label": "Load-CollectorToUi()",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Invoke-CollectorAction",
-      "file_type": "code",
-      "norm_label": "load-collectortoui()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4462"
-    },
-    {
-      "id": "syncdatacollector_parse_utc",
-      "label": "Parse-Utc()",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Invoke-CollectorAction",
-      "file_type": "code",
-      "norm_label": "parse-utc()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L1619"
-    },
-    {
-      "id": "syncdatacollector_reset_checkgate",
-      "label": "Reset-CheckGate()",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Invoke-CollectorAction",
-      "file_type": "code",
-      "norm_label": "reset-checkgate()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4585"
-    },
-    {
-      "id": "syncdatacollector_set_busy",
-      "label": "Set-Busy()",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Invoke-CollectorAction",
-      "file_type": "code",
-      "norm_label": "set-busy()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4608"
+      "source_location": "L4100"
     },
     {
       "id": "syncdatacollector_show_compareplan",
       "label": "Show-ComparePlan()",
       "_origin": "ast",
       "community": 3,
-      "community_name": "Invoke-CollectorAction",
+      "community_name": "Show-ComparePlan",
       "file_type": "code",
       "norm_label": "show-compareplan()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4187"
+      "source_location": "L4276"
     },
     {
       "id": "syncdatacollector_split_relpath",
       "label": "Split-RelPath()",
       "_origin": "ast",
       "community": 3,
-      "community_name": "Invoke-CollectorAction",
+      "community_name": "Show-ComparePlan",
       "file_type": "code",
       "norm_label": "split-relpath()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4022"
-    },
-    {
-      "id": "syncdatacollector_test_rescueeligible",
-      "label": "Test-RescueEligible()",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Invoke-CollectorAction",
-      "file_type": "code",
-      "norm_label": "test-rescueeligible()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3957"
-    },
-    {
-      "id": "syncdatacollector_test_rescuemark",
-      "label": "Test-RescueMark()",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Invoke-CollectorAction",
-      "file_type": "code",
-      "norm_label": "test-rescuemark()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3966"
-    },
-    {
-      "id": "syncdatacollector_test_syncallowed",
-      "label": "Test-SyncAllowed()",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Invoke-CollectorAction",
-      "file_type": "code",
-      "norm_label": "test-syncallowed()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4578"
-    },
-    {
-      "id": "syncdatacollector_toggle_rescuemark",
-      "label": "Toggle-RescueMark()",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Invoke-CollectorAction",
-      "file_type": "code",
-      "norm_label": "toggle-rescuemark()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4761"
-    },
-    {
-      "id": "syncdatacollector_update_actionbuttons",
-      "label": "Update-ActionButtons()",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Invoke-CollectorAction",
-      "file_type": "code",
-      "norm_label": "update-actionbuttons()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4591"
-    },
-    {
-      "id": "syncdatacollector_update_comparehint",
-      "label": "Update-CompareHint()",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Invoke-CollectorAction",
-      "file_type": "code",
-      "norm_label": "update-comparehint()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4146"
+      "source_location": "L4111"
     },
     {
       "id": "syncdatacollector_update_comparerow",
       "label": "Update-CompareRow()",
       "_origin": "ast",
       "community": 3,
-      "community_name": "Invoke-CollectorAction",
+      "community_name": "Show-ComparePlan",
       "file_type": "code",
       "norm_label": "update-comparerow()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4269"
-    },
-    {
-      "id": "syncdatacollector_update_detectedcollector",
-      "label": "Update-DetectedCollector()",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Invoke-CollectorAction",
-      "file_type": "code",
-      "norm_label": "update-detectedcollector()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4515"
-    },
-    {
-      "id": "syncdatacollector_write_log",
-      "label": "Write-Log()",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "Invoke-CollectorAction",
-      "file_type": "code",
-      "norm_label": "write-log()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3914"
-    },
-    {
-      "id": "syncdatacollector_copy_tabletconfigtovolume",
-      "label": "Copy-TabletConfigToVolume()",
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "Invoke-CollectorSync",
-      "file_type": "code",
-      "norm_label": "copy-tabletconfigtovolume()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2680"
+      "source_location": "L4358"
     },
     {
       "id": "syncdatacollector_ensure_exportfolder",
@@ -1192,6 +994,17 @@
       "norm_label": "ensure-exportfolder()",
       "source_file": "SyncDataCollector.ps1",
       "source_location": "L2721"
+    },
+    {
+      "id": "syncdatacollector_expand_envvars",
+      "label": "Expand-EnvVars()",
+      "_origin": "ast",
+      "community": 4,
+      "community_name": "Invoke-CollectorSync",
+      "file_type": "code",
+      "norm_label": "expand-envvars()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L510"
     },
     {
       "id": "syncdatacollector_expand_pathtokens",
@@ -1227,15 +1040,37 @@
       "source_location": "L2378"
     },
     {
-      "id": "syncdatacollector_get_extradesigns",
-      "label": "Get-ExtraDesigns()",
+      "id": "syncdatacollector_get_collectorlabel",
+      "label": "Get-CollectorLabel()",
       "_origin": "ast",
       "community": 4,
       "community_name": "Invoke-CollectorSync",
       "file_type": "code",
-      "norm_label": "get-extradesigns()",
+      "norm_label": "get-collectorlabel()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2145"
+      "source_location": "L2366"
+    },
+    {
+      "id": "syncdatacollector_get_exportroutes",
+      "label": "Get-ExportRoutes()",
+      "_origin": "ast",
+      "community": 4,
+      "community_name": "Invoke-CollectorSync",
+      "file_type": "code",
+      "norm_label": "get-exportroutes()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2218"
+    },
+    {
+      "id": "syncdatacollector_get_jobcleanupplan",
+      "label": "Get-JobCleanupPlan()",
+      "_origin": "ast",
+      "community": 4,
+      "community_name": "Invoke-CollectorSync",
+      "file_type": "code",
+      "norm_label": "get-jobcleanupplan()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L1427"
     },
     {
       "id": "syncdatacollector_get_juliandate",
@@ -1304,6 +1139,17 @@
       "source_location": "L1026"
     },
     {
+      "id": "syncdatacollector_split_datedroot",
+      "label": "Split-DatedRoot()",
+      "_origin": "ast",
+      "community": 4,
+      "community_name": "Invoke-CollectorSync",
+      "file_type": "code",
+      "norm_label": "split-datedroot()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L435"
+    },
+    {
       "id": "syncdatacollector_test_collectorreachable",
       "label": "Test-CollectorReachable()",
       "_origin": "ast",
@@ -1334,7 +1180,18 @@
       "file_type": "code",
       "norm_label": "update-datelabel()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L5091"
+      "source_location": "L5180"
+    },
+    {
+      "id": "syncdatacollector_choose_devicedialog",
+      "label": "Choose-DeviceDialog()",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "Invoke-SyncCheck",
+      "file_type": "code",
+      "norm_label": "choose-devicedialog()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4454"
     },
     {
       "id": "syncdatacollector_format_devicechoice",
@@ -1357,17 +1214,6 @@
       "norm_label": "format-utc()",
       "source_file": "SyncDataCollector.ps1",
       "source_location": "L1614"
-    },
-    {
-      "id": "syncdatacollector_get_collectorlabel",
-      "label": "Get-CollectorLabel()",
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "Invoke-SyncCheck",
-      "file_type": "code",
-      "norm_label": "get-collectorlabel()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2366"
     },
     {
       "id": "syncdatacollector_get_devicefriendlyname",
@@ -1469,6 +1315,28 @@
       "source_location": "L1650"
     },
     {
+      "id": "syncdatacollector_select_fromlist",
+      "label": "Select-FromList()",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "Invoke-SyncCheck",
+      "file_type": "code",
+      "norm_label": "select-fromlist()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4430"
+    },
+    {
+      "id": "syncdatacollector_select_syncset",
+      "label": "Select-SyncSet()",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "Invoke-SyncCheck",
+      "file_type": "code",
+      "norm_label": "select-syncset()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L1238"
+    },
+    {
       "id": "syncdatacollector_set_syncstateentry",
       "label": "Set-SyncStateEntry()",
       "_origin": "ast",
@@ -1478,6 +1346,17 @@
       "norm_label": "set-syncstateentry()",
       "source_file": "SyncDataCollector.ps1",
       "source_location": "L1732"
+    },
+    {
+      "id": "syncdatacollector_test_landxml",
+      "label": "Test-LandXml()",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "Invoke-SyncCheck",
+      "file_type": "code",
+      "norm_label": "test-landxml()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L1174"
     },
     {
       "id": "syncdatacollector_update_syncrecords",
@@ -1506,7 +1385,7 @@
       "label": "Confirm-MappedDrive()",
       "_origin": "ast",
       "community": 6,
-      "community_name": "Expand-EnvVars",
+      "community_name": "Confirm-PathDrive",
       "file_type": "code",
       "norm_label": "confirm-mappeddrive()",
       "source_file": "SyncDataCollector.ps1",
@@ -1517,7 +1396,7 @@
       "label": "Confirm-MappedDrives()",
       "_origin": "ast",
       "community": 6,
-      "community_name": "Expand-EnvVars",
+      "community_name": "Confirm-PathDrive",
       "file_type": "code",
       "norm_label": "confirm-mappeddrives()",
       "source_file": "SyncDataCollector.ps1",
@@ -1528,7 +1407,7 @@
       "label": "Confirm-PathDrive()",
       "_origin": "ast",
       "community": 6,
-      "community_name": "Expand-EnvVars",
+      "community_name": "Confirm-PathDrive",
       "file_type": "code",
       "norm_label": "confirm-pathdrive()",
       "source_file": "SyncDataCollector.ps1",
@@ -1539,29 +1418,18 @@
       "label": "Ensure-MappedDrive()",
       "_origin": "ast",
       "community": 6,
-      "community_name": "Expand-EnvVars",
+      "community_name": "Confirm-PathDrive",
       "file_type": "code",
       "norm_label": "ensure-mappeddrive()",
       "source_file": "SyncDataCollector.ps1",
       "source_location": "L590"
     },
     {
-      "id": "syncdatacollector_expand_envvars",
-      "label": "Expand-EnvVars()",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "Expand-EnvVars",
-      "file_type": "code",
-      "norm_label": "expand-envvars()",
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L510"
-    },
-    {
       "id": "syncdatacollector_get_driveletter",
       "label": "Get-DriveLetter()",
       "_origin": "ast",
       "community": 6,
-      "community_name": "Expand-EnvVars",
+      "community_name": "Confirm-PathDrive",
       "file_type": "code",
       "norm_label": "get-driveletter()",
       "source_file": "SyncDataCollector.ps1",
@@ -1572,7 +1440,7 @@
       "label": "Get-DriveMapEntry()",
       "_origin": "ast",
       "community": 6,
-      "community_name": "Expand-EnvVars",
+      "community_name": "Confirm-PathDrive",
       "file_type": "code",
       "norm_label": "get-drivemapentry()",
       "source_file": "SyncDataCollector.ps1",
@@ -1583,7 +1451,7 @@
       "label": "Get-OneDriveRoots()",
       "_origin": "ast",
       "community": 6,
-      "community_name": "Expand-EnvVars",
+      "community_name": "Confirm-PathDrive",
       "file_type": "code",
       "norm_label": "get-onedriveroots()",
       "source_file": "SyncDataCollector.ps1",
@@ -1594,7 +1462,7 @@
       "label": "Get-SubstTarget()",
       "_origin": "ast",
       "community": 6,
-      "community_name": "Expand-EnvVars",
+      "community_name": "Confirm-PathDrive",
       "file_type": "code",
       "norm_label": "get-substtarget()",
       "source_file": "SyncDataCollector.ps1",
@@ -1605,11 +1473,88 @@
       "label": "Resolve-DriveMapTarget()",
       "_origin": "ast",
       "community": 6,
-      "community_name": "Expand-EnvVars",
+      "community_name": "Confirm-PathDrive",
       "file_type": "code",
       "norm_label": "resolve-drivemaptarget()",
       "source_file": "SyncDataCollector.ps1",
       "source_location": "L551"
+    },
+    {
+      "id": "syncdatacollector_apply_settingstoui",
+      "label": "Apply-SettingsToUi()",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "Get-UiSettings",
+      "file_type": "code",
+      "norm_label": "apply-settingstoui()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4533"
+    },
+    {
+      "id": "syncdatacollector_commit_uitocollector",
+      "label": "Commit-UiToCollector()",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "Get-UiSettings",
+      "file_type": "code",
+      "norm_label": "commit-uitocollector()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4582"
+    },
+    {
+      "id": "syncdatacollector_format_settings",
+      "label": "Format-Settings()",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "Get-UiSettings",
+      "file_type": "code",
+      "norm_label": "format-settings()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4511"
+    },
+    {
+      "id": "syncdatacollector_get_uisettings",
+      "label": "Get-UiSettings()",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "Get-UiSettings",
+      "file_type": "code",
+      "norm_label": "get-uisettings()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4500"
+    },
+    {
+      "id": "syncdatacollector_parse_extensions",
+      "label": "Parse-Extensions()",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "Get-UiSettings",
+      "file_type": "code",
+      "norm_label": "parse-extensions()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L379"
+    },
+    {
+      "id": "syncdatacollector_parse_folderlist",
+      "label": "Parse-FolderList()",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "Get-UiSettings",
+      "file_type": "code",
+      "norm_label": "parse-folderlist()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L394"
+    },
+    {
+      "id": "syncdatacollector_update_defaultsindicator",
+      "label": "Update-DefaultsIndicator()",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "Get-UiSettings",
+      "file_type": "code",
+      "norm_label": "update-defaultsindicator()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4520"
     },
     {
       "id": "readme",
@@ -1633,7 +1578,7 @@
       "node_kind": "heading",
       "norm_label": "check is required before sync",
       "source_file": "README.md",
-      "source_location": "L882"
+      "source_location": "L886"
     },
     {
       "id": "readme_configuration_reference",
@@ -1645,7 +1590,7 @@
       "node_kind": "heading",
       "norm_label": "configuration reference",
       "source_file": "README.md",
-      "source_location": "L1066"
+      "source_location": "L1070"
     },
     {
       "id": "readme_exports_are_never_destroyed",
@@ -1657,7 +1602,7 @@
       "node_kind": "heading",
       "norm_label": "exports are never destroyed",
       "source_file": "README.md",
-      "source_location": "L654"
+      "source_location": "L658"
     },
     {
       "id": "readme_features",
@@ -1681,7 +1626,7 @@
       "node_kind": "heading",
       "norm_label": "field data on the tablet",
       "source_file": "README.md",
-      "source_location": "L234"
+      "source_location": "L238"
     },
     {
       "id": "readme_how_mtp_works_here_and_why_it_s_reliable",
@@ -1693,7 +1638,7 @@
       "node_kind": "heading",
       "norm_label": "how mtp works here (and why it's reliable)",
       "source_file": "README.md",
-      "source_location": "L107"
+      "source_location": "L111"
     },
     {
       "id": "readme_keeping_a_file_the_collector_has_and_the_design_folder_doesn_t",
@@ -1705,7 +1650,7 @@
       "node_kind": "heading",
       "norm_label": "keeping a file the collector has and the design folder doesn't",
       "source_file": "README.md",
-      "source_location": "L904"
+      "source_location": "L908"
     },
     {
       "id": "readme_keeping_superseded_designs_off_the_collector",
@@ -1717,7 +1662,7 @@
       "node_kind": "heading",
       "norm_label": "keeping superseded designs off the collector",
       "source_file": "README.md",
-      "source_location": "L722"
+      "source_location": "L726"
     },
     {
       "id": "readme_knowing_when_a_collector_is_out_of_date",
@@ -1729,7 +1674,7 @@
       "node_kind": "heading",
       "norm_label": "knowing when a collector is out of date",
       "source_file": "README.md",
-      "source_location": "L797"
+      "source_location": "L801"
     },
     {
       "id": "readme_license",
@@ -1741,7 +1686,7 @@
       "node_kind": "heading",
       "norm_label": "license",
       "source_file": "README.md",
-      "source_location": "L1162"
+      "source_location": "L1195"
     },
     {
       "id": "readme_main_screen",
@@ -1765,7 +1710,7 @@
       "node_kind": "heading",
       "norm_label": "mirror mode: letting the tool own the destination folder",
       "source_file": "README.md",
-      "source_location": "L761"
+      "source_location": "L765"
     },
     {
       "id": "readme_pulling_field_data_off_collectors_reverse_sync",
@@ -1777,7 +1722,7 @@
       "node_kind": "heading",
       "norm_label": "pulling field data off collectors (reverse sync)",
       "source_file": "README.md",
-      "source_location": "L275"
+      "source_location": "L279"
     },
     {
       "id": "readme_quick_start",
@@ -1789,7 +1734,7 @@
       "node_kind": "heading",
       "norm_label": "quick start",
       "source_file": "README.md",
-      "source_location": "L136"
+      "source_location": "L140"
     },
     {
       "id": "readme_recognising_a_file_the_office_has_since_moved",
@@ -1801,7 +1746,7 @@
       "node_kind": "heading",
       "norm_label": "recognising a file the office has since moved",
       "source_file": "README.md",
-      "source_location": "L694"
+      "source_location": "L698"
     },
     {
       "id": "readme_requirements",
@@ -1813,7 +1758,7 @@
       "node_kind": "heading",
       "norm_label": "requirements",
       "source_file": "README.md",
-      "source_location": "L127"
+      "source_location": "L131"
     },
     {
       "id": "readme_roadmap",
@@ -1825,7 +1770,7 @@
       "node_kind": "heading",
       "norm_label": "roadmap",
       "source_file": "README.md",
-      "source_location": "L1154"
+      "source_location": "L1187"
     },
     {
       "id": "readme_several_collectors_one_device_name",
@@ -1837,7 +1782,7 @@
       "node_kind": "heading",
       "norm_label": "several collectors, one device name",
       "source_file": "README.md",
-      "source_location": "L946"
+      "source_location": "L950"
     },
     {
       "id": "readme_sync_datacollector",
@@ -1861,7 +1806,7 @@
       "node_kind": "heading",
       "norm_label": "telling tablets apart",
       "source_file": "README.md",
-      "source_location": "L252"
+      "source_location": "L256"
     },
     {
       "id": "readme_the_compare_view",
@@ -1873,7 +1818,7 @@
       "node_kind": "heading",
       "norm_label": "the compare view",
       "source_file": "README.md",
-      "source_location": "L831"
+      "source_location": "L835"
     },
     {
       "id": "readme_the_exception_files_that_are_still_being_worked_in",
@@ -1885,7 +1830,7 @@
       "node_kind": "heading",
       "norm_label": "the exception: files that are still being worked in",
       "source_file": "README.md",
-      "source_location": "L665"
+      "source_location": "L669"
     },
     {
       "id": "readme_the_one_folder_mirroring_must_never_be_pointed_at",
@@ -1897,7 +1842,7 @@
       "node_kind": "heading",
       "norm_label": "the one folder mirroring must never be pointed at",
       "source_file": "README.md",
-      "source_location": "L631"
+      "source_location": "L635"
     },
     {
       "id": "readme_the_s_drive_maps_itself",
@@ -1909,7 +1854,7 @@
       "node_kind": "heading",
       "norm_label": "the `s:` drive maps itself",
       "source_file": "README.md",
-      "source_location": "L1019"
+      "source_location": "L1023"
     },
     {
       "id": "readme_the_stick_is_a_self_contained_kit",
@@ -1921,7 +1866,7 @@
       "node_kind": "heading",
       "norm_label": "the stick is a self-contained kit",
       "source_file": "README.md",
-      "source_location": "L200"
+      "source_location": "L204"
     },
     {
       "id": "readme_the_stick_round_trip_devices_that_can_t_do_mtp",
@@ -1933,7 +1878,7 @@
       "node_kind": "heading",
       "norm_label": "the stick round trip (devices that can't do mtp)",
       "source_file": "README.md",
-      "source_location": "L181"
+      "source_location": "L185"
     },
     {
       "id": "readme_tidying_old_jobs_off_the_collector",
@@ -1945,7 +1890,7 @@
       "node_kind": "heading",
       "norm_label": "tidying old jobs off the collector",
       "source_file": "README.md",
-      "source_location": "L579"
+      "source_location": "L583"
     },
     {
       "id": "readme_troubleshooting",
@@ -1957,7 +1902,19 @@
       "node_kind": "heading",
       "norm_label": "troubleshooting",
       "source_file": "README.md",
-      "source_location": "L1114"
+      "source_location": "L1147"
+    },
+    {
+      "id": "readme_updates",
+      "label": "Updates",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "Sync DataCollector",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "updates",
+      "source_file": "README.md",
+      "source_location": "L1119"
     },
     {
       "id": "readme_what_gets_written_and_where",
@@ -1969,7 +1926,7 @@
       "node_kind": "heading",
       "norm_label": "what gets written, and where",
       "source_file": "README.md",
-      "source_location": "L1000"
+      "source_location": "L1004"
     },
     {
       "id": "syncdatacollector_convertfrom_legacyprofiles",
@@ -1983,6 +1940,17 @@
       "source_location": "L178"
     },
     {
+      "id": "syncdatacollector_copy_tabletconfigtovolume",
+      "label": "Copy-TabletConfigToVolume()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "Load-Config",
+      "file_type": "code",
+      "norm_label": "copy-tabletconfigtovolume()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2680"
+    },
+    {
       "id": "syncdatacollector_get_defaultconfig",
       "label": "Get-DefaultConfig()",
       "_origin": "ast",
@@ -1994,15 +1962,48 @@
       "source_location": "L139"
     },
     {
-      "id": "syncdatacollector_get_exportroutes",
-      "label": "Get-ExportRoutes()",
+      "id": "syncdatacollector_get_defaults",
+      "label": "Get-Defaults()",
       "_origin": "ast",
       "community": 9,
       "community_name": "Load-Config",
       "file_type": "code",
-      "norm_label": "get-exportroutes()",
+      "norm_label": "get-defaults()",
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L2218"
+      "source_location": "L2313"
+    },
+    {
+      "id": "syncdatacollector_get_deviceprojectsubpath",
+      "label": "Get-DeviceProjectSubPath()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "Load-Config",
+      "file_type": "code",
+      "norm_label": "get-deviceprojectsubpath()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2399"
+    },
+    {
+      "id": "syncdatacollector_get_extradesigns",
+      "label": "Get-ExtraDesigns()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "Load-Config",
+      "file_type": "code",
+      "norm_label": "get-extradesigns()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2145"
+    },
+    {
+      "id": "syncdatacollector_get_jobretentiondays",
+      "label": "Get-JobRetentionDays()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "Load-Config",
+      "file_type": "code",
+      "norm_label": "get-jobretentiondays()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2270"
     },
     {
       "id": "syncdatacollector_load_config",
@@ -2025,6 +2026,17 @@
       "norm_label": "new-collector()",
       "source_file": "SyncDataCollector.ps1",
       "source_location": "L2319"
+    },
+    {
+      "id": "syncdatacollector_new_collectordefaults",
+      "label": "New-CollectorDefaults()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "Load-Config",
+      "file_type": "code",
+      "norm_label": "new-collectordefaults()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2245"
     },
     {
       "id": "syncdatacollector_new_drivemap",
@@ -2124,6 +2136,28 @@
       "norm_label": "register-collector()",
       "source_file": "SyncDataCollector.ps1",
       "source_location": "L2948"
+    },
+    {
+      "id": "syncdatacollector_resolve_defaults",
+      "label": "Resolve-Defaults()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "Load-Config",
+      "file_type": "code",
+      "norm_label": "resolve-defaults()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L2283"
+    },
+    {
+      "id": "syncdatacollector_split_mtppath",
+      "label": "Split-MtpPath()",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "Load-Config",
+      "file_type": "code",
+      "norm_label": "split-mtppath()",
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L373"
     }
   ],
   "links": [
@@ -2135,7 +2169,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4460",
+      "source_location": "L4549",
       "weight": 1.0
     },
     {
@@ -2146,7 +2180,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4367",
+      "source_location": "L4456",
       "weight": 1.0
     },
     {
@@ -2157,7 +2191,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4368",
+      "source_location": "L4457",
       "weight": 1.0
     },
     {
@@ -2168,7 +2202,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4498",
+      "source_location": "L4587",
       "weight": 1.0
     },
     {
@@ -2179,7 +2213,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4500",
+      "source_location": "L4589",
       "weight": 1.0
     },
     {
@@ -2465,7 +2499,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4047",
+      "source_location": "L4136",
       "weight": 1.0
     },
     {
@@ -2476,7 +2510,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4425",
+      "source_location": "L4514",
       "weight": 1.0
     },
     {
@@ -2487,7 +2521,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4427",
+      "source_location": "L4516",
       "weight": 1.0
     },
     {
@@ -2927,7 +2961,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3989",
+      "source_location": "L4078",
       "weight": 1.0
     },
     {
@@ -2993,7 +3027,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4412",
+      "source_location": "L4501",
       "weight": 1.0
     },
     {
@@ -3004,7 +3038,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4414",
+      "source_location": "L4503",
       "weight": 1.0
     },
     {
@@ -3015,7 +3049,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4416",
+      "source_location": "L4505",
       "weight": 1.0
     },
     {
@@ -3037,7 +3071,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4627",
+      "source_location": "L4716",
       "weight": 1.0
     },
     {
@@ -3048,7 +3082,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4628",
+      "source_location": "L4717",
       "weight": 1.0
     },
     {
@@ -3059,7 +3093,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4630",
+      "source_location": "L4719",
       "weight": 1.0
     },
     {
@@ -3070,7 +3104,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4638",
+      "source_location": "L4727",
       "weight": 1.0
     },
     {
@@ -3081,7 +3115,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4644",
+      "source_location": "L4733",
       "weight": 1.0
     },
     {
@@ -3092,7 +3126,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4665",
+      "source_location": "L4754",
       "weight": 1.0
     },
     {
@@ -3103,7 +3137,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4670",
+      "source_location": "L4759",
       "weight": 1.0
     },
     {
@@ -3114,7 +3148,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4699",
+      "source_location": "L4788",
       "weight": 1.0
     },
     {
@@ -3125,7 +3159,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4708",
+      "source_location": "L4797",
       "weight": 1.0
     },
     {
@@ -3324,6 +3358,17 @@
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
       "source_location": "L1534",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector_invoke_selfupdate",
+      "target": "syncdatacollector_invoke_git",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L3635",
       "weight": 1.0
     },
     {
@@ -3708,7 +3753,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4478",
+      "source_location": "L4567",
       "weight": 1.0
     },
     {
@@ -3719,7 +3764,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4490",
+      "source_location": "L4579",
       "weight": 1.0
     },
     {
@@ -4071,7 +4116,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4588",
+      "source_location": "L4677",
       "weight": 1.0
     },
     {
@@ -4082,7 +4127,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4119",
+      "source_location": "L4208",
       "weight": 1.0
     },
     {
@@ -4214,7 +4259,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4618",
+      "source_location": "L4707",
       "weight": 1.0
     },
     {
@@ -4225,7 +4270,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4619",
+      "source_location": "L4708",
       "weight": 1.0
     },
     {
@@ -4236,7 +4281,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4510",
+      "source_location": "L4599",
       "weight": 1.0
     },
     {
@@ -4269,7 +4314,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4232",
+      "source_location": "L4321",
       "weight": 1.0
     },
     {
@@ -4280,7 +4325,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4235",
+      "source_location": "L4324",
       "weight": 1.0
     },
     {
@@ -4291,7 +4336,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4239",
+      "source_location": "L4328",
       "weight": 1.0
     },
     {
@@ -4302,7 +4347,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4240",
+      "source_location": "L4329",
       "weight": 1.0
     },
     {
@@ -4313,7 +4358,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4251",
+      "source_location": "L4340",
       "weight": 1.0
     },
     {
@@ -4324,7 +4369,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4255",
+      "source_location": "L4344",
       "weight": 1.0
     },
     {
@@ -4335,7 +4380,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4262",
+      "source_location": "L4351",
       "weight": 1.0
     },
     {
@@ -4346,7 +4391,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4263",
+      "source_location": "L4352",
       "weight": 1.0
     },
     {
@@ -4489,7 +4534,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4766",
+      "source_location": "L4855",
       "weight": 1.0
     },
     {
@@ -4500,7 +4545,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4771",
+      "source_location": "L4860",
       "weight": 1.0
     },
     {
@@ -4511,7 +4556,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4777",
+      "source_location": "L4866",
       "weight": 1.0
     },
     {
@@ -4522,7 +4567,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4781",
+      "source_location": "L4870",
       "weight": 1.0
     },
     {
@@ -4533,7 +4578,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4594",
+      "source_location": "L4683",
       "weight": 1.0
     },
     {
@@ -4544,7 +4589,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4148",
+      "source_location": "L4237",
       "weight": 1.0
     },
     {
@@ -4555,7 +4600,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4159",
+      "source_location": "L4248",
       "weight": 1.0
     },
     {
@@ -4566,7 +4611,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4070",
+      "source_location": "L4159",
       "weight": 1.0
     },
     {
@@ -4577,7 +4622,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4272",
+      "source_location": "L4361",
       "weight": 1.0
     },
     {
@@ -4588,7 +4633,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4273",
+      "source_location": "L4362",
       "weight": 1.0
     },
     {
@@ -4599,7 +4644,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4293",
+      "source_location": "L4382",
       "weight": 1.0
     },
     {
@@ -4610,7 +4655,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4297",
+      "source_location": "L4386",
       "weight": 1.0
     },
     {
@@ -4621,7 +4666,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4298",
+      "source_location": "L4387",
       "weight": 1.0
     },
     {
@@ -4632,7 +4677,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4305",
+      "source_location": "L4394",
       "weight": 1.0
     },
     {
@@ -4643,7 +4688,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L5093",
+      "source_location": "L5182",
       "weight": 1.0
     },
     {
@@ -4654,7 +4699,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L5093",
+      "source_location": "L5182",
       "weight": 1.0
     },
     {
@@ -4665,7 +4710,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4434",
+      "source_location": "L4523",
       "weight": 1.0
     },
     {
@@ -4676,7 +4721,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4434",
+      "source_location": "L4523",
       "weight": 1.0
     },
     {
@@ -4687,7 +4732,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4434",
+      "source_location": "L4523",
       "weight": 1.0
     },
     {
@@ -4698,7 +4743,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4519",
+      "source_location": "L4608",
       "weight": 1.0
     },
     {
@@ -4709,7 +4754,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4523",
+      "source_location": "L4612",
       "weight": 1.0
     },
     {
@@ -4720,7 +4765,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4529",
+      "source_location": "L4618",
       "weight": 1.0
     },
     {
@@ -4731,7 +4776,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4562",
+      "source_location": "L4651",
       "weight": 1.0
     },
     {
@@ -4742,7 +4787,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4563",
+      "source_location": "L4652",
       "weight": 1.0
     },
     {
@@ -4753,7 +4798,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4566",
+      "source_location": "L4655",
       "weight": 1.0
     },
     {
@@ -4764,7 +4809,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4567",
+      "source_location": "L4656",
       "weight": 1.0
     },
     {
@@ -4775,7 +4820,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4571",
+      "source_location": "L4660",
       "weight": 1.0
     },
     {
@@ -4929,7 +4974,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L545",
+      "source_location": "L549",
       "weight": 1.0
     },
     {
@@ -4940,7 +4985,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L665",
+      "source_location": "L669",
       "weight": 1.0
     },
     {
@@ -4951,7 +4996,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L1000",
+      "source_location": "L1004",
       "weight": 1.0
     },
     {
@@ -4962,7 +5007,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L831",
+      "source_location": "L835",
       "weight": 1.0
     },
     {
@@ -4973,7 +5018,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L882",
+      "source_location": "L886",
       "weight": 1.0
     },
     {
@@ -4984,7 +5029,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L904",
+      "source_location": "L908",
       "weight": 1.0
     },
     {
@@ -4995,7 +5040,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L946",
+      "source_location": "L950",
       "weight": 1.0
     },
     {
@@ -5006,7 +5051,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L332",
+      "source_location": "L336",
       "weight": 1.0
     },
     {
@@ -5017,7 +5062,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L361",
+      "source_location": "L365",
       "weight": 1.0
     },
     {
@@ -5028,7 +5073,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L418",
+      "source_location": "L422",
       "weight": 1.0
     },
     {
@@ -5039,7 +5084,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L434",
+      "source_location": "L438",
       "weight": 1.0
     },
     {
@@ -5050,7 +5095,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L465",
+      "source_location": "L469",
       "weight": 1.0
     },
     {
@@ -5061,7 +5106,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L495",
+      "source_location": "L499",
       "weight": 1.0
     },
     {
@@ -5072,7 +5117,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L1019",
+      "source_location": "L1023",
       "weight": 1.0
     },
     {
@@ -5083,7 +5128,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L1066",
+      "source_location": "L1070",
       "weight": 1.0
     },
     {
@@ -5094,7 +5139,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L107",
+      "source_location": "L111",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_sync_datacollector",
+      "target": "readme_updates",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L1119",
       "weight": 1.0
     },
     {
@@ -5105,7 +5161,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L1114",
+      "source_location": "L1147",
       "weight": 1.0
     },
     {
@@ -5116,7 +5172,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L1154",
+      "source_location": "L1187",
       "weight": 1.0
     },
     {
@@ -5127,7 +5183,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L1162",
+      "source_location": "L1195",
       "weight": 1.0
     },
     {
@@ -5138,7 +5194,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L127",
+      "source_location": "L131",
       "weight": 1.0
     },
     {
@@ -5149,7 +5205,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L136",
+      "source_location": "L140",
       "weight": 1.0
     },
     {
@@ -5160,7 +5216,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L181",
+      "source_location": "L185",
       "weight": 1.0
     },
     {
@@ -5182,7 +5238,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L275",
+      "source_location": "L279",
       "weight": 1.0
     },
     {
@@ -5204,7 +5260,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L310",
+      "source_location": "L314",
       "weight": 1.0
     },
     {
@@ -5215,7 +5271,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L579",
+      "source_location": "L583",
       "weight": 1.0
     },
     {
@@ -5226,7 +5282,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L722",
+      "source_location": "L726",
       "weight": 1.0
     },
     {
@@ -5237,7 +5293,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L761",
+      "source_location": "L765",
       "weight": 1.0
     },
     {
@@ -5248,7 +5304,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L797",
+      "source_location": "L801",
       "weight": 1.0
     },
     {
@@ -5259,7 +5315,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L200",
+      "source_location": "L204",
       "weight": 1.0
     },
     {
@@ -5270,7 +5326,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L234",
+      "source_location": "L238",
       "weight": 1.0
     },
     {
@@ -5281,7 +5337,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L252",
+      "source_location": "L256",
       "weight": 1.0
     },
     {
@@ -5292,7 +5348,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L631",
+      "source_location": "L635",
       "weight": 1.0
     },
     {
@@ -5303,7 +5359,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L654",
+      "source_location": "L658",
       "weight": 1.0
     },
     {
@@ -5314,7 +5370,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L694",
+      "source_location": "L698",
       "weight": 1.0
     },
     {
@@ -5325,7 +5381,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L397",
+      "source_location": "L401",
       "weight": 1.0
     },
     {
@@ -6122,13 +6178,13 @@
     },
     {
       "source": "syncdatacollector",
-      "target": "syncdatacollector_get_applocationlabel",
+      "target": "syncdatacollector_invoke_git",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3600",
+      "source_location": "L3606",
       "weight": 1.0
     },
     {
@@ -6140,6 +6196,28 @@
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
       "source_location": "L361",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_invoke_selfupdate",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L3628",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_get_applocationlabel",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L3689",
       "weight": 1.0
     },
     {
@@ -6166,17 +6244,6 @@
     },
     {
       "source": "syncdatacollector",
-      "target": "syncdatacollector_write_log",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3914",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
       "target": "syncdatacollector_parse_folderlist",
       "relation": "contains",
       "_origin": "ast",
@@ -6188,13 +6255,24 @@
     },
     {
       "source": "syncdatacollector",
+      "target": "syncdatacollector_write_log",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4003",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
       "target": "syncdatacollector_get_rowkey",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3943",
+      "source_location": "L4032",
       "weight": 1.0
     },
     {
@@ -6205,73 +6283,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3957",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_test_rescuemark",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3966",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_get_rowlook",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L3977",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_get_rowtip",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4011",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_split_relpath",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4022",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_format_size",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4030",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_format_rowtime",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4044",
+      "source_location": "L4046",
       "weight": 1.0
     },
     {
@@ -6287,13 +6299,79 @@
     },
     {
       "source": "syncdatacollector",
+      "target": "syncdatacollector_test_rescuemark",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4055",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_get_rowlook",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4066",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_get_rowtip",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4100",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_split_relpath",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4111",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_format_size",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4119",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_format_rowtime",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4133",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
       "target": "syncdatacollector_update_comparelayout",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4057",
+      "source_location": "L4146",
       "weight": 1.0
     },
     {
@@ -6304,29 +6382,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4076",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_resize_comparecolumns",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4113",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_update_comparehint",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4146",
+      "source_location": "L4165",
       "weight": 1.0
     },
     {
@@ -6342,46 +6398,35 @@
     },
     {
       "source": "syncdatacollector",
+      "target": "syncdatacollector_resize_comparecolumns",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4202",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_update_comparehint",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4235",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
       "target": "syncdatacollector_show_compareplan",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4187",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_update_comparerow",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4269",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_prompt_text",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4320",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_select_fromlist",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4341",
+      "source_location": "L4276",
       "weight": 1.0
     },
     {
@@ -6397,13 +6442,46 @@
     },
     {
       "source": "syncdatacollector",
+      "target": "syncdatacollector_update_comparerow",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4358",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_prompt_text",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4409",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_select_fromlist",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4430",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
       "target": "syncdatacollector_choose_devicedialog",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4365",
+      "source_location": "L4454",
       "weight": 1.0
     },
     {
@@ -6414,7 +6492,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4374",
+      "source_location": "L4463",
       "weight": 1.0
     },
     {
@@ -6425,7 +6503,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4386",
+      "source_location": "L4475",
       "weight": 1.0
     },
     {
@@ -6436,7 +6514,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4395",
+      "source_location": "L4484",
       "weight": 1.0
     },
     {
@@ -6447,73 +6525,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4411",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_format_settings",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4422",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_update_defaultsindicator",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4431",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_apply_settingstoui",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4444",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_load_collectortoui",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4462",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_commit_uitocollector",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4493",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_set_pinnedcollector",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4505",
+      "source_location": "L4500",
       "weight": 1.0
     },
     {
@@ -6529,13 +6541,79 @@
     },
     {
       "source": "syncdatacollector",
+      "target": "syncdatacollector_format_settings",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4511",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_update_defaultsindicator",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4520",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_apply_settingstoui",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4533",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_load_collectortoui",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4551",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_commit_uitocollector",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4582",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_set_pinnedcollector",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4594",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
       "target": "syncdatacollector_update_detectedcollector",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4515",
+      "source_location": "L4604",
       "weight": 1.0
     },
     {
@@ -6546,7 +6624,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4578",
+      "source_location": "L4667",
       "weight": 1.0
     },
     {
@@ -6557,7 +6635,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4585",
+      "source_location": "L4674",
       "weight": 1.0
     },
     {
@@ -6568,7 +6646,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4591",
+      "source_location": "L4680",
       "weight": 1.0
     },
     {
@@ -6579,18 +6657,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4608",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_invoke_collectoraction",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4623",
+      "source_location": "L4697",
       "weight": 1.0
     },
     {
@@ -6606,13 +6673,24 @@
     },
     {
       "source": "syncdatacollector",
+      "target": "syncdatacollector_invoke_collectoraction",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L4712",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
       "target": "syncdatacollector_set_advancedmode",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4721",
+      "source_location": "L4810",
       "weight": 1.0
     },
     {
@@ -6623,18 +6701,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
-      "source_location": "L4761",
-      "weight": 1.0
-    },
-    {
-      "source": "syncdatacollector",
-      "target": "syncdatacollector_update_datelabel",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "SyncDataCollector.ps1",
-      "source_location": "L5091",
+      "source_location": "L4850",
       "weight": 1.0
     },
     {
@@ -6657,6 +6724,17 @@
       "confidence_score": 1.0,
       "source_file": "SyncDataCollector.ps1",
       "source_location": "L518",
+      "weight": 1.0
+    },
+    {
+      "source": "syncdatacollector",
+      "target": "syncdatacollector_update_datelabel",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "SyncDataCollector.ps1",
+      "source_location": "L5180",
       "weight": 1.0
     },
     {
@@ -6925,5 +7003,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "7b65ddf89272ac5bc9f42178b83b60d8c2c6fbfb"
+  "built_at_commit": "1acf968a2ac32314aad74ee98ae3273961c3c9b5"
 }

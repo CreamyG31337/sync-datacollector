@@ -3585,6 +3585,95 @@ if ($env:SDC_SMOKETEST -ne '1') {
     }
 }
 
+# --------------------------------------------------------------------------
+# Self-update
+#
+# A copy that runs from a git clone of the repo keeps itself on the latest main.
+# That is enough to reach every machine: the stick gets this PC's copy of the app on
+# every sync (Copy-AppToVolume), and the tablet runs from the stick -- so a tablet
+# never needs git, or a GitHub sign-in, to stay current.
+#
+# git does the fetching, as it does for anyone pulling by hand: this never downloads
+# anything and runs it. And it only ever fast-forwards a clean clone sitting on main.
+# The office clone is also where the code is worked on, so local commits, edits to
+# tracked files, or another branch all mean "leave it alone" -- said in the log, so a
+# copy that stopped updating says why. Offline, or GitHub slow to answer, costs a few
+# seconds at most and the app starts as it is.
+# Off with SDC_NOUPDATE=1 or "autoUpdate": false in config.json.
+# --------------------------------------------------------------------------
+$script:UpdateNotes = @()
+
+function Invoke-Git {
+    param([string[]]$GitArgs, [int]$TimeoutMs = 15000)
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = $script:GitExe
+    $psi.Arguments = (@('-C', "`"$ScriptDir`"") + @($GitArgs | ForEach-Object { if ($_ -match '\s') { "`"$_`"" } else { $_ } })) -join ' '
+    $psi.UseShellExecute = $false; $psi.CreateNoWindow = $true
+    $psi.RedirectStandardOutput = $true; $psi.RedirectStandardError = $true
+    # Never stop to ask for a login: there is nobody at a prompt here.
+    $psi.EnvironmentVariables['GIT_TERMINAL_PROMPT'] = '0'
+    $psi.EnvironmentVariables['GCM_INTERACTIVE'] = 'never'
+    $p = [System.Diagnostics.Process]::Start($psi)
+    $out = $p.StandardOutput.ReadToEndAsync(); $err = $p.StandardError.ReadToEndAsync()
+    if (-not $p.WaitForExit($TimeoutMs)) {
+        try { $p.Kill() } catch { }
+        return @{ Code = -1; Out = ''; Err = "no answer within $([int]($TimeoutMs / 1000))s" }
+    }
+    # First line of any error only: git explains itself over several, and the log
+    # line just needs the reason.
+    return @{ Code = $p.ExitCode; Out = $out.Result.Trim(); Err = @($err.Result.Trim() -split "`r?`n")[0] }
+}
+
+# $true when the clone moved forward and the app should restart on the new code.
+function Invoke-SelfUpdate {
+    if ($env:SDC_NOUPDATE -eq '1' -or $env:SDC_UPDATED) { return $false }
+    if ($script:Config.PSObject.Properties['autoUpdate'] -and -not [bool]$script:Config.autoUpdate) { return $false }
+    if (-not (Test-Path -LiteralPath (Join-Path $ScriptDir '.git'))) { return $false }   # the stick, a plain copy
+    $script:GitExe = (Get-Command git -ErrorAction SilentlyContinue | Select-Object -First 1).Source
+    if (-not $script:GitExe) { $script:UpdateNotes += 'Update check skipped: git is not installed here.'; return $false }
+
+    $br = Invoke-Git @('rev-parse', '--abbrev-ref', 'HEAD')
+    if ($br.Code -ne 0) { $script:UpdateNotes += "Update check skipped: $($br.Err)"; return $false }
+    if ($br.Out -ne 'main') { $script:UpdateNotes += "Update check skipped: on branch '$($br.Out)', not main."; return $false }
+
+    $f = Invoke-Git @('fetch', '--quiet', 'origin', 'main') 20000
+    if ($f.Code -ne 0) { $script:UpdateNotes += "Update check skipped: could not reach GitHub ($($f.Err))."; return $false }
+
+    $c = Invoke-Git @('rev-list', '--left-right', '--count', 'HEAD...origin/main')
+    $ab = @(([string]$c.Out) -split '\s+')
+    if ($c.Code -ne 0 -or $ab.Count -lt 2) { $script:UpdateNotes += "Update check skipped: $($c.Err)"; return $false }
+    $ahead = [int]$ab[0]; $behind = [int]$ab[1]
+    if ($behind -eq 0) { return $false }
+    if ($ahead -gt 0) {
+        $script:UpdateNotes += "Not updating: this copy has $ahead commit(s) GitHub does not, and is $behind behind. Push or pull by hand."
+        return $false
+    }
+    $dirty = Invoke-Git @('status', '--porcelain', '--untracked-files=no')
+    if ($dirty.Out) {
+        $script:UpdateNotes += "Not updating: $behind newer commit(s) on GitHub, but files here have uncommitted changes."
+        return $false
+    }
+    $from = (Invoke-Git @('rev-parse', '--short', 'HEAD')).Out
+    $m = Invoke-Git @('merge', '--ff-only', '--quiet', 'origin/main')
+    if ($m.Code -ne 0) { $script:UpdateNotes += "Update failed, carrying on with this version: $($m.Err)"; return $false }
+    $to = (Invoke-Git @('log', '-1', '--format=%h %s')).Out
+    $env:SDC_UPDATED = "Updated from $from to $to ($behind commit(s))."
+    return $true
+}
+
+if ($env:SDC_SMOKETEST -ne '1') {
+    $updated = $false
+    try { $updated = Invoke-SelfUpdate } catch { $script:UpdateNotes += "Update check failed: $($_.Exception.Message)" }
+    if ($updated) {
+        # The old code is what is running, so start the new one in its place. The
+        # lock goes first, or the new copy would find this one "already open".
+        try { Add-Content -LiteralPath $LogFile -Value ('[{0}] {1} Restarting.' -f (Get-Date -Format 'HH:mm:ss'), $env:SDC_UPDATED) -Encoding UTF8 } catch { }
+        try { $script:InstanceMutex.ReleaseMutex(); $script:InstanceMutex.Dispose() } catch { }
+        Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-STA', '-File', "`"$PSCommandPath`"")
+        exit 0
+    }
+}
+
 # Hide the launcher's console for the whole GUI session. Skipped for the smoke
 # test (which reports on the console) and overridable with SDC_HIDECONSOLE=0 for
 # anyone troubleshooting who wants the console output in view. The trap re-shows
@@ -5129,6 +5218,8 @@ Confirm-MappedDrives { param($m, $lvl) Write-Log $m $lvl }
 $startProject = [string](Get-Pref 'LastProject' $script:Config.activeProject)
 Refresh-ProjectList -SelectName $startProject
 Write-Log 'Sync Data Collector ready.'
+if ($env:SDC_UPDATED) { Write-Log $env:SDC_UPDATED }
+foreach ($n in @($script:UpdateNotes)) { Write-Log $n 'WARN' }
 try { $script:LastSeenSerials = ((@(Get-MtpDevices) | ForEach-Object { $_.Serial }) -join '|') } catch {}
 Update-DetectedCollector $true
 # Now that every control is placed and anchored, widen the window to fit the

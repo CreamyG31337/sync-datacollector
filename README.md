@@ -94,6 +94,10 @@ WinForms GUI that runs on stock Windows (PowerShell 5.1 + .NET Framework 4.x).
   can live on OneDrive and run from several PCs/collectors; each machine remembers its own
   last project, and which collector it last chose, in `HKCU\Software\SyncDataCollector`
   instead of churning the shared file.
+- **Keeps itself up to date** — a copy running from a git clone checks GitHub at startup and,
+  if `main` has moved on, fast-forwards and restarts on the new version. The stick picks the
+  new version up on its next sync from the office, and the tablet runs from the stick, so no
+  other machine needs git. See *Updates* below.
 - **One copy at a time** — starting the app while it is already open, from any folder, brings
   up the open window instead and says where that copy is running from. Two windows would be two
   engines working the same folders, and a stray copy is easy to come by on a stick.
@@ -1097,6 +1101,7 @@ root can be written `%OneDriveCommercial%\…` where a drive letter is not wante
 | `collectors[].exportCollision` | `"prefix"` (default), `"deviceSubfolder"`, or `"overwrite"`. Routes carry their own `collision`, which wins — except on a USB stick, where this wins, and should be `"overwrite"` because the tablets have already named their files. |
 | `mtp.retries` | Extra attempts per file after the first (default 2). |
 | `mtp.verifyAfterUpload` | Re-read the on-device size and confirm it matches (default true). |
+| `autoUpdate` | Optional, top level. `false` stops a git clone of the app updating itself at startup. Default on. `SDC_NOUPDATE=1` in the environment does the same for one machine. |
 
 Values under `collectors[]` **override** `defaults` for that collector; they are written out in
 full rather than left blank, so the file always says exactly what a given unit will do.
@@ -1108,6 +1113,34 @@ Per-machine settings (not in `config.json`) live in `HKCU\Software\SyncDataColle
 > derive a project (design source, on-device project folder, export root) and the file gains
 > `projects` / `collectors`. The old `profiles` array is **left in place, ignored** — delete it
 > by hand once you're happy. Collectors are not invented: plug each one in and press **Detect**.
+
+---
+
+## Updates
+
+Install the app on the office PC as a **git clone** of this repository, not a downloaded copy.
+At each start it then runs `git fetch`, and if `main` on GitHub is ahead it fast-forwards and
+restarts itself on the new version. The log's first lines say so:
+`Updated from 4f46f77 to 7b65ddf Keep scans whole… (1 commit(s)).`
+
+Everything else follows from that one clone. Every sync to a USB stick copies the app onto it,
+and the tablet runs the app from the stick. So the field gets the new version through the stick,
+and no tablet ever needs git or a GitHub login.
+
+It only ever **fast-forwards a clean clone on `main`**, and otherwise leaves it alone and logs
+why:
+
+| Log line | Meaning |
+|---|---|
+| `…files here have uncommitted changes.` | Someone has edited the app in this clone. Commit or discard the edit, and the next start updates. |
+| `…has N commit(s) GitHub does not…` | Local commits not pushed. Push them, or pull by hand. |
+| `…on branch 'x', not main.` | The clone is on another branch. |
+| `…could not reach GitHub…` | Offline, or GitHub did not answer within 20 s. The app starts on the version it has. |
+
+`config.json`, `sync-log.txt` and `sync-state.json` are not tracked by git, so an update never
+touches them. Git does the downloading, the same as a manual `git pull`; the app never downloads
+anything and runs it. Turn updates off with `"autoUpdate": false` in `config.json`, or
+`SDC_NOUPDATE=1` in the environment.
 
 ---
 

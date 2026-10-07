@@ -54,6 +54,9 @@
     }
   ],
 
+  "_autoUpdate_note": "A copy running from a git clone fast-forwards itself to the latest main at startup, and restarts on it. Only a clean clone on main is touched. false turns it off.",
+  "autoUpdate": true,
+
   "_tabletDataRoot_note": "Optional. The folder that CONTAINS 'Trimble Data' on Windows tablets. Defaults to C:\\ProgramData\\Trimble, where Trimble Access for Windows keeps it; only set it for tablets set up differently.",
 
   "_defaults_note": "The baseline every collector starts from. Edit it HERE - the GUI deliberately cannot write it, so nobody can turn a one-off tweak into everyone's default by clicking. Reset to defaults (Advanced) puts one collector back on it; collectors already set up keep what they have until you do.",
