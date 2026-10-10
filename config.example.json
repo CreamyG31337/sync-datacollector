@@ -38,6 +38,15 @@
           "collision": "prefix",
           "dateFrom": "file",
           "supersede": true
+        },
+        {
+          "_note": "Surfaces the surveyor builds on the device. Trimble Access saves them in the project folder beside the jobs, so this reads 'root'. A root route never reads the design folder or the extra design folders, so the .ttm surfaces the office pushed do not come back.",
+          "name": "Surfaces",
+          "from": "root",
+          "extensions": [ ".ttm" ],
+          "root": "S:\\07-DATALOGGER BACKUP\\{year}\\{month}",
+          "collision": "prefix",
+          "dateFrom": "file"
         }
       ]
     }
@@ -64,7 +73,7 @@
     "designSubPath": "02-Design",
     "exportSubPath": "Exports",
     "designExtensions": [ ".csv", ".dxf", ".xml", ".ttm", ".rxl" ],
-    "exportExtensions": [ ".job", ".jxl", ".csv", ".dxf", ".rxl", ".xml" ],
+    "exportExtensions": [ ".job", ".jxl", ".csv", ".dxf", ".rxl", ".xml", ".ttm" ],
     "excludeFolders": [ "SUPERSEDED" ],
     "prune": true,
     "exportCollision": "prefix",
@@ -82,7 +91,7 @@
       "designSubPath": "02-Design",
       "exportSubPath": "Exports",
       "designExtensions": [ ".csv", ".dxf", ".xml", ".ttm", ".rxl" ],
-      "exportExtensions": [ ".job", ".jxl", ".csv", ".dxf", ".rxl", ".xml" ],
+      "exportExtensions": [ ".job", ".jxl", ".csv", ".dxf", ".rxl", ".xml", ".ttm" ],
       "excludeFolders": [ "SUPERSEDED" ],
       "prune": true,
       "exportCollision": "prefix"
@@ -96,7 +105,7 @@
       "designSubPath": "02-Design",
       "exportSubPath": "Exports",
       "designExtensions": [ ".csv", ".dxf", ".xml", ".ttm", ".rxl" ],
-      "exportExtensions": [ ".job", ".jxl", ".csv", ".dxf", ".rxl", ".xml" ],
+      "exportExtensions": [ ".job", ".jxl", ".csv", ".dxf", ".rxl", ".xml", ".ttm" ],
       "excludeFolders": [ "SUPERSEDED" ],
       "prune": true,
       "exportCollision": "overwrite"

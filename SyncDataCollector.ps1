@@ -109,7 +109,7 @@ function New-Profile {
 }
 
 # Sensible default file types when creating a new PULL profile (field exports).
-$script:PullDefaultExtensions = @('.job', '.jxl', '.csv', '.dxf', '.rxl', '.xml')
+$script:PullDefaultExtensions = @('.job', '.jxl', '.csv', '.dxf', '.rxl', '.xml', '.ttm')
 
 function New-MtpSettings {
     # Safeguards for unreliable MTP transfers. Edit in config.json if needed.
@@ -2247,7 +2247,7 @@ function New-CollectorDefaults {
         [string]$DesignSubPath = '02-Design',
         [string]$ExportSubPath = 'Exports',
         [string[]]$DesignExtensions = @('.csv', '.dxf', '.xml', '.ttm', '.rxl'),
-        [string[]]$ExportExtensions = @('.job', '.jxl', '.csv', '.dxf', '.rxl', '.xml'),
+        [string[]]$ExportExtensions = @('.job', '.jxl', '.csv', '.dxf', '.rxl', '.xml', '.ttm'),
         [string[]]$ExcludeFolders = @('SUPERSEDED'),
         [bool]$Prune = $true,                # the design folder is owned by the tool
         [string]$ExportCollision = 'prefix', # prefix | deviceSubfolder | overwrite
@@ -2475,9 +2475,22 @@ function New-LegProfile {
     # 'root' pulls from the project folder itself -- where Trimble Access keeps its
     # .job files -- so there is no subfolder to append.
     $src = $devRoot
+    $skip = @()
     if ([string]$Route.from -ne 'root') {
         $sub = ([string]$Collector.exportSubPath).Trim('\')
         if ($sub) { $src = $devRoot + '\' + $sub }
+    }
+    else {
+        # The project folder also holds the folders this tool pushes INTO. A .ttm the
+        # surveyor built sits beside the jobs, but the design surfaces we sent are .ttm
+        # too, and pulling them would file our own linework back as field data. So a
+        # root route never reads the design folder or any extra design folder.
+        $owned = @([string]$Collector.designSubPath)
+        foreach ($xd in @(Get-ExtraDesigns $Project $Collector)) { $owned += [string]$xd.subPath }
+        foreach ($o in $owned) {
+            $seg = @($o.Trim('\') -split '\\')[0]
+            if ($seg) { $skip += $seg }
+        }
     }
     $coll = [string]$Route.collision
     # A stick is a courier, not a collector: what comes off it was already named by
@@ -2491,7 +2504,7 @@ function New-LegProfile {
         -DestinationPath ([string]$Route.root) `
         -CollisionMode $coll `
         -Extensions @($Route.extensions) `
-        -ExcludeFolders @() -Prune $false
+        -ExcludeFolders $skip -Prune $false
     $p | Add-Member -NotePropertyName collisionLabel -NotePropertyValue (Get-CollectorFolderName $Collector) -Force
     $df = [string]$Route.dateFrom
     if (-not $df) { $df = 'run' }
@@ -2598,7 +2611,15 @@ function New-TabletExportRoutes {
         $routes += New-ExportRoute -Name 'Job files' -From 'root' -Extensions @('.job') `
                         -Root $StickJob -Collision 'prefix' -Supersede $true
     }
-    $rest = @($exts | Where-Object { $_ -ne '.job' })
+    if ($exts -contains '.ttm') {
+        # A surface the surveyor builds on the tablet is saved in the project folder
+        # beside the jobs, not in Exports. Same place on the stick, where this PC's
+        # own root route reads it. Not superseding: nothing works in a .ttm all day,
+        # so a changed one is a different surface and both are kept.
+        $routes += New-ExportRoute -Name 'Surfaces' -From 'root' -Extensions @('.ttm') `
+                        -Root $StickJob -Collision 'prefix'
+    }
+    $rest = @($exts | Where-Object { $_ -notin @('.job', '.ttm') })
     if ($rest.Count) {
         # A per-tablet folder, NOT a prefix. A scan is a .jxl plus a "<name> Files"
         # folder whose name the .jxl records inside itself; prefixing renames that

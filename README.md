@@ -166,8 +166,10 @@ All of this uses only built-in Windows components — nothing to download or ins
    - **Design folder** / **Export folder** — subfolders under the project folder on the device.
    - **Design types** — defaults `.csv, .dxf, .xml, .ttm, .rxl`. `.xml` is only synced when it is
      really **LandXML** (root `<LandXML>`), so unrelated project XML is skipped.
-   - **Export types** — defaults `.job, .jxl, .csv, .dxf, .rxl, .xml`. Include `.jxl` to pull
-     scans with their `<name> Files` folder.
+   - **Export types** — defaults `.job, .jxl, .csv, .dxf, .rxl, .xml, .ttm`. Include `.jxl` to pull
+     scans with their `<name> Files` folder. A `.ttm` the surveyor builds on the device is saved
+     in the project folder, not `Exports` — give it a `root` route (see
+     [Export routes](#export-routes-filing-different-file-types-in-different-places)).
    - **Skip folders** — folder names ignored at any depth, defaults `SUPERSEDED`.
    - **Export naming** — how files from different collectors are kept apart. See below.
    - **Mirror** — whether the design folder is owned by the tool. See below.
@@ -242,6 +244,9 @@ The tablet sends two things back, laid out the way the office's export routes re
 - **`.job` files** from the project folder itself → the stick's project folder. A job changes
   every time it is opened, so a newer copy replaces the tablet's earlier one on the stick rather
   than piling up beside it.
+- **`.ttm` surfaces** the surveyor built, also from the project folder itself → the stick's
+  project folder, prefixed with the tablet's name. `02-Design` and the extra design folders
+  are skipped, so the surfaces the office sent never come back.
 - **Everything else** (`.csv`, `.jxl` with its scan folder, `.dxf`, …) from the project's
   **`Exports`** folder → a folder named after the tablet in the stick's `Exports`
   (`Exports\T110-A\26-245-SCAN.jxl`). Not a filename prefix: a `.jxl` records its
@@ -514,6 +519,8 @@ naming:
   { "name": "Linework backup", "from": "export", "extensions": [".dxf"],
     "root": "S:\\07-DATALOGGER BACKUP\\{year}\\{month}", "collision": "prefix" },
   { "name": "Job files",       "from": "root",   "extensions": [".job"],
+    "root": "S:\\07-DATALOGGER BACKUP\\{year}\\{month}", "collision": "prefix" },
+  { "name": "Surfaces",        "from": "root",   "extensions": [".ttm"],
     "root": "S:\\07-DATALOGGER BACKUP\\{year}\\{month}", "collision": "prefix" }
 ]
 ```
@@ -523,11 +530,16 @@ naming:
 - **`export`** — the collector's `exportSubPath` (`03-Export`, `Exports`, whatever that unit
   uses). This is where a surveyor's exports go.
 - **`root`** — the project folder on the device itself. Trimble Access keeps `.job` files
-  here, not in the export folder, so a job backup has to read the root.
+  here, not in the export folder, so a job backup has to read the root. A surface the
+  surveyor creates on the device (`.ttm`) is saved here too.
 
-> **Keep a `root` route's extension list tight.** The project folder also holds the `.xml`,
-> `.dxf` and `.rxl` the *design* leg put there. A `root` route listing those would pull design
-> files back off the collector and file them as if they were field data.
+A `root` route never reads the design folder (`02-Design`) or any extra design folder
+(`01-Survey Control`, …). Those hold what the office pushed, `.ttm` surfaces included, and
+pulling them would file the office's own designs as field data.
+
+> **Keep a `root` route's extension list tight.** It still reads every other folder in the
+> project, including `Exports`, so a type another route already pulls from `export` would be
+> pulled twice.
 
 Two things follow from `collision` that are worth stating plainly:
 

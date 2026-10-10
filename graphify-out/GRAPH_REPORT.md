@@ -1,17 +1,17 @@
-# Graph Report - sync datacollector  (2026-10-06)
+# Graph Report - sync datacollector  (2026-10-09)
 
 ## Corpus Check
-- 7 files · ~46,228 words
+- 7 files · ~46,589 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 3 file(s) not represented in the graph (top: (none) 2, .cmd 1)
 
 ## Summary
-- 192 nodes · 440 edges · 16 communities (14 shown, 2 thin omitted)
+- 192 nodes · 441 edges · 16 communities (14 shown, 2 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `1acf968a`
+- Built from commit: `455c551d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -79,8 +79,8 @@ Cohesion: 0.39
 Nodes (8): Format-Local(), Format-RowTime(), Format-Size(), Get-RowKey(), Get-RowTip(), Show-ComparePlan(), Split-RelPath(), Update-CompareRow()
 
 ### Community 4 - "Invoke-CollectorSync"
-Cohesion: 0.23
-Nodes (18): Ensure-ExportFolder(), Expand-EnvVars(), Expand-PathTokens(), Get-CollectorDeviceRoot(), Get-CollectorFolderName(), Get-CollectorLabel(), Get-ExportRoutes(), Get-JobCleanupPlan() (+10 more)
+Cohesion: 0.22
+Nodes (19): Ensure-ExportFolder(), Expand-EnvVars(), Expand-PathTokens(), Get-CollectorDeviceRoot(), Get-CollectorFolderName(), Get-CollectorLabel(), Get-ExportRoutes(), Get-ExtraDesigns() (+11 more)
 
 ### Community 5 - "Invoke-SyncCheck"
 Cohesion: 0.15
@@ -99,8 +99,8 @@ Cohesion: 0.06
 Nodes (30): Check is required before Sync, Configuration reference, Exports are never destroyed, Features, Field data on the tablet, How MTP works here (and why it's reliable), Keeping a file the collector has and the design folder doesn't, Keeping superseded designs off the collector (+22 more)
 
 ### Community 9 - "Load-Config"
-Cohesion: 0.15
-Nodes (21): ConvertFrom-LegacyProfiles(), Copy-TabletConfigToVolume(), Get-DefaultConfig(), Get-Defaults(), Get-DeviceProjectSubPath(), Get-ExtraDesigns(), Get-JobRetentionDays(), Load-Config() (+13 more)
+Cohesion: 0.16
+Nodes (20): ConvertFrom-LegacyProfiles(), Copy-TabletConfigToVolume(), Get-DefaultConfig(), Get-Defaults(), Get-DeviceProjectSubPath(), Get-JobRetentionDays(), Load-Config(), New-Collector() (+12 more)
 
 ### Community 10 - "Get-ConnectedCollectors"
 Cohesion: 0.29
@@ -136,5 +136,3 @@ _Questions this graph is uniquely positioned to answer:_
   _Cohesion score 0.13157894736842105 - nodes in this community are weakly interconnected._
 - **Should `Sync DataCollector` be split into smaller, more focused modules?**
   _Cohesion score 0.06451612903225806 - nodes in this community are weakly interconnected._
-- **Should `Load-Config` be split into smaller, more focused modules?**
-  _Cohesion score 0.14761904761904762 - nodes in this community are weakly interconnected._
