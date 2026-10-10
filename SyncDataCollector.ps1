@@ -1356,8 +1356,15 @@ function Target-DeleteDir {
 # exact-path check alone would pull such a file again on every sync for ever. Match
 # on name AND size, within one month's folder only -- that is a narrow enough scope
 # that the same name and the same byte count really is the same file.
+#
+# Except inside a scan's "<name> Files" folder: every scan carries its own
+# trwlayer.lay, Database.dmt and trwdb.db1, byte-for-byte the same size from one scan
+# to the next (ten of each in one month on S:). Matched on name and size alone, a new
+# scan's copies "were already filed" under some other scan, were skipped, and the new
+# scan arrived without its database. $Tail -- the path from "<name> Files\" down --
+# makes those match only inside a scan folder of the same name.
 function Test-AlreadyFiled {
-    param($Ctx, [string]$Kind, [string]$ScopeDir, [string]$Leaf, [long]$Length)
+    param($Ctx, [string]$Kind, [string]$ScopeDir, [string]$Leaf, [long]$Length, [string]$Tail = '')
     if ($Kind -ne 'fs' -or -not $ScopeDir -or $Length -lt 0) { return '' }
     if (-not (Test-Path -LiteralPath $ScopeDir)) { return '' }
     if (-not $Ctx.ContainsKey('FiledIndex')) { $Ctx.FiledIndex = @{} }
@@ -1368,12 +1375,17 @@ function Test-AlreadyFiled {
         $idx = @{}
         foreach ($f in @(Get-ChildItem -LiteralPath $ScopeDir -Recurse -File -Force -ErrorAction SilentlyContinue)) {
             $k = $f.Name.ToLowerInvariant() + '|' + $f.Length
-            if (-not $idx.ContainsKey($k)) { $idx[$k] = $f.FullName }
+            if (-not $idx.ContainsKey($k)) { $idx[$k] = @() }
+            $idx[$k] += $f.FullName
         }
         $Ctx.FiledIndex[$key] = $idx
     }
     $probe = ([string]$Leaf).ToLowerInvariant() + '|' + $Length
-    if ($Ctx.FiledIndex[$key].ContainsKey($probe)) { return [string]$Ctx.FiledIndex[$key][$probe] }
+    if (-not $Ctx.FiledIndex[$key].ContainsKey($probe)) { return '' }
+    $hits = @($Ctx.FiledIndex[$key][$probe])
+    if (-not $Tail) { return [string]$hits[0] }
+    $end = '\' + $Tail.ToLowerInvariant()
+    foreach ($h in $hits) { if (([string]$h).ToLowerInvariant().EndsWith($end)) { return [string]$h } }
     return ''
 }
 
@@ -2370,6 +2382,20 @@ function Get-CollectorLabel {
     return (Get-DeviceLabel ([string]$Collector.model) ([string]$Collector.serial))
 }
 
+# What to call the two ends of a sync. The engine only knows "office side" and
+# "collector side", but who plays each part changes: on a tablet running off the stick,
+# the office side IS the stick and the collector is the machine the app runs on, so
+# "This PC -> collector" there reads exactly backwards. Here = left column / the source
+# of designs; There = right column / where field data comes from.
+function Get-SideNames {
+    param($Collector)
+    if ($Collector -and [string]$Collector.type -eq 'folder') {
+        if (Test-VolumeCollector $Collector) { return @{ Here = 'This PC'; There = 'USB stick' } }
+        return @{ Here = 'USB stick'; There = 'This tablet' }
+    }
+    return @{ Here = 'This PC'; There = 'Collector' }
+}
+
 # Folder-safe name for the per-collector export subfolder. Two crews exporting the
 # same filename must never land on each other, so this has to be stable and unique.
 # Environment variables are expanded here so ONE generated config can serve several
@@ -2475,22 +2501,9 @@ function New-LegProfile {
     # 'root' pulls from the project folder itself -- where Trimble Access keeps its
     # .job files -- so there is no subfolder to append.
     $src = $devRoot
-    $skip = @()
     if ([string]$Route.from -ne 'root') {
         $sub = ([string]$Collector.exportSubPath).Trim('\')
         if ($sub) { $src = $devRoot + '\' + $sub }
-    }
-    else {
-        # The project folder also holds the folders this tool pushes INTO. A .ttm the
-        # surveyor built sits beside the jobs, but the design surfaces we sent are .ttm
-        # too, and pulling them would file our own linework back as field data. So a
-        # root route never reads the design folder or any extra design folder.
-        $owned = @([string]$Collector.designSubPath)
-        foreach ($xd in @(Get-ExtraDesigns $Project $Collector)) { $owned += [string]$xd.subPath }
-        foreach ($o in $owned) {
-            $seg = @($o.Trim('\') -split '\\')[0]
-            if ($seg) { $skip += $seg }
-        }
     }
     $coll = [string]$Route.collision
     # A stick is a courier, not a collector: what comes off it was already named by
@@ -2504,7 +2517,15 @@ function New-LegProfile {
         -DestinationPath ([string]$Route.root) `
         -CollisionMode $coll `
         -Extensions @($Route.extensions) `
-        -ExcludeFolders $skip -Prune $false
+        -ExcludeFolders @() -Prune $false
+    # Trimble Access keeps jobs, and the surfaces a surveyor builds, directly in the
+    # project folder. Its subfolders are someone else's: the design folders this tool
+    # pushes into, and anything copied onto the device by hand -- a tablet was found
+    # carrying 01-OUTPUT\...\SUPERSEDE\*.ttm. Recursing filed those office surfaces
+    # back as field data, so a root route reads that one level and no deeper.
+    if ([string]$Route.from -eq 'root') {
+        $p | Add-Member -NotePropertyName topLevelOnly -NotePropertyValue $true -Force
+    }
     $p | Add-Member -NotePropertyName collisionLabel -NotePropertyValue (Get-CollectorFolderName $Collector) -Force
     $df = [string]$Route.dateFrom
     if (-not $df) { $df = 'run' }
@@ -2807,15 +2828,17 @@ function Invoke-CollectorSync {
 
     # Design first so a crew heading out has current drawings, then one pull leg per
     # export route. Keys have to stay unique: the compare view groups rows by them.
+    $sides = Get-SideNames $Collector
+    $here = $sides.Here; $there = $sides.There.ToLowerInvariant()
     $legs = @( @{ Key = 'design'; Kind = 'design'; Route = $null
-                  Title = 'Design  PC -> collector (mirrored)' } )
+                  Title = ('Design  {0} -> {1} (mirrored)' -f $here, $there) } )
     # Extra design sources go out with the design, before anything comes back.
     foreach ($xd in @(Get-ExtraDesigns $Project $Collector $OnLog)) {
         $legs += @{
             Key   = 'design:' + [string]$xd.name
             Kind  = 'design'
             Route = $xd
-            Title = ('{0}  PC -> collector\{1} (mirrored)' -f [string]$xd.name, ([string]$xd.subPath).Trim('\'))
+            Title = ('{0}  {1} -> {2}\{3} (mirrored)' -f [string]$xd.name, $here, $there, ([string]$xd.subPath).Trim('\'))
         }
     }
     foreach ($rt in @(Get-ExportRoutes $Project $Collector)) {
@@ -2829,7 +2852,7 @@ function Invoke-CollectorSync {
             Key   = 'export:' + [string]$rt.name
             Kind  = 'export'
             Route = $rt
-            Title = ('{0}  collector -> {1} (additive)' -f [string]$rt.name, $shown)
+            Title = ('{0}  {1} -> {2} (additive)' -f [string]$rt.name, $there, $shown)
         }
     }
     $copied = 0; $pruned = 0; $kept = 0; $failed = 0; $legErrors = @(); $lines = @()
@@ -3177,6 +3200,16 @@ function Invoke-Sync {
         }
         $sel = Select-SyncSet $rawFiles $rawDirs $exts ($direction -eq 'push') $excludeFolders
         $records = @($sel.Files)
+        # A root route: the project folder's own files only (see New-LegProfile). A
+        # scan's "<name> Files" folder still travels with a .jxl sitting at that level.
+        if ($Profile.PSObject.Properties['topLevelOnly'] -and $Profile.topLevelOnly) {
+            $keepDirs = @($records | Where-Object { $_.Rel -notmatch '\\' -and $_.Ext -eq '.jxl' } |
+                            ForEach-Object { ([System.IO.Path]::GetFileNameWithoutExtension($_.Rel) + ' Files').ToLowerInvariant() })
+            $deeper = @($records | Where-Object { $_.Rel -match '\\' -and $keepDirs -notcontains ((($_.Rel -split '\\')[0]).ToLowerInvariant()) }).Count
+            $records = @($records | Where-Object { $_.Rel -notmatch '\\' -or $keepDirs -contains ((($_.Rel -split '\\')[0]).ToLowerInvariant()) })
+            $sel.Dirs = @(@($sel.Dirs) | Where-Object { $keepDirs -contains ((($_ -split '\\')[0]).ToLowerInvariant()) })
+            if ($deeper) { & $OnLog "Project folder only: left $deeper matching file(s) in its subfolders alone." 'INFO' }
+        }
         $total = $records.Count
         $jxlNote = if ($sel.Dirs.Count) { " (+$($sel.Dirs.Count) scan subfolder(s))" } else { '' }
         $xmlNote = if ($sel.SkippedXml -gt 0) { " (excluded $($sel.SkippedXml) non-LandXML .xml)" } else { '' }
@@ -3283,7 +3316,17 @@ function Invoke-Sync {
                 # very file under a different company subfolder in the same month.
                 # Pulling it again would put a second copy in ours, every sync.
                 if ($need -and $di.Length -lt 0 -and $neverOverwrite -and $scopeDir) {
-                    $filed = Test-AlreadyFiled $ctx $dstKind $scopeDir $leaf ([long]$rec.Length)
+                    # Inside a scan folder, match from "<name> Files\" down, not the leaf.
+                    $tail = ''
+                    $rl = ([string]$rel).ToLowerInvariant()
+                    foreach ($k in $scanOwner.Keys) {
+                        if ($rl.StartsWith($k)) {
+                            $compName = @($k.TrimEnd('\') -split '\\')[-1]
+                            $tail = $compName + '\' + ([string]$rel).Substring($k.Length)
+                            break
+                        }
+                    }
+                    $filed = Test-AlreadyFiled $ctx $dstKind $scopeDir $leaf ([long]$rec.Length) $tail
                     if ($filed) {
                         $need = $false
                         $reason = 'already filed at ' + ($filed -replace [regex]::Escape($dstPath + '\'), '')
@@ -4302,7 +4345,9 @@ function Show-ComparePlan {
     # no rows. Drop the nulls before anything counts or iterates.
     $plans = @(@($LegPlans) | Where-Object { $null -ne $_ })
     $script:LastLegPlans = $plans
-    if ($DeviceLabel) { $lblDevRoot.Text = $DeviceLabel }
+    $sides = Get-SideNames $script:CurrentCollector
+    $lblPcRoot.Text = $sides.Here
+    if ($DeviceLabel) { $lblDevRoot.Text = ('{0}: {1}' -f $sides.There, $DeviceLabel) }
     $showSame = $chkShowSame.Checked
 
     $lvCompare.BeginUpdate()
@@ -4581,6 +4626,10 @@ function Load-CollectorToUi {
     }
     $script:CurrentCollector = $C
     $has = ($null -ne $C)
+    $sides = Get-SideNames $C
+    $lblPcRoot.Text = $sides.Here
+    $lblDevRoot.Text = $sides.There
+    if ($has) { $lblDevRoot.Text = ('{0}: {1}' -f $sides.There, (Get-CollectorLabel $C)) }
     foreach ($ctl in @($txtDesignSub,$txtExportSub,$txtDesignExt,$txtExportExt,$txtExcl,$cboExportCollision,
                        $chkPrune,$btnNameDev,$btnResetDefaults)) {
         $ctl.Enabled = $has

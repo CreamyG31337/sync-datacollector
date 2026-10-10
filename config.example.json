@@ -40,7 +40,7 @@
           "supersede": true
         },
         {
-          "_note": "Surfaces the surveyor builds on the device. Trimble Access saves them in the project folder beside the jobs, so this reads 'root'. A root route never reads the design folder or the extra design folders, so the .ttm surfaces the office pushed do not come back.",
+          "_note": "Surfaces the surveyor builds on the device. Trimble Access saves them in the project folder beside the jobs, so this reads 'root'. A root route reads only the project folder's own files, never its subfolders, so the .ttm surfaces the office pushed into 02-Design do not come back.",
           "name": "Surfaces",
           "from": "root",
           "extensions": [ ".ttm" ],

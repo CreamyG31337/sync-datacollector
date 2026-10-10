@@ -245,8 +245,8 @@ The tablet sends two things back, laid out the way the office's export routes re
   every time it is opened, so a newer copy replaces the tablet's earlier one on the stick rather
   than piling up beside it.
 - **`.ttm` surfaces** the surveyor built, also from the project folder itself → the stick's
-  project folder, prefixed with the tablet's name. `02-Design` and the extra design folders
-  are skipped, so the surfaces the office sent never come back.
+  project folder, prefixed with the tablet's name. Only the project folder's own files are
+  read, not its subfolders, so the surfaces the office sent never come back.
 - **Everything else** (`.csv`, `.jxl` with its scan folder, `.dxf`, …) from the project's
   **`Exports`** folder → a folder named after the tablet in the stick's `Exports`
   (`Exports\T110-A\26-245-SCAN.jxl`). Not a filename prefix: a `.jxl` records its
@@ -533,13 +533,12 @@ naming:
   here, not in the export folder, so a job backup has to read the root. A surface the
   surveyor creates on the device (`.ttm`) is saved here too.
 
-A `root` route never reads the design folder (`02-Design`) or any extra design folder
-(`01-Survey Control`, …). Those hold what the office pushed, `.ttm` surfaces included, and
-pulling them would file the office's own designs as field data.
-
-> **Keep a `root` route's extension list tight.** It still reads every other folder in the
-> project, including `Exports`, so a type another route already pulls from `export` would be
-> pulled twice.
+A `root` route reads **only the files sitting in the project folder itself**, never its
+subfolders (a `.jxl` at that level still brings its `<name> Files` folder). The subfolders
+hold what the office pushed (`02-Design`, `01-Survey Control`) and whatever was copied onto
+the device by hand; pulling those would file the office's own designs, `.ttm` surfaces
+included, as field data. A `.ttm` the surveyor *exports* into `Exports` is not picked up by
+a `root` route — add `.ttm` to an `export` route if crews do that.
 
 Two things follow from `collision` that are worth stating plainly:
 
