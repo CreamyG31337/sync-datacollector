@@ -1196,6 +1196,36 @@ function Test-LandXml {
     catch { return $false }
 }
 
+# The folder a scan's photos and point cloud live in, as the .jxl itself names it.
+# Trimble Access writes every media path as "<job name> Files\...", and the job name
+# is on the root element -- which is not the .jxl's own name once a surveyor renames
+# the export. Only a .jxl readable here is opened (an MTP one is not downloaded just
+# to ask); otherwise its filename stands in, which is what an unrenamed export has.
+function Get-ScanFolderName {
+    param($Rec)
+    $base = [System.IO.Path]::GetFileNameWithoutExtension([string]$Rec.Rel)
+    if ($Rec.Local) {
+        try {
+            $settings = New-Object System.Xml.XmlReaderSettings
+            $settings.DtdProcessing = [System.Xml.DtdProcessing]::Prohibit
+            $settings.XmlResolver = $null
+            $reader = [System.Xml.XmlReader]::Create([string]$Rec.Local, $settings)
+            try {
+                while ($reader.Read()) {
+                    if ($reader.NodeType -ne [System.Xml.XmlNodeType]::Element) { continue }
+                    $jn = [string]$reader.GetAttribute('jobName')
+                    # A name that is not a valid folder name is not one we can look for.
+                    if ($jn.Trim() -and $jn.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -lt 0) { return "$jn Files" }
+                    break
+                }
+            }
+            finally { $reader.Dispose() }
+        }
+        catch {}
+    }
+    return "$base Files"
+}
+
 # Map a source-relative path to a destination-relative path, applying the pull
 # collision mode. Used for both files and directories so a scan's .jxl and its
 # "<name> Files" folder stay associated on the destination.
@@ -2792,6 +2822,9 @@ function New-LegProfile {
     if ([string]$Route.from -eq 'root') {
         $p | Add-Member -NotePropertyName topLevelOnly -NotePropertyValue $true -Force
     }
+    # Where a scan's "<job> Files" folder is looked for when Trimble Access left it
+    # beside the job instead of beside the exported .jxl. Read only; prune is off here.
+    $p | Add-Member -NotePropertyName deviceProjectRoot -NotePropertyValue ([string]$devRoot) -Force
     $p | Add-Member -NotePropertyName collisionLabel -NotePropertyValue (Get-CollectorFolderName $Collector) -Force
     $df = [string]$Route.dateFrom
     if (-not $df) { $df = 'run' }
@@ -3508,6 +3541,84 @@ function Invoke-Sync {
             $sel.Dirs = @(@($sel.Dirs) | Where-Object { $keepDirs -contains ((($_ -split '\\')[0]).ToLowerInvariant()) })
             if ($deeper) { & $OnLog "Project folder only: left $deeper matching file(s) in its subfolders alone." 'INFO' }
         }
+
+        # A scan whose photos and point cloud never left the job. Exporting a .jxl
+        # writes only the .jxl: Trimble Access leaves "<job> Files" wherever the job
+        # keeps its media, which on newer setups is the project folder, not Exports.
+        # The .jxl names that folder relative to itself, so it must land beside the
+        # .jxl at the destination. Read it where it is and file it as though it had
+        # been exported too. Nothing on the collector is moved or written: the job
+        # still needs that folder where it is.
+        $borrowedScans = @{}    # "<dir>\<folder>\" (lower case) -> the .jxl record it belongs to
+        $isTopLevel = ($Profile.PSObject.Properties['topLevelOnly'] -and $Profile.topLevelOnly)
+        if ($direction -eq 'pull' -and ($exts -contains '.jxl') -and -not $isTopLevel) {
+            $projRoot = ''
+            if ($Profile.PSObject.Properties['deviceProjectRoot']) { $projRoot = ([string]$Profile.deviceProjectRoot).Trim().TrimEnd('\') }
+            if ($srcKind -eq 'fs' -and $projRoot -and (Test-Path -LiteralPath $projRoot)) {
+                $projRoot = (Get-Item -LiteralPath $projRoot).FullName.TrimEnd('\')
+            }
+            $haveDir = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+            foreach ($d in $rawDirs) { [void]$haveDir.Add([string]$d) }
+            foreach ($j in @($records | Where-Object { [string]$_.Ext -eq '.jxl' })) {
+                $jRel = [string]$j.Rel
+                $li = $jRel.LastIndexOf('\')
+                $pre = if ($li -ge 0) { $jRel.Substring(0, $li + 1) } else { '' }
+                $jLeaf = $jRel.Substring($li + 1)
+                $base = [System.IO.Path]::GetFileNameWithoutExtension($jRel)
+                if ($haveDir.Contains("$pre$base Files")) { continue }    # exported with it, already selected
+                $compName = Get-ScanFolderName $j
+                $compRel = $pre + $compName
+                $key = ($compRel + '\').ToLowerInvariant()
+                if ($borrowedScans.ContainsKey($key)) { continue }
+                $add = @(); $addDirs = @(); $from = ''
+                if ($compName -ine "$base Files" -and $haveDir.Contains($compRel)) {
+                    # Beside the .jxl after all, under the job's name rather than the export's.
+                    # Its .csv/.jxl matched the types already; take only what was left behind.
+                    $taken = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+                    foreach ($r in $records) { [void]$taken.Add([string]$r.Rel) }
+                    foreach ($r in $rawFiles) {
+                        if (([string]$r.Rel).ToLowerInvariant().StartsWith($key) -and -not $taken.Contains([string]$r.Rel)) { $add += $r }
+                    }
+                    $addDirs += $compRel
+                    foreach ($d in $rawDirs) { if (([string]$d).ToLowerInvariant().StartsWith($key)) { $addDirs += [string]$d } }
+                    $from = 'beside it'
+                }
+                elseif ($projRoot -and ($srcPath -ine $projRoot)) {
+                    $folder = $projRoot + '\' + $compName
+                    $inv = $null
+                    if ($srcKind -eq 'fs') {
+                        if (Test-Path -LiteralPath $folder -PathType Container) { $inv = Get-FsInventory $folder }
+                    }
+                    else { $inv = Get-MtpInventory $ctx $folder }
+                    if ($inv -and @($inv.Files).Count) {
+                        $addDirs += $compRel
+                        foreach ($d in @($inv.Dirs)) { $addDirs += ($compRel + '\' + [string]$d) }
+                        foreach ($m in @($inv.Files)) {
+                            $mSrc = if ($srcKind -eq 'fs') { $m.Src } else { $m.Item }
+                            $add += @{ Rel = $compRel + '\' + [string]$m.Rel; Length = $m.Length; MtimeUtc = $m.MtimeUtc
+                                       Src = $mSrc; Local = $m.Local; Ext = $m.Ext }
+                        }
+                        $from = 'the project folder'
+                    }
+                }
+                if ($add.Count) {
+                    $records += $add
+                    $sel.Dirs = @(@($sel.Dirs) + $addDirs)
+                    $borrowedScans[$key] = $j
+                    $mb = [math]::Round((($add | ForEach-Object { [long]$_.Length } | Measure-Object -Sum).Sum) / 1MB)
+                    & $OnLog "Scan data for $jLeaf is in $from ('$compName', $($add.Count) file(s), $mb MB) - it goes beside the .jxl." 'INFO'
+                }
+                elseif ($j.Local) {
+                    # Only a .jxl that actually points into the folder is missing anything;
+                    # most (a layout, a stakeout) have no media at all.
+                    $txt = ''
+                    try { $txt = [System.IO.File]::ReadAllText([string]$j.Local) } catch {}
+                    if ($txt.IndexOf($compName + '\', [StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                        & $OnLog "$jLeaf refers to scan data in '$compName', but that folder is not beside it or in the project folder - the .jxl goes without it." 'WARN'
+                    }
+                }
+            }
+        }
         $total = $records.Count
         $jxlNote = if ($sel.Dirs.Count) { " (+$($sel.Dirs.Count) scan subfolder(s))" } else { '' }
         $xmlNote = if ($sel.SkippedXml -gt 0) { " (excluded $($sel.SkippedXml) non-LandXML .xml)" } else { '' }
@@ -3544,6 +3655,12 @@ function Invoke-Sync {
                 $base = [System.IO.Path]::GetFileNameWithoutExtension([string]$r.Rel)
                 $key = $(if ($dirRel) { "$dirRel\$base Files\" } else { "$base Files\" }).ToLowerInvariant()
                 $scanOwner[$key] = (& $fileDate ([string]$r.Rel) $r.MtimeUtc)
+            }
+            # A borrowed folder named after the job rather than the export still files with its .jxl.
+            foreach ($k in @($borrowedScans.Keys)) {
+                if (-not $scanOwner.ContainsKey($k)) {
+                    $scanOwner[$k] = (& $fileDate ([string]$borrowedScans[$k].Rel) $borrowedScans[$k].MtimeUtc)
+                }
             }
         }
 

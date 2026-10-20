@@ -60,7 +60,9 @@ WinForms GUI that runs on stock Windows (PowerShell 5.1 + .NET Framework 4.x).
   touched, and a letter held by a real disk is never taken over.
 - **Mirrors your folder tree** under the destination (subfolders preserved).
 - **Total-station scans stay whole** — when a `.jxl` is synced, its companion `<name> Files`
-  folder (point cloud, photos, database — any file type, incl. empty subfolders) travels with it.
+  folder (point cloud, photos, database — any file type, incl. empty subfolders) travels with it,
+  even when Trimble Access left that folder beside the job in the project folder instead of
+  exporting it.
 - **Per-collector separation on pull** — exported files are prefixed with the collector that
   produced them (`TSC5-01_2100-25-346.csv`), so two crews exporting the same filename into one
   shared folder never collide. A per-collector subfolder is available instead.
@@ -500,10 +502,21 @@ are the same thing.
 > leaves every name untouched, which is why it is the default. A run that combines `prefix`
 > with `.jxl` in the export types logs a warning.
 
-There is a second, independent limit: a companion folder is matched **by name**, as
-`<jxl basename> Files`. A `.jxl` that references a folder named after something else — an
-aggregate "dumpall" export is the usual case — will not have that folder pulled, because
-nothing pairs them. The media simply does not travel, silently.
+**Scan data that stayed with the job.** Exporting a `.jxl` writes only the `.jxl`: Trimble
+Access leaves the scan's `<job name> Files` folder wherever the job keeps its media, which on
+newer setups is the **project folder**, not `Exports`. When an exported `.jxl` has no
+`<name> Files` beside it, the export leg looks for the folder the `.jxl` names — the
+`jobName` in its header, so a renamed export still finds `26-292-… Files` — first beside the
+`.jxl`, then in the project folder, and files it **beside the `.jxl` at the destination**,
+dated with it, exactly as if it had been exported. It is read where it is: nothing on the
+collector is moved, because the job itself still needs that folder. The log says where each
+scan's data came from and how big it is. A `.jxl` that refers to scan data that is in neither
+place is copied without it, with a warning.
+
+The folder name is read from inside the `.jxl` only when the `.jxl` is readable as a file (a
+tablet, a stick). Over MTP the `.jxl` is not downloaded just to ask, so its filename stands in —
+which is right unless the export was renamed. An aggregate "dumpall" export that references
+several jobs' folders still only brings the one its header names.
 
 ### Export routes: filing different file types in different places
 
