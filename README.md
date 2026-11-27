@@ -432,9 +432,10 @@ write-protected logs a warning rather than failing the run — design files matt
 
 ### Trimble Connect as a collector (cloud)
 
-> **Not yet tested against a live Trimble Connect project.** The sign-in and the prune rules
-> below are covered by offline tests; folder paging and re-uploading an existing file name
-> still need a first real run. Do a **Check** before the first **Sync**.
+> **Tested against a live project (2026-11-26)** in a scratch folder: silent session renewal,
+> folder paging, re-upload creating a new version (not a duplicate), same-size edits being
+> picked up, and prune removing only design-type files. As with any new collector, read the
+> **Check** before the first **Sync** — it lists every file it would delete.
 
 A Trimble Connect project can be a collector too (`type: "connect"`), so designs reach crews
 who pick them up from the cloud instead of a cable. It shows up as `<name> [Cloud]` and is

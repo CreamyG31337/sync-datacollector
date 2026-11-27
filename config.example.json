@@ -111,7 +111,7 @@
       "exportCollision": "overwrite"
     },
     {
-      "_note": "A Trimble Connect project as a collector - the one collector written by hand, since Detect cannot find a cloud project. NOT YET TESTED against a live project: Check before the first Sync. serial is any id unique among your collectors. pushOnly: designs go up, nothing comes back. On Connect, prune deletes only design file types the source no longer has and never deletes folders (scans and jobs may exist only there). Sign-in is a browser Trimble ID login; the session is stored DPAPI-encrypted per Windows user, never in this file. The IDs below are placeholders.",
+      "_note": "A Trimble Connect project as a collector - the one collector written by hand, since Detect cannot find a cloud project. Read the Check before the first Sync: it lists every file prune would delete. serial is any id unique among your collectors. pushOnly: designs go up, nothing comes back. On Connect, prune deletes only design file types the source no longer has and never deletes folders (scans and jobs may exist only there). Sign-in is a browser Trimble ID login; the session is stored DPAPI-encrypted per Windows user, never in this file. The IDs below are placeholders.",
       "serial": "TC-EXAMPLE",
       "name": "Connect",
       "model": "Trimble Connect",

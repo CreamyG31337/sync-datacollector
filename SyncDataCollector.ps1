@@ -1052,6 +1052,20 @@ function Parse-ConnectTimestamp {
     catch { return (Parse-Utc $Text) }
 }
 
+# Connect v2 items carry updatedAt / createdAt (live check 2026-11-26), not modifiedOn.
+# A missing date silently disables the "source newer" test, so a same-size edit to a
+# design file would never be uploaded -- take the first date the item has.
+function Get-ConnectItemMtime {
+    param($Item)
+    foreach ($f in 'updatedAt', 'modifiedOn', 'createdAt') {
+        if ($Item.PSObject.Properties[$f] -and $Item.$f) {
+            $t = Parse-ConnectTimestamp ([string]$Item.$f)
+            if ($t) { return $t }
+        }
+    }
+    return $null
+}
+
 function Get-ConnectFolderItems {
     param($Ctx, [string]$FolderId)
     if ($Ctx.ConnectCache.ContainsKey($FolderId)) { return $Ctx.ConnectCache[$FolderId] }
@@ -1114,7 +1128,7 @@ function Get-ConnectInfo {
     $it = $children.ByName[$leaf.ToLowerInvariant()]
     if (-not $it -or ([string]$it.type).ToUpperInvariant() -ne 'FILE') { return $null }
     $sz = if ($it.PSObject.Properties['size'] -and $null -ne $it.size) { [long]$it.size } else { [long]0 }
-    $mt = Parse-ConnectTimestamp ([string]$it.modifiedOn)
+    $mt = Get-ConnectItemMtime $it
     return @{ Length = $sz; Mtime = $mt; Item = $it; ParentId = $parentId }
 }
 
@@ -1141,7 +1155,7 @@ function Get-ConnectInventory {
             }
             elseif ($tp -eq 'FILE') {
                 $sz = if ($it.PSObject.Properties['size'] -and $null -ne $it.size) { [long]$it.size } else { [long]0 }
-                $mt = Parse-ConnectTimestamp ([string]$it.modifiedOn)
+                $mt = Get-ConnectItemMtime $it
                 $ext = ([System.IO.Path]::GetExtension($nm)).ToLowerInvariant()
                 [void]$files.Add(@{ Rel = $rel; Length = $sz; MtimeUtc = $mt; Item = $it; Ext = $ext })
             }
@@ -1192,13 +1206,13 @@ function Copy-FileConnect {
     for ($poll = 0; $poll -lt 5; $poll++) {
         $st = Invoke-ConnectRest $Ctx 'Get' ("files/fs/upload?uploadId=$([Uri]::EscapeDataString($uploadId))&wait=true")
         $status = ([string]$st.status).ToUpperInvariant()
-        if ($status -in @('AVAILABLE', 'COMPLETED', 'UPLOADED')) { break }
+        if ($status -in @('DONE', 'AVAILABLE', 'COMPLETED', 'UPLOADED')) { break }
         if ($status -in @('FAILED', 'EXPIRED', 'ERROR')) {
             throw ("Trimble Connect upload $status for '$leaf': $($st.errorReason)")
         }
         Start-Sleep -Seconds 2
     }
-    if ($status -and $status -notin @('AVAILABLE', 'COMPLETED', 'UPLOADED')) {
+    if ($status -and $status -notin @('DONE', 'AVAILABLE', 'COMPLETED', 'UPLOADED')) {
         throw "Trimble Connect upload did not finish for '$leaf' (status: $status)."
     }
 
