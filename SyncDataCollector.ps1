@@ -142,8 +142,8 @@ function Get-DefaultConfig {
         activeProject = 'Example project'
         projects      = @(
             New-Project -Name 'Example project' `
-                -DesignSource 'S:\02-DESIGN' `
-                -ExportRoot 'C:\Users\you\OneDrive\Surveying\07-DATALOGGER BACKUP\{year}\{month}' `
+                -DesignSource 'S:\Design' `
+                -ExportRoot 'C:\Users\you\OneDrive\Surveying\Backup\{year}\{month}' `
                 -DeviceProjectPath 'Internal shared storage\Trimble Data\Projects\Example project'
         )
         collectors    = @()                 # filled in as collectors are plugged in
@@ -186,7 +186,7 @@ function ConvertFrom-LegacyProfiles {
 
     $devProject = ''; $name = 'Migrated project'
     if ($push -and $push.destinationPath) {
-        # ...\Projects\2100 - EXAMPLE SITE\02-Design  ->  the project folder is the parent
+        # ...\Projects\2100 - EXAMPLE SITE\Design  ->  the project folder is the parent
         $devProject = (Split-Path -Parent ([string]$push.destinationPath))
         $leaf = Split-Path -Leaf $devProject
         if ($leaf) { $name = $leaf }
@@ -515,7 +515,7 @@ function Expand-EnvVars {
     return [System.Environment]::ExpandEnvironmentVariables($Path)
 }
 
-# The drive letter something names: 'S', 's:', 'S:\02-DESIGN' -> 'S'.
+# The drive letter something names: 'S', 's:', 'S:\Design' -> 'S'.
 # A UNC path or a relative path names none, and gets ''.
 function Get-DriveLetter {
     param([string]$Text)
@@ -1631,7 +1631,7 @@ function Get-TidyPlan {
         $inv = $invs[$ik]
 
         # Which files this route carries. From the project folder, top level only: a
-        # .job nested under a scan folder or 02-Design is somebody else's business.
+        # .job nested under a scan folder or Design is somebody else's business.
         # From the export folder, exactly what the sync pulls -- scan folders included.
         if ($fromRoot) {
             $files = @($inv.Files | Where-Object { $exts -contains $_.Ext -and $_.Rel.IndexOf('\') -lt 0 })
@@ -2401,8 +2401,8 @@ function Invoke-SyncCheck {
 function New-Project {
     param(
         [string]$Name = 'New project',
-        [string]$DesignSource = '',        # S:\02-DESIGN
-        [string]$ExportRoot = '',          # ...\07-DATALOGGER BACKUP\{year}\{month}
+        [string]$DesignSource = '',        # S:\Design
+        [string]$ExportRoot = '',          # ...\Backup\{year}\{month}
         [string]$DeviceProjectPath = '',   # Internal shared storage\Trimble Data\Projects\2100 - EXAMPLE SITE
         $ExportRoutes = @(),               # empty = file every export type under ExportRoot
         # Where this project lives on a Windows tablet, in full, when its folder there
@@ -2422,14 +2422,14 @@ function New-Project {
 }
 
 # One more folder pushed to the collector, beside the design folder rather than in
-# it. Survey control lives under 01-OUTPUT, not 02-DESIGN, and the crews need it as
+# it. Survey control lives under Control, not Design, and the crews need it as
 # much as the drawings. It cannot ride inside the design folder on the device: that
-# folder is mirrored from 02-DESIGN, so anything there 02-DESIGN lacks gets deleted.
+# folder is mirrored from Design, so anything there Design lacks gets deleted.
 # So each extra source gets its own folder on the device and its own mirrored leg.
 function New-ExtraDesign {
     param(
         [string]$Name = 'Extra',
-        [string]$Source = '',              # S:\01-OUTPUT\01-Survey Control
+        [string]$Source = '',              # S:\Control
         [string]$SubPath = '',             # its folder under the project on the device
         [string[]]$Extensions = @()
     )
@@ -2462,7 +2462,7 @@ function Get-ExtraDesigns {
         elseif (-not $sub) { $why = 'it has no subPath, and mirroring onto the project folder itself would delete the crew''s jobs' }
         elseif (-not @($x.extensions).Count) { $why = 'it lists no file types' }
         else {
-            # Nested counts as shared: a leg mirroring "02-Design\Control" sits inside
+            # Nested counts as shared: a leg mirroring "Design\Control" sits inside
             # the design leg's mirror, which would delete it.
             $k = $sub.ToLowerInvariant()
             foreach ($t in @($taken.Keys)) {
@@ -2547,7 +2547,7 @@ function Get-ExportRoutes {
 # --------------------------------------------------------------------------
 function New-CollectorDefaults {
     param(
-        [string]$DesignSubPath = '02-Design',
+        [string]$DesignSubPath = 'Design',
         [string]$ExportSubPath = 'Exports',
         [string[]]$DesignExtensions = @('.csv', '.dxf', '.xml', '.ttm', '.rxl'),
         [string[]]$ExportExtensions = @('.job', '.jxl', '.csv', '.dxf', '.rxl', '.xml', '.ttm'),
@@ -2817,7 +2817,7 @@ function New-LegProfile {
     # Trimble Access keeps jobs, and the surfaces a surveyor builds, directly in the
     # project folder. Its subfolders are someone else's: the design folders this tool
     # pushes into, and anything copied onto the device by hand -- a tablet was found
-    # carrying 01-OUTPUT\...\SUPERSEDE\*.ttm. Recursing filed those office surfaces
+    # carrying Output\...\SUPERSEDE\*.ttm. Recursing filed those office surfaces
     # back as field data, so a root route reads that one level and no deeper.
     if ([string]$Route.from -eq 'root') {
         $p | Add-Member -NotePropertyName topLevelOnly -NotePropertyValue $true -Force
@@ -2899,7 +2899,7 @@ function Copy-AppToVolume {
 # is the collector. So the two sides swap round:
 #
 #            this PC                          the tablet
-#   design   S:\02-DESIGN    -> stick         stick -> <data root>\Trimble Data\...\02-Design
+#   design   S:\Design    -> stick         stick -> <data root>\Trimble Data\...\Design
 #   export   stick           -> S:\07-...     <data root>\Trimble Data\...\Exports -> stick
 #
 # Trimble Access for Windows keeps "Trimble Data" under C:\ProgramData\Trimble, not at
@@ -3104,7 +3104,7 @@ function Invoke-CollectorSync {
     & $OnLog "===== $verb $label  (project: $($Project.name)) =====" 'INFO'
 
     # A folder collector with its volume absent has no device root, so every leg path
-    # would come out drive-less ("\02-Design") and land on whatever drive is current.
+    # would come out drive-less ("\Design") and land on whatever drive is current.
     # Refuse the write outright. A CHECK is still allowed through: with the stick out
     # it falls back to the last sync recorded here, which is the point of that path.
     if (Test-VolumeCollector $Collector) {
@@ -3427,7 +3427,7 @@ function Invoke-Sync {
         if ($ownRoot -and ($dstPath -ieq $ownRoot)) {
             throw ("Refusing to mirror onto '$dstPath': that is the project folder on the collector itself, " +
                    "not a subfolder this tool owns. Everything there the design source does not account for " +
-                   "would be DELETED, including the crew's .job files. Set a design subfolder (e.g. 02-Design), " +
+                   "would be DELETED, including the crew's .job files. Set a design subfolder (e.g. Design), " +
                    "or turn mirror/prune off for this collector.")
         }
     }

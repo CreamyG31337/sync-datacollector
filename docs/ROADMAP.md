@@ -60,7 +60,7 @@ The stick holds only what is in transit. Two halves:
 - File: `<stick root>\delivered.json`, next to `config.json` / `sync-state.json`.
 - One entry per delivered file:
   `{ tablet, route, rel, length, mtimeUtc, deliveredUtc, filedAt }`
-  - `tablet`: the collector label the tablet used (`%COMPUTERNAME%`, e.g. `DESKTOP-MENK28V`),
+  - `tablet`: the collector label the tablet used (`%COMPUTERNAME%`, e.g. `TABLET-01`),
     because several tablets can share one stick.
   - `rel`: the path **as it sits on the tablet**, relative to that route's source. That is
     what the tablet compares against. It is not the stick path: the stick path carries the
@@ -133,27 +133,25 @@ you press on purpose, never part of Sync.
 
 - [ ] **`.ttm` exported into `Exports`** is not picked up: the `Surfaces` route reads only the
   project folder itself. If crews export surfaces, add `.ttm` to an `export` route.
-- [ ] **Scans missing from S:**: 26-260-JEJ-TS-WEST HH ABUT SCAN and
-  26-261-JEJ-TS-HH WEST ABUT SCAN exist on the tablet but nowhere on S:. They should arrive with
-  the first round trip; confirm they do.
 - [ ] **New tablet files land in a per-tablet subfolder** on S:
-  (`05-QC SURVEY DATA\2026\09-SEP\FDC\DESKTOP-MENK28V\…`), because the stick keeps them under
+  (`Field\2026\09-SEP\OURCO\TABLET-01\…`), because the stick keeps them under
   `Exports\<tablet>\`. Decide whether that's wanted, or whether the QC route should flatten
   that folder away. Flattening a scan is safe as long as the `.jxl` and its `<name> Files`
   folder move together.
-- [ ] **Rename the tablet.** Its Windows name, `DESKTOP-MENK28V`, is what appears on S:.
+- [ ] **Give tablets readable Windows computer names**, since `%COMPUTERNAME%` is used as the
+  per-tablet prefix/folder on S:.
 
 ---
 
-## The round trip this week (before section 1 exists)
+## First tablet round trip (before section 1 exists)
 
-1. On this PC, with the stick plugged in, **Sync USB-01**. This puts the current app and the
+1. On the office PC, with the stick plugged in, **Sync USB-01**. This puts the current app and the
    tablet config on the stick.
 2. On the tablet, press **Sync** (not Check). The first run copies the tablet's whole
    backlog to the stick (~2–3 GB, mostly scan photos), so it is slow. It copies; nothing is
    removed from the tablet.
-3. Back on this PC, press **Check** for USB-01 first. Expect the scans already on S: (26-203,
-   26-246, 26-247, 26-253, 26-255, 26-274) to show `already filed at …`. Anything showing
+3. Back on the office PC, press **Check** for USB-01 first. Expect scans already on S:
+   to show `already filed at …`. Anything showing
    `new` that you know is on S: has a different size there, probably re-exported. Look before
    syncing.
 4. Sync. From now on the stick keeps this backlog; that's expected until section 1 is built.

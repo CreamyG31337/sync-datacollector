@@ -158,9 +158,9 @@ All of this uses only built-in Windows components — nothing to download or ins
 3. **Tick "Advanced"** — steps 4 and 5 are one-time setup, and the panels they describe are
    hidden until you do. Untick it afterwards; day to day nobody needs them.
 4. **Set up the project** (once) — the paths every collector shares:
-   - **Design source** — where the drawings live, e.g. `S:\02-DESIGN`.
+   - **Design source** — where the drawings live, e.g. `S:\Design`.
    - **Export root** — where pulled field data is filed. Supports `{year}` `{month}`
-     `{julian}` `{date}`, so `…\07-DATALOGGER BACKUP\{year}\{month}` files into
+     `{julian}` `{date}`, so `…\Backup\{year}\{month}` files into
      `2026\8-AUG` on its own.
    - **Project on device** — the project folder on the collector, e.g.
      `Internal shared storage\Trimble Data\Projects\2100 - EXAMPLE SITE`.
@@ -199,10 +199,10 @@ but to let a **USB stick carry everything**, in a four-leg round trip:
 
 | | Runs on | Source → Destination |
 |---|---|---|
-| 1. design out | office PC | `S:\02-DESIGN` → stick |
+| 1. design out | office PC | `S:\Design` → stick |
 | 2. design in | tablet | stick → `C:\ProgramData\Trimble\Trimble Data\…` |
 | 3. exports out | tablet | `C:\ProgramData\Trimble\Trimble Data\…\Exports` → stick |
-| 4. exports in | office PC | stick → `S:\07-DATALOGGER BACKUP\{year}\{month}` |
+| 4. exports in | office PC | stick → `S:\Backup\{year}\{month}` |
 
 Legs 1 and 4 are one press of **Sync** against the stick's collector entry on the office PC.
 Legs 2 and 3 are one press on the tablet. **On the tablet the stick simply plays the part `S:`
@@ -260,7 +260,7 @@ The tablet sends two things back, laid out the way the office's export routes re
   from its point cloud and photos.
 
 **Procedure: export into `Exports`.** Exports saved anywhere else in the project are not
-collected — reading the whole project would also carry the design files in `02-Design` back to
+collected — reading the whole project would also carry the design files in `Design` back to
 the office as if they were field data. The app creates `Exports` on the tablet on its first sync
 (only inside a project folder that already exists), so it is there to pick in Trimble Access.
 
@@ -347,23 +347,23 @@ either leg on its own, so the export still runs if the design push fails.
 ### More than one folder going out: survey control
 
 Not everything the crews need lives in the design folder. Survey control is kept in
-`S:\01-OUTPUT\01-Survey Control`, and the design leg never touches it. A project can list
+`S:\Control`, and the design leg never touches it. A project can list
 **extra design sources**, and each one gets its own mirrored leg into **its own folder** on the
 device:
 
 ```json
 "extraDesign": [
-  { "name": "Survey control", "source": "S:\\01-OUTPUT\\01-Survey Control",
-    "subPath": "01-Survey Control", "extensions": [".csv", ".jxl"] }
+  { "name": "Survey control", "source": "S:\\Control",
+    "subPath": "Control", "extensions": [".csv", ".jxl"] }
 ]
 ```
 
-This puts the control `.csv` and `.jxl` files in `…\Projects\<job>\01-Survey Control` on
+This puts the control `.csv` and `.jxl` files in `…\Projects\<job>\Control` on
 every controller, stick and tablet. The leg runs right after the design leg, and Check shows it
 as its own group.
 
-**Why its own folder:** it cannot go inside `02-Design` on the device. That folder is a mirror
-of `S:\02-DESIGN`, so the next design sync would delete anything `S:\02-DESIGN` does not have.
+**Why its own folder:** it cannot go inside `Design` on the device. That folder is a mirror
+of `S:\Design`, so the next design sync would delete anything `S:\Design` does not have.
 For the same reason the app refuses (and logs why) an extra source whose `subPath` is empty,
 overlaps the design or export folder, or overlaps another extra source. Two mirrors writing to
 one folder would delete each other's files on every sync.
@@ -532,13 +532,13 @@ naming:
 ```json
 "exportRoutes": [
   { "name": "QC survey data",  "from": "export", "extensions": [".csv", ".jxl"],
-    "root": "S:\\05-QC SURVEY DATA\\{year}\\{month}",   "collision": "overwrite" },
+    "root": "S:\\Field\\{year}\\{month}",   "collision": "overwrite" },
   { "name": "Linework backup", "from": "export", "extensions": [".dxf"],
-    "root": "S:\\07-DATALOGGER BACKUP\\{year}\\{month}", "collision": "prefix" },
+    "root": "S:\\Backup\\{year}\\{month}", "collision": "prefix" },
   { "name": "Job files",       "from": "root",   "extensions": [".job"],
-    "root": "S:\\07-DATALOGGER BACKUP\\{year}\\{month}", "collision": "prefix" },
+    "root": "S:\\Backup\\{year}\\{month}", "collision": "prefix" },
   { "name": "Surfaces",        "from": "root",   "extensions": [".ttm"],
-    "root": "S:\\07-DATALOGGER BACKUP\\{year}\\{month}", "collision": "prefix" }
+    "root": "S:\\Backup\\{year}\\{month}", "collision": "prefix" }
 ]
 ```
 
@@ -552,7 +552,7 @@ naming:
 
 A `root` route reads **only the files sitting in the project folder itself**, never its
 subfolders (a `.jxl` at that level still brings its `<name> Files` folder). The subfolders
-hold what the office pushed (`02-Design`, `01-Survey Control`) and whatever was copied onto
+hold what the office pushed (`Design`, `Control`) and whatever was copied onto
 the device by hand; pulling those would file the office's own designs, `.ttm` surfaces
 included, as field data. A `.ttm` the surveyor *exports* into `Exports` is not picked up by
 a `root` route — add `.ttm` to an `export` route if crews do that.
@@ -709,7 +709,7 @@ a disaster: the collector's *project* folder is where Trimble Access keeps the c
 files, so mirroring onto it would delete every job on the controller, including today's.
 
 The only thing separating the two is the **Design subfolder** field. Blank it, and the
-destination collapses from `…\Projects\<job>\02-Design` to `…\Projects\<job>`.
+destination collapses from `…\Projects\<job>\Design` to `…\Projects\<job>`.
 
 So a mirrored design leg whose destination resolves to the project folder itself is refused
 outright, before anything is read or written:
@@ -718,7 +718,7 @@ outright, before anything is read or written:
 Refusing to mirror onto '...\Projects\2100 - EXAMPLE SITE': that is the project folder on the
 collector itself, not a subfolder this tool owns. Everything there the design source does not
 account for would be DELETED, including the crew's .job files. Set a design subfolder
-(e.g. 02-Design), or turn mirror/prune off for this collector.
+(e.g. Design), or turn mirror/prune off for this collector.
 ```
 
 Turning mirror off is still allowed on any folder — the refusal is specifically about
@@ -806,9 +806,9 @@ Skip folders:  SUPERSEDED
 ```
 
 ```
-S:\02-DESIGN\9.0 TOWER CRANE\SUPERSEDED\TC-1.dxf          <- skipped
-S:\02-DESIGN\5.0 BRIDGE\MCB\superseded\26-111 MCB FDN.dxf <- skipped (case ignored)
-S:\02-DESIGN\9.0 TOWER CRANE\2100 - TC PLATES.dxf         <- synced
+S:\Design\Area-A\SUPERSEDED\TC-1.dxf          <- skipped
+S:\Design\Area-B\superseded\26-001 FDN.dxf <- skipped (case ignored)
+S:\Design\Area-A\2100 - TC PLATES.dxf         <- synced
 ```
 
 Names may contain spaces (`OLD DRAWINGS`), so the list splits on **commas/semicolons only**,
@@ -856,8 +856,8 @@ This is the one irreversible thing the tool does, so:
 - **Every deletion is logged by name** to `sync-log.txt`, and the run banner warns up front:
   ```
   Prune ON - files at the destination that the source does not account for will be DELETED.
-  DELETED        9.0 TOWER CRANE\SUPERSEDED\TC-1.dxf
-  DELETED FOLDER 9.0 TOWER CRANE\SUPERSEDED
+  DELETED        Area-A\SUPERSEDED\TC-1.dxf
+  DELETED FOLDER Area-A\SUPERSEDED
   ----- Done. Copied 0, deleted 10, skipped 151, failed 0 (of 151). -----
   ```
 
@@ -911,12 +911,12 @@ tail of a path is the filename -- split, and the clipping lands on the folder in
 ```
 This PC                                              TSC5-01 (JAJ000000001)
 Folder          File            Size   Modified        Folder      File          What happens
-  Design  PC -> collector (mirrored)    S:\02-DESIGN  ->  \2100 - EXAMPLE SITE\02-Design
-Hoist House(HH) 26-243 HH.dxf   240 KB 08-31 17:22 ->                            Copy (new)
+  Design  PC -> collector (mirrored)    S:\Design  ->  \2100 - EXAMPLE SITE\Design
+Building-A 26-010 BLDG.dxf   240 KB 08-31 17:22 ->                            Copy (new)
 6.0 UTILITIES   Pull Boxes.dxf   85 KB 08-31 17:22 ->  6.0 UTIL..  Pull Boxes    Copy (source newer)
 5.0 BRIDGE...   Boundary.dxf    1.4 MB 08-31 17:22  =  5.0 BRI..   Boundary.dxf  In sync
-                                                    X  Hoist Ho..  26-111 HH.dxf Delete from collector
-  Export  collector -> OneDrive (additive)    ...\07-DATALOGGER BACKUP\2026\08  <-  \...\Exports
+                                                    X  Building..  26-002 BLDG.dxf Delete from collector
+  Export  collector -> OneDrive (additive)    ...\Backup\2026\08  <-  \...\Exports
                                                    <-  Exports     2100-25-346   Copy (new)
 ```
 
@@ -985,8 +985,8 @@ clean sync is to delete real work.
 **Click the `X`** — on the arrow cell or on the *What happens* cell — and it becomes a `←`:
 
 ```
-                                                    X  Hoist Ho..  26-111 HH.dxf  Delete from collector  (click to keep)
-                                                    <-  Hoist Ho..  26-111 HH.dxf  KEEP - copy into the design folder
+                                                    X  Building..  26-002 BLDG.dxf  Delete from collector  (click to keep)
+                                                    <-  Building..  26-002 BLDG.dxf  KEEP - copy into the design folder
 ```
 
 The next Sync copies that file **into the design folder** instead of deleting it, and leaves
@@ -994,8 +994,8 @@ it on the collector. Click again to change your mind. The summary line under the
 what is marked, and the log names every file before anything happens:
 
 ```
-Keeping 1 file(s) the collector has that the design folder does not: Hoist House(HH)\26-111 HH.dxf
-KEPT           Hoist House(HH)\26-111 HH.dxf  ->  S:\02-DESIGN\Hoist House(HH)\26-111 HH.dxf
+Keeping 1 file(s) the collector has that the design folder does not: Building-A\26-002 BLDG.dxf
+KEPT           Building-A\26-002 BLDG.dxf  ->  S:\Design\Building-A\26-002 BLDG.dxf
 ```
 
 Copying it back is the point, not a side effect: prune only ever removes what the source
@@ -1094,7 +1094,7 @@ what's on the target.
 Every path in `config.json` calls the team folder `S:`. That letter is not a real disk — it is a
 `subst` onto the OneDrive-synced team folder, which is exactly what keeps the shared config free
 of anybody's `C:\Users\<name>\…`. But a `subst` lives and dies with the **logon session**: after
-a reboot `S:` is simply gone, every run fails with `Source folder not found: 'S:\02-DESIGN'`, and
+a reboot `S:` is simply gone, every run fails with `Source folder not found: 'S:\Design'`, and
 somebody has to remember to double-click a per-user `.bat` first.
 
 So the app maps it itself, from `driveMap`:
@@ -1144,7 +1144,7 @@ root can be written `%OneDriveCommercial%\…` where a drive letter is not wante
 |---|---|
 | `activeProject` | Which project is currently selected. |
 | `projects[].name` | Display name in the dropdown. |
-| `projects[].designSource` | Where the drawings live on the PC, e.g. `S:\02-DESIGN`. Supports the same tokens as `exportRoot`. |
+| `projects[].designSource` | Where the drawings live on the PC, e.g. `S:\Design`. Supports the same tokens as `exportRoot`. |
 | `projects[].exportRoot` | Where pulled field data is filed when no routes are set. Supports `{year}` `{month}` `{julian}` `{date}` `{apphome}`, and `%ENVVAR%`. `{apphome}` is the folder the app is running from — use it when the app runs off a USB stick, so no drive letter is baked in. `{month}` is zero-padded (`08-AUG`) so a year's folders sort in calendar order. |
 | `projects[].exportRoutes` | Optional list. Empty means "everything under `exportRoot`". Each route is one pull leg: `name`, `from` (`export` = the collector's `exportSubPath`, `root` = the project folder on the device), `extensions`, `root` (same tokens as `exportRoot`), `collision` (`prefix` / `deviceSubfolder` / `overwrite`) and `dateFrom`. |
 | `collectors[].jobRetentionDays` | Days of recent work **Tidy** never touches (default 7). It only removes a job or export whose filename date is older than this *and* that is confirmed in OneDrive. A value below 1 falls back to the default. |
@@ -1153,7 +1153,7 @@ root can be written `%OneDriveCommercial%\…` where a drive letter is not wante
 | `projects[].exportRoutes[].dateFrom` | `run` (default) dates the destination folder from when the sync runs. `file` dates it from the julian in each filename, falling back to that file's modified time — so exports pulled months later still land in the month they were surveyed. |
 | `projects[].deviceProjectPath` | The project folder **on the collector**. For MTP the first segment is the device storage. For a `"folder"` collector that first segment is replaced by wherever the volume is currently mounted, so one project path serves both kinds. |
 | `projects[].tabletProjectPath` | Optional. The project folder's full path **on a Windows tablet**, for when it is named differently there than on the controllers (e.g. `C:\ProgramData\Trimble\Trimble Data\Projects\2100 - Example Site Upgrade`). Only goes into the generated tablet config; the stick keeps the controllers' layout. Empty = `tabletDataRoot` + the controllers' path. |
-| `projects[].extraDesign` | Optional list of more office folders pushed to the devices, each mirrored into its own folder: `name`, `source` (e.g. `S:\01-OUTPUT\01-Survey Control`), `subPath` (its folder under the project on the device, e.g. `01-Survey Control`; must not be empty or overlap the design/export folders or another extra source) and `extensions`. Carried through the stick to tablets too. |
+| `projects[].extraDesign` | Optional list of more office folders pushed to the devices, each mirrored into its own folder: `name`, `source` (e.g. `S:\Control`), `subPath` (its folder under the project on the device, e.g. `Control`; must not be empty or overlap the design/export folders or another extra source) and `extensions`. Carried through the stick to tablets too. |
 | `tabletDataRoot` | Optional, top level. The folder that **contains** `Trimble Data` on the tablets. Default `C:\ProgramData\Trimble`, where Trimble Access for Windows keeps it. |
 | `driveMap[].letter` | A drive letter the app creates with `subst` when it is missing, e.g. `S`. Leave `driveMap` out entirely and it never maps anything. |
 | `driveMap[].targets` | Folders that letter may point at, **best first**. `%ENVVAR%` is expanded — prefer `%OneDriveCommercial%\…` to `C:\Users\<name>\…`, or the config only works for whoever wrote it. |
@@ -1162,7 +1162,7 @@ root can be written `%OneDriveCommercial%\…` where a drive letter is not wante
 | `collectors[].name` | Short name you assign. **Becomes the export filename prefix**, so settle it before the first export. |
 | `collectors[].model` | MTP model name as shown under "This PC" (e.g. `TSC5`). Several units share this, which is why `serial` is the key. For a USB target it is the volume label. |
 | `collectors[].type` | `"mtp"` (over USB), or `"folder"` for a plain filesystem target — a USB stick, or a Windows tablet running this app locally. |
-| `collectors[].designSubPath` | Design subfolder under `deviceProjectPath`, e.g. `02-Design`. |
+| `collectors[].designSubPath` | Design subfolder under `deviceProjectPath`, e.g. `Design`. |
 | `collectors[].exportSubPath` | Export subfolder under `deviceProjectPath`, e.g. `Exports`. |
 | `collectors[].designExtensions` | Types pushed. `.xml` is content-checked and only sent when it is LandXML. |
 | `collectors[].exportExtensions` | Types pulled. Include `.jxl` to bring scans with their `<name> Files` folder. |
@@ -1222,7 +1222,7 @@ anything and runs it. Turn updates off with `"autoUpdate": false` in `config.jso
 - **Nothing happens when I double-click the .cmd / "running scripts is disabled"** — the
   launcher already passes `-ExecutionPolicy Bypass`. On a locked-down device (AppLocker /
   AllSigned), IT may need to allow the script's location or sign it.
-- **"Source folder not found: `S:\02-DESIGN`"** — `S:` is not mapped and the app could not map
+- **"Source folder not found: `S:\Design`"** — `S:` is not mapped and the app could not map
   it either. The log line above says why: no `driveMap` entry for `S`, none of its `targets`
   exist on this machine (has OneDrive finished setting this profile up?), or the letter is held
   by something else. Stopgap, in a **normal** (non-admin) prompt — an admin one maps a drive
@@ -1240,7 +1240,7 @@ anything and runs it. Turn updates off with `"autoUpdate": false` in `config.jso
 
 **On a tablet:**
 
-- **"Cannot map S:", the design leg fails on `S:\02-DESIGN`, and every export leg checks 0
+- **"Cannot map S:", the design leg fails on `S:\Design`, and every export leg checks 0
   files** — this is the *office* config running on the tablet, i.e. a copy of the app
   other than the one at the stick's root. Run `SyncDataCollector.cmd` from the stick's root, and
   delete the stray copy.
