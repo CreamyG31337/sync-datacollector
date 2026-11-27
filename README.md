@@ -430,6 +430,42 @@ This applies to USB targets only. MTP controllers do not run this app, so nothin
 them. A **Check** reports what would be updated without writing, and a stick that is full or
 write-protected logs a warning rather than failing the run — design files matter more.
 
+### Trimble Connect as a collector (cloud)
+
+> **Not yet tested against a live Trimble Connect project.** The sign-in and the prune rules
+> below are covered by offline tests; folder paging and re-uploading an existing file name
+> still need a first real run. Do a **Check** before the first **Sync**.
+
+A Trimble Connect project can be a collector too (`type: "connect"`), so designs reach crews
+who pick them up from the cloud instead of a cable. It shows up as `<name> [Cloud]` and is
+always "connected" — there is nothing to plug in. Uploads go straight to Connect's storage
+(files up to 5 GB), with the same size check after upload as the other targets.
+
+**Sign-in.** The first sync opens a browser for a normal Trimble ID sign-in (OAuth 2.0 with
+PKCE — no client secret is stored anywhere). The session is kept **encrypted for the current
+Windows user** (DPAPI) in `%LOCALAPPDATA%\SyncDataCollector\`, never in `config.json`, and is
+renewed silently after that. If it can't be renewed, the next sync asks you to sign in again;
+a run with nobody at the screen stops with "sign-in needed" rather than waiting on a browser.
+
+**Setting it up.** Detect cannot find a cloud project, so a Connect collector is the one entry
+written by hand in `config.json` (see the example in `config.example.json`):
+
+1. Register an application in the Trimble Developer Console with redirect URI
+   `http://localhost:8765/callback` (or your `redirectPort`), and note its **client ID**.
+2. Find the Connect **project ID** and the ID of the **folder** the tool should write under
+   (`rootFolderId`); `designSubPath` and any extra design folders are created beneath it.
+3. Pick a `serial` that is unique among your collectors (e.g. `TC-<project>`); it is how this
+   PC remembers when the project was last synced.
+
+Set `pushOnly: true` when Connect should only *receive* designs. Without it the export legs
+also run, pulling field files from the project's export folder back to the office.
+
+**What prune may delete on Connect.** A Connect project is shared: people put scans and survey
+jobs there that may exist nowhere else. So on a Connect target the design mirror deletes only
+files of the **design types** (`designExtensions`) that the office source no longer has, and it
+**never deletes a folder** — a Connect folder delete takes everything inside it. Anything else
+the source cannot account for is left in place and logged. Tidy does not run on Connect targets.
+
 ### Everyday mode, and the Advanced tick-box
 
 Almost every run is the same three facts: which project, which collector is plugged in, and
@@ -1161,13 +1197,21 @@ root can be written `%OneDriveCommercial%\…` where a drive letter is not wante
 | `collectors[].serial` | Hardware serial — the key. Read from the USB descriptor; never guessed. For a `"folder"` USB target it is `VOL-<volume serial>` (e.g. `VOL-00000000`), read from the volume itself. |
 | `collectors[].name` | Short name you assign. **Becomes the export filename prefix**, so settle it before the first export. |
 | `collectors[].model` | MTP model name as shown under "This PC" (e.g. `TSC5`). Several units share this, which is why `serial` is the key. For a USB target it is the volume label. |
-| `collectors[].type` | `"mtp"` (over USB), or `"folder"` for a plain filesystem target — a USB stick, or a Windows tablet running this app locally. |
+| `collectors[].type` | `"mtp"` (over USB), `"folder"` for a plain filesystem target — a USB stick, or a Windows tablet running this app locally — or `"connect"` for a Trimble Connect project (see *Trimble Connect as a collector*). |
+| `collectors[].pushOnly` | Optional, default `false`. `true` runs only the design legs (nothing is pulled back) and turns Tidy off. Typical for a Connect target. |
+| `collectors[].connect.clientId` | Connect only. Client ID of the application registered in the Trimble Developer Console. Not a secret. |
+| `collectors[].connect.projectId` | Connect only. The Trimble Connect project ID. |
+| `collectors[].connect.rootFolderId` | Connect only. ID of the Connect folder everything is written under; `designSubPath` and extra design folders are created beneath it. |
+| `collectors[].connect.region` | Connect only. `us` (default), `eu`, `eu-gb`/`uk`, `ap-sg`/`asia`, `ap-au`/`australia`, or a full API base URL. |
+| `collectors[].connect.redirectPort` | Connect only. Local port for the sign-in callback (default `8765`); must match the redirect URI registered with Trimble. |
+| `collectors[].connect.scope` | Connect only. OAuth scope, default `openid connect`; use whatever your registered application requires. |
+| `collectors[].connect.extraDesignPaths` | Connect only, optional. Maps an extra design source's `name` to a different folder on Connect, e.g. `{ "Survey control": "Control" }`. |
 | `collectors[].designSubPath` | Design subfolder under `deviceProjectPath`, e.g. `Design`. |
 | `collectors[].exportSubPath` | Export subfolder under `deviceProjectPath`, e.g. `Exports`. |
 | `collectors[].designExtensions` | Types pushed. `.xml` is content-checked and only sent when it is LandXML. |
 | `collectors[].exportExtensions` | Types pulled. Include `.jxl` to bring scans with their `<name> Files` folder. |
 | `collectors[].excludeFolders` | Folder **names** skipped at any depth, case-insensitive. Defaults `[ "SUPERSEDED" ]`; `[]` excludes nothing. |
-| `collectors[].prune` | Design leg only. `true` makes the collector's design folder an exact mirror, deleting what the source lacks. Defaults `true`. |
+| `collectors[].prune` | Design leg only. `true` makes the collector's design folder an exact mirror, deleting what the source lacks. Defaults `true`. On a Connect target only design file types are deleted and folders never are. |
 | `collectors[].exportCollision` | `"prefix"` (default), `"deviceSubfolder"`, or `"overwrite"`. Routes carry their own `collision`, which wins — except on a USB stick, where this wins, and should be `"overwrite"` because the tablets have already named their files. |
 | `mtp.retries` | Extra attempts per file after the first (default 2). |
 | `mtp.verifyAfterUpload` | Re-read the on-device size and confirm it matches (default true). |
