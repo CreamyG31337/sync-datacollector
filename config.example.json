@@ -109,6 +109,29 @@
       "excludeFolders": [ "SUPERSEDED" ],
       "prune": true,
       "exportCollision": "overwrite"
+    },
+    {
+      "_note": "A Trimble Connect project as a collector - the one collector written by hand, since Detect cannot find a cloud project. Read the Check before the first Sync: it lists every file prune would delete. serial is any id unique among your collectors. pushOnly: designs go up, nothing comes back. On Connect, prune deletes only design file types the source no longer has and never deletes folders (scans and jobs may exist only there). Sign-in is a browser Trimble ID login; the session is stored DPAPI-encrypted per Windows user, never in this file. The IDs below are placeholders.",
+      "serial": "TC-EXAMPLE",
+      "name": "Connect",
+      "model": "Trimble Connect",
+      "type": "connect",
+      "pushOnly": true,
+      "designSubPath": "Design",
+      "exportSubPath": "Exports",
+      "designExtensions": [ ".csv", ".dxf", ".xml", ".ttm", ".rxl" ],
+      "exportExtensions": [ ".job", ".jxl", ".csv", ".dxf", ".rxl", ".xml", ".ttm" ],
+      "excludeFolders": [ "SUPERSEDED" ],
+      "prune": true,
+      "exportCollision": "prefix",
+      "connect": {
+        "clientId": "00000000-0000-0000-0000-000000000000",
+        "projectId": "ExampleProjectId",
+        "rootFolderId": "ExampleFolderId",
+        "region": "us",
+        "redirectPort": 8765,
+        "extraDesignPaths": { "Survey control": "Control" }
+      }
     }
   ],
 

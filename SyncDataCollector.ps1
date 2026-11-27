@@ -4,10 +4,12 @@
 
     - One-way push only (source -> collector). Never deletes on the target.
     - Copies only .csv / .dxf by default (configurable per profile).
-    - Two target types:
-        * "folder" : any drive-letter / UNC / local path (USB stick, collector's internal disk).
-        * "mtp"    : an MTP device (over USB), driven through the Windows Shell namespace
-                     (what Explorer uses) + IFileOperation -- no third-party library.
+    - Three target types:
+        * "folder"  : any drive-letter / UNC / local path (USB stick, collector's internal disk).
+        * "mtp"     : an MTP device (over USB), driven through the Windows Shell namespace
+                      (what Explorer uses) + IFileOperation -- no third-party library.
+        * "connect" : a Trimble Connect project over Core API v2 with OAuth 2.0 Serial PKCE
+                      and DPAPI-encrypted user tokens -- no third-party library.
     - Mirrors the source subfolder tree under the destination.
     - Copies only new or changed files (size differs, or source newer than target).
     - Re-checks the live target every run; it never trusts a cached manifest.
@@ -280,11 +282,13 @@ function Load-Config {
                     $xc = if ($_.PSObject.Properties['exportCollision'] -and $_.exportCollision) { [string]$_.exportCollision } else { 'prefix' }
                     $jr = if ($_.PSObject.Properties['jobRetentionDays']) { [int]$_.jobRetentionDays } else { (Get-Defaults).jobRetentionDays }
                     $rp = if ($_.PSObject.Properties['proofReceipt']) { [string]$_.proofReceipt } else { '' }
+                    $po = if ($_.PSObject.Properties['pushOnly']) { [bool]$_.pushOnly } else { $false }
+                    $cc = if ($_.PSObject.Properties['connect']) { $_.connect } else { $null }
                     New-Collector -Serial $_.serial -Name $_.name -Model $_.model -Type $_.type `
                         -DesignSubPath $_.designSubPath -ExportSubPath $_.exportSubPath `
                         -DesignExtensions @($_.designExtensions) -ExportExtensions @($_.exportExtensions) `
                         -ExcludeFolders $ec -Prune $pr -ExportCollision $xc -JobRetentionDays $jr `
-                        -ProofReceipt $rp
+                        -ProofReceipt $rp -PushOnly $po -Connect $cc
                 })
             }
             # Shared baseline for collector settings. Always normalised to a
@@ -676,11 +680,600 @@ function Confirm-PathDrive {
 }
 
 # --------------------------------------------------------------------------
-# Target providers -- a small interface parameterised by $Kind ('fs'|'mtp') so
-# either the source or the destination can be MTP (push vs pull).
-#   $ctx = @{ DeviceName=..; Settings=..; FolderCache=@{} }
+# Trimble Connect Core API v2 + OAuth 2.0 Serial PKCE
+#
+# Uses stock .NET Framework 4.8 (System.Security DPAPI, System.Net.Http,
+# TcpListener on localhost -- no admin rights, no URLACL, no client secret).
+# Tokens are cached per-user encrypted via Windows DPAPI under %LOCALAPPDATA%,
+# never written to config.json.
+# --------------------------------------------------------------------------
+$script:ConnectTypesLoaded = $false
+$script:ConnectTokenMem    = @{}
+
+function Ensure-ConnectTypes {
+    if ($script:ConnectTypesLoaded) { return }
+    Add-Type -AssemblyName System.Security
+    Add-Type -AssemblyName System.Web
+    Add-Type -AssemblyName System.Net.Http
+    try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::SystemDefault }
+    catch { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 }
+    $script:ConnectTypesLoaded = $true
+}
+
+function Get-ConnectBaseUrl {
+    param([string]$Region)
+    $r = ([string]$Region).Trim()
+    if ($r -match '^https?://') { return $r.TrimEnd('/') }
+    switch ($r.ToLowerInvariant()) {
+        'eu'           { return 'https://eu.api.trimble.com/connect/v2' }
+        'europe'       { return 'https://eu.api.trimble.com/connect/v2' }
+        'eu-gb'        { return 'https://eu-gb.api.trimble.com/connect/v2' }
+        'uk'           { return 'https://eu-gb.api.trimble.com/connect/v2' }
+        'ap-sg'        { return 'https://ap-sg.api.trimble.com/connect/v2' }
+        'asia'         { return 'https://ap-sg.api.trimble.com/connect/v2' }
+        'ap-au'        { return 'https://ap-au.api.trimble.com/connect/v2' }
+        'australia'    { return 'https://ap-au.api.trimble.com/connect/v2' }
+        default        { return 'https://us-east.api.trimble.com/connect/v2' }
+    }
+}
+
+function ConvertTo-Base64Url {
+    param([byte[]]$Bytes)
+    return [Convert]::ToBase64String($Bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_')
+}
+
+function New-PkcePair {
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    try {
+        $buf = New-Object byte[] 48
+        $rng.GetBytes($buf)
+    }
+    finally { $rng.Dispose() }
+    $verifier = ConvertTo-Base64Url $buf
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try { $hash = $sha.ComputeHash([System.Text.Encoding]::ASCII.GetBytes($verifier)) }
+    finally { $sha.Dispose() }
+    return @{ Verifier = $verifier; Challenge = (ConvertTo-Base64Url $hash) }
+}
+
+function Get-ConnectTokenPath {
+    param([string]$ClientId)
+    $safe = ($ClientId -replace '[^A-Za-z0-9_-]', '')
+    $dir = Join-Path $env:LOCALAPPDATA 'SyncDataCollector'
+    return (Join-Path $dir ("connect-token-$safe.dat"))
+}
+
+function Read-ConnectTokenCache {
+    param([string]$ClientId)
+    Ensure-ConnectTypes
+    $path = Get-ConnectTokenPath $ClientId
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return $null }
+    try {
+        $enc = [System.IO.File]::ReadAllBytes($path)
+        $plain = [System.Security.Cryptography.ProtectedData]::Unprotect(
+            $enc, $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)
+        return ([System.Text.Encoding]::UTF8.GetString($plain) | ConvertFrom-Json)
+    }
+    catch { return $null }
+}
+
+function Write-ConnectTokenCache {
+    param([string]$ClientId, $Record)
+    Ensure-ConnectTypes
+    $path = Get-ConnectTokenPath $ClientId
+    $dir = Split-Path -Parent $path
+    if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+    $json = $Record | ConvertTo-Json -Compress
+    $enc = [System.Security.Cryptography.ProtectedData]::Protect(
+        [System.Text.Encoding]::UTF8.GetBytes($json), $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)
+    $tmp = $path + '.tmp'
+    [System.IO.File]::WriteAllBytes($tmp, $enc)
+    if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Force }
+    [System.IO.File]::Move($tmp, $path)
+    $script:ConnectTokenMem[$ClientId] = $Record
+}
+
+function Read-WebErrorBody {
+    param($Exception)
+    try {
+        if ($Exception.Response) {
+            $sr = New-Object System.IO.StreamReader($Exception.Response.GetResponseStream())
+            try { return $sr.ReadToEnd() } finally { $sr.Dispose() }
+        }
+    }
+    catch {}
+    return ''
+}
+
+function Invoke-ConnectInteractiveAuth {
+    param([string]$ClientId, [string]$Scope, [int]$RedirectPort, [scriptblock]$OnLog)
+    Ensure-ConnectTypes
+    if ($RedirectPort -le 0) { $RedirectPort = 8765 }
+    if (-not $Scope) { $Scope = 'openid connect' }
+    $redirectUri = "http://localhost:$RedirectPort/callback"
+
+    $pkce1 = New-PkcePair
+    $pkce2 = New-PkcePair
+    $state = (New-PkcePair).Verifier.Substring(0, 24)
+
+    $authUrl = 'https://id.trimble.com/oauth/authorize' +
+        '?response_type=code' +
+        '&client_id=' + [Uri]::EscapeDataString($ClientId) +
+        '&redirect_uri=' + [Uri]::EscapeDataString($redirectUri) +
+        '&scope=' + [Uri]::EscapeDataString($Scope) +
+        '&code_challenge=' + [Uri]::EscapeDataString($pkce1.Challenge) +
+        '&code_challenge_method=S256' +
+        '&state=' + [Uri]::EscapeDataString($state)
+
+    $listeners = @()
+    $l4 = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Loopback, $RedirectPort)
+    $l4.Start()
+    $listeners += $l4
+    try {
+        $l6 = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::IPv6Loopback, $RedirectPort)
+        $l6.Start()
+        $listeners += $l6
+    }
+    catch {}
+
+    if ($OnLog) { & $OnLog 'Opening browser for Trimble Connect sign-in...' 'INFO' }
+    $code = $null; $errMsg = $null
+    try {
+        if ($env:SDC_AUTH_URL_FILE) {
+            [System.IO.File]::WriteAllText($env:SDC_AUTH_URL_FILE, $authUrl, [System.Text.Encoding]::UTF8)
+        }
+        else {
+            Start-Process $authUrl | Out-Null
+        }
+        $deadline = (Get-Date).AddSeconds(180)
+        while ((Get-Date) -lt $deadline -and -not $code -and -not $errMsg) {
+            if ($script:CancelRequested) { throw 'Trimble Connect sign-in cancelled.' }
+            $accepted = $null
+            foreach ($l in $listeners) {
+                if ($l.Pending()) { $accepted = $l.AcceptTcpClient(); break }
+            }
+            if (-not $accepted) {
+                if ($env:SDC_NOGUI -ne '1') {
+                    try { [System.Windows.Forms.Application]::DoEvents() } catch {}
+                }
+                Start-Sleep -Milliseconds 100
+                continue
+            }
+            try {
+                $stream = $accepted.GetStream()
+                $stream.ReadTimeout = 5000
+                $reader = New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::ASCII, $false, 4096, $true)
+                $reqLine = $reader.ReadLine()
+                while ($true) {
+                    $hdr = $reader.ReadLine()
+                    if ([string]::IsNullOrEmpty($hdr)) { break }
+                }
+                $reqPath = ''
+                if ($reqLine -match '^GET\s+(\S+)\s+HTTP/') { $reqPath = $Matches[1] }
+                $bodyHtml = '<html><body>Not found</body></html>'
+                if ($reqPath -like '/callback*') {
+                    $qIdx = $reqPath.IndexOf('?')
+                    if ($qIdx -ge 0) {
+                        $qs = [System.Web.HttpUtility]::ParseQueryString($reqPath.Substring($qIdx + 1))
+                        if ($qs['error']) {
+                            $errMsg = "Trimble sign-in error: $($qs['error']) $($qs['error_description'])"
+                            # The text comes from the redirect URL: escape it before echoing it into HTML.
+                            $bodyHtml = "<html><body><h2>Sign-in failed</h2><p>$([System.Web.HttpUtility]::HtmlEncode($errMsg))</p></body></html>"
+                        }
+                        elseif ($qs['state'] -ne $state) {
+                            $errMsg = 'Trimble sign-in state mismatch.'
+                            $bodyHtml = '<html><body><h2>Sign-in failed</h2><p>State mismatch.</p></body></html>'
+                        }
+                        elseif ($qs['code']) {
+                            $code = $qs['code']
+                            $bodyHtml = '<html><body style="font-family:Segoe UI,sans-serif;padding:24px"><h2>Signed in to Trimble Connect</h2><p>You can close this tab and return to Sync Data Collector.</p></body></html>'
+                        }
+                    }
+                }
+                $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($bodyHtml)
+                $respHdr = "HTTP/1.1 200 OK`r`nContent-Type: text/html; charset=utf-8`r`nContent-Length: $($bodyBytes.Length)`r`nConnection: close`r`n`r`n"
+                $hdrBytes = [System.Text.Encoding]::ASCII.GetBytes($respHdr)
+                $stream.Write($hdrBytes, 0, $hdrBytes.Length)
+                $stream.Write($bodyBytes, 0, $bodyBytes.Length)
+                $stream.Flush()
+            }
+            catch {
+                # Browsers open speculative connections that never send a request (the
+                # read times out) or drop them half-way. One bad connection must not end
+                # the sign-in: drop it and keep listening for the real callback.
+            }
+            finally { $accepted.Close() }
+        }
+    }
+    finally {
+        foreach ($l in $listeners) { try { $l.Stop() } catch {} }
+    }
+
+    if ($errMsg) { throw $errMsg }
+    if (-not $code) { throw 'Timed out waiting for Trimble Connect sign-in in browser.' }
+
+    $tokenBody = @{
+        grant_type            = 'authorization_code'
+        client_id             = $ClientId
+        code                  = $code
+        redirect_uri          = $redirectUri
+        code_verifier         = $pkce1.Verifier
+        code_challenge        = $pkce2.Challenge
+        code_challenge_method = 'S256'
+    }
+    try {
+        $tok = Invoke-RestMethod -Uri 'https://id.trimble.com/oauth/token' -Method Post `
+            -ContentType 'application/x-www-form-urlencoded' -Headers @{ Accept = 'application/json' } -Body $tokenBody
+    }
+    catch {
+        $detail = Read-WebErrorBody $_.Exception
+        throw "Trimble token exchange failed: $($_.Exception.Message) $detail"
+    }
+    $expSec = if ($tok.expires_in) { [int]$tok.expires_in } else { 3600 }
+    $rec = [pscustomobject]@{
+        client_id     = $ClientId
+        scope         = $Scope
+        access_token  = [string]$tok.access_token
+        refresh_token = [string]$tok.refresh_token
+        next_verifier = $pkce2.Verifier
+        expires_utc   = [datetime]::UtcNow.AddSeconds($expSec).ToString('o')
+    }
+    Write-ConnectTokenCache $ClientId $rec
+    if ($OnLog) { & $OnLog 'Signed in to Trimble Connect.' 'INFO' }
+    return $rec
+}
+
+function Invoke-ConnectRefreshToken {
+    param([string]$ClientId, $Cached, [scriptblock]$OnLog)
+    Ensure-ConnectTypes
+    if (-not $Cached -or -not $Cached.refresh_token -or -not $Cached.next_verifier) { return $null }
+    $pkceNext = New-PkcePair
+    $body = @{
+        grant_type            = 'refresh_token'
+        client_id             = $ClientId
+        refresh_token         = [string]$Cached.refresh_token
+        code_verifier         = [string]$Cached.next_verifier
+        code_challenge        = $pkceNext.Challenge
+        code_challenge_method = 'S256'
+    }
+    try {
+        $tok = Invoke-RestMethod -Uri 'https://id.trimble.com/oauth/token' -Method Post `
+            -ContentType 'application/x-www-form-urlencoded' -Headers @{ Accept = 'application/json' } -Body $body
+        $expSec = if ($tok.expires_in) { [int]$tok.expires_in } else { 3600 }
+        $rec = [pscustomobject]@{
+            client_id     = $ClientId
+            scope         = [string]$Cached.scope
+            access_token  = [string]$tok.access_token
+            refresh_token = $(if ($tok.refresh_token) { [string]$tok.refresh_token } else { [string]$Cached.refresh_token })
+            next_verifier = $pkceNext.Verifier
+            expires_utc   = [datetime]::UtcNow.AddSeconds($expSec).ToString('o')
+        }
+        Write-ConnectTokenCache $ClientId $rec
+        if ($OnLog) { & $OnLog 'Refreshed Trimble Connect session.' 'INFO' }
+        return $rec
+    }
+    catch {
+        if ($OnLog) {
+            $detail = Read-WebErrorBody $_.Exception
+            & $OnLog ("Trimble Connect session refresh failed: $($_.Exception.Message) $detail").Trim() 'WARN'
+        }
+        return $null
+    }
+}
+
+function Get-ConnectAccessToken {
+    param($ConnectCfg, [scriptblock]$OnLog, [switch]$ForceRefresh)
+    Ensure-ConnectTypes
+    $cid = [string]$ConnectCfg.clientId
+    if (-not $cid) { throw 'Trimble Connect clientId is not configured.' }
+    $scope = if ($ConnectCfg.PSObject.Properties['scope'] -and $ConnectCfg.scope) { [string]$ConnectCfg.scope } else { 'openid connect' }
+    $port  = if ($ConnectCfg.PSObject.Properties['redirectPort'] -and $ConnectCfg.redirectPort) { [int]$ConnectCfg.redirectPort } else { 8765 }
+
+    $cached = $null
+    if ($script:ConnectTokenMem.ContainsKey($cid)) { $cached = $script:ConnectTokenMem[$cid] }
+    else {
+        $cached = Read-ConnectTokenCache $cid
+        if ($cached) { $script:ConnectTokenMem[$cid] = $cached }
+    }
+
+    if (-not $ForceRefresh -and $cached -and $cached.access_token) {
+        $exp = Parse-Utc ([string]$cached.expires_utc)
+        if ($exp -and $exp -gt [datetime]::UtcNow.AddSeconds(120)) {
+            return [string]$cached.access_token
+        }
+    }
+    if ($cached -and $cached.refresh_token -and $cached.next_verifier) {
+        $refreshed = Invoke-ConnectRefreshToken $cid $cached $OnLog
+        if ($refreshed -and $refreshed.access_token) { return [string]$refreshed.access_token }
+    }
+    # A browser sign-in needs someone at the screen. Headless (SDC_NOGUI) or a
+    # non-interactive session would just sit for 3 minutes waiting, so say why instead.
+    if ($env:SDC_NOGUI -eq '1' -or -not [Environment]::UserInteractive) {
+        throw ('Trimble Connect sign-in needed: the saved session is missing or expired. ' +
+               'Open Sync Data Collector and sign in once, then run again.')
+    }
+    $fresh = Invoke-ConnectInteractiveAuth $cid $scope $port $OnLog
+    return [string]$fresh.access_token
+}
+
+function Invoke-ConnectRest {
+    param($Ctx, [string]$Method, [string]$PathOrUrl, $BodyObj = $null, [switch]$RawNoBody)
+    Ensure-ConnectTypes
+    $base = Get-ConnectBaseUrl ([string]$Ctx.Connect.region)
+    $uri  = if ($PathOrUrl -match '^https?://') { $PathOrUrl } else { $base + '/' + $PathOrUrl.TrimStart('/') }
+
+    for ($tryAuth = 0; $tryAuth -lt 2; $tryAuth++) {
+        $tok = if ($tryAuth -eq 0 -and $Ctx.ConnectToken) { [string]$Ctx.ConnectToken } else {
+            $t = Get-ConnectAccessToken $Ctx.Connect $Ctx.OnLog -ForceRefresh:($tryAuth -gt 0)
+            $Ctx.ConnectToken = $t
+            $t
+        }
+        $headers = @{ Authorization = "Bearer $tok"; Accept = 'application/json' }
+        $params = @{ Uri = $uri; Method = $Method; Headers = $headers }
+        if ($null -ne $BodyObj) {
+            $json = $BodyObj | ConvertTo-Json -Depth 6 -Compress
+            $params['ContentType'] = 'application/json; charset=utf-8'
+            $params['Body'] = [System.Text.Encoding]::UTF8.GetBytes($json)
+        }
+        try {
+            return (Invoke-RestMethod @params)
+        }
+        catch {
+            $status = 0
+            try { $status = [int]$_.Exception.Response.StatusCode } catch {}
+            if ($status -eq 401 -and $tryAuth -eq 0) {
+                $Ctx.ConnectToken = ''
+                continue
+            }
+            $detail = Read-WebErrorBody $_.Exception
+            throw ("Trimble Connect $Method $PathOrUrl failed (HTTP $status): $($_.Exception.Message) $detail").Trim()
+        }
+    }
+}
+
+function Split-ConnectPath {
+    param($Ctx, [string]$LogicalPath)
+    $p = ([string]$LogicalPath).Trim().Replace('/', '\').Trim('\')
+    if (-not $p) { return @() }
+    $segs = @($p -split '\\' | Where-Object { $_ -ne '' })
+    if ($segs.Count -gt 0 -and $segs[0] -match '^TC:') {
+        if ($segs.Count -eq 1) { return @() }
+        return @($segs[1..($segs.Count - 1)])
+    }
+    return $segs
+}
+
+function Parse-ConnectTimestamp {
+    param([string]$Text)
+    if ([string]::IsNullOrWhiteSpace($Text)) { return $null }
+    try {
+        return ([System.DateTimeOffset]::Parse($Text, [System.Globalization.CultureInfo]::InvariantCulture).UtcDateTime)
+    }
+    catch { return (Parse-Utc $Text) }
+}
+
+# Connect v2 items carry updatedAt / createdAt (live check 2026-11-26), not modifiedOn.
+# A missing date silently disables the "source newer" test, so a same-size edit to a
+# design file would never be uploaded -- take the first date the item has.
+function Get-ConnectItemMtime {
+    param($Item)
+    foreach ($f in 'updatedAt', 'modifiedOn', 'createdAt') {
+        if ($Item.PSObject.Properties[$f] -and $Item.$f) {
+            $t = Parse-ConnectTimestamp ([string]$Item.$f)
+            if ($t) { return $t }
+        }
+    }
+    return $null
+}
+
+function Get-ConnectFolderItems {
+    param($Ctx, [string]$FolderId)
+    if ($Ctx.ConnectCache.ContainsKey($FolderId)) { return $Ctx.ConnectCache[$FolderId] }
+    $list = New-Object System.Collections.ArrayList
+    $byName = @{}
+    $url = "folders/$FolderId/items?pageSize=500&fields=size"
+    while ($url) {
+        $resp = Invoke-ConnectRest $Ctx 'Get' $url
+        $items = if ($resp -and $resp.PSObject.Properties['items']) { @($resp.items) } else { @($resp) }
+        foreach ($it in $items) {
+            if (-not $it -or -not $it.name) { continue }
+            [void]$list.Add($it)
+            $k = ([string]$it.name).ToLowerInvariant()
+            # Prefer FILE/FOLDER match; last entry wins only if duplicate names ever appear
+            $byName[$k] = $it
+        }
+        $next = ''
+        if ($resp -and $resp.PSObject.Properties['links'] -and $resp.links -and
+            $resp.links.PSObject.Properties['next'] -and $resp.links.next -and
+            $resp.links.next.PSObject.Properties['href']) {
+            $next = [string]$resp.links.next.href
+        }
+        $url = $next
+    }
+    $entry = @{ List = @($list); ByName = $byName }
+    $Ctx.ConnectCache[$FolderId] = $entry
+    return $entry
+}
+
+function Resolve-ConnectDir {
+    param($Ctx, [string]$LogicalDirPath, [bool]$CreateMissing)
+    $curId = [string]$Ctx.Connect.rootFolderId
+    if (-not $curId) { throw 'Trimble Connect rootFolderId is not configured.' }
+    $segs = @(Split-ConnectPath $Ctx $LogicalDirPath)
+    foreach ($seg in $segs) {
+        $children = Get-ConnectFolderItems $Ctx $curId
+        $k = $seg.ToLowerInvariant()
+        $hit = $children.ByName[$k]
+        if ($hit -and ([string]$hit.type).ToUpperInvariant() -eq 'FOLDER') {
+            $curId = [string]$hit.id
+            continue
+        }
+        if (-not $CreateMissing) { return '' }
+        $created = Invoke-ConnectRest $Ctx 'Post' 'folders' @{ name = $seg; parentId = $curId }
+        $Ctx.ConnectCache.Remove($curId)
+        $curId = [string]$created.id
+    }
+    return $curId
+}
+
+function Get-ConnectInfo {
+    param($Ctx, [string]$LogicalFilePath)
+    $segs = @(Split-ConnectPath $Ctx $LogicalFilePath)
+    if ($segs.Count -eq 0) { return $null }
+    $leaf = $segs[$segs.Count - 1]
+    $parentLogical = if ($segs.Count -gt 1) { (@($segs[0..($segs.Count - 2)]) -join '\') } else { '' }
+    $parentId = Resolve-ConnectDir $Ctx $parentLogical $false
+    if (-not $parentId) { return $null }
+    $children = Get-ConnectFolderItems $Ctx $parentId
+    $it = $children.ByName[$leaf.ToLowerInvariant()]
+    if (-not $it -or ([string]$it.type).ToUpperInvariant() -ne 'FILE') { return $null }
+    $sz = if ($it.PSObject.Properties['size'] -and $null -ne $it.size) { [long]$it.size } else { [long]0 }
+    $mt = Get-ConnectItemMtime $it
+    return @{ Length = $sz; Mtime = $mt; Item = $it; ParentId = $parentId }
+}
+
+function Get-ConnectInventory {
+    param($Ctx, [string]$LogicalRootPath)
+    $files = New-Object System.Collections.ArrayList
+    $dirs  = New-Object System.Collections.ArrayList
+    $rootId = Resolve-ConnectDir $Ctx $LogicalRootPath $false
+    if (-not $rootId) { return @{ Files = @(); Dirs = @() } }
+
+    $stack = New-Object System.Collections.Stack
+    $stack.Push(@{ FolderId = $rootId; Prefix = '' })
+    while ($stack.Count -gt 0) {
+        $cur = $stack.Pop()
+        $children = Get-ConnectFolderItems $Ctx $cur.FolderId
+        foreach ($it in $children.List) {
+            $nm = [string]$it.name
+            if (-not $nm) { continue }
+            $rel = if ($cur.Prefix) { $cur.Prefix + '\' + $nm } else { $nm }
+            $tp  = ([string]$it.type).ToUpperInvariant()
+            if ($tp -eq 'FOLDER') {
+                [void]$dirs.Add($rel)
+                $stack.Push(@{ FolderId = [string]$it.id; Prefix = $rel })
+            }
+            elseif ($tp -eq 'FILE') {
+                $sz = if ($it.PSObject.Properties['size'] -and $null -ne $it.size) { [long]$it.size } else { [long]0 }
+                $mt = Get-ConnectItemMtime $it
+                $ext = ([System.IO.Path]::GetExtension($nm)).ToLowerInvariant()
+                [void]$files.Add(@{ Rel = $rel; Length = $sz; MtimeUtc = $mt; Item = $it; Ext = $ext })
+            }
+        }
+    }
+    return @{ Files = @($files); Dirs = @($dirs) }
+}
+
+function Copy-FileConnect {
+    param($Ctx, [string]$SourceFile, [string]$DestPath, [bool]$Verify)
+    Ensure-ConnectTypes
+    $srcLen = [long](Get-Item -LiteralPath $SourceFile).Length
+    if ($srcLen -gt 5368709120L) { throw "File exceeds 5 GB single-part Trimble Connect upload limit: '$SourceFile'" }
+
+    $segs = @(Split-ConnectPath $Ctx $DestPath)
+    if ($segs.Count -eq 0) { throw "Invalid Trimble Connect destination path '$DestPath'." }
+    $leaf = $segs[$segs.Count - 1]
+    $parentLogical = if ($segs.Count -gt 1) { (@($segs[0..($segs.Count - 2)]) -join '\') } else { '' }
+    $parentId = Resolve-ConnectDir $Ctx $parentLogical $true
+
+    $init = Invoke-ConnectRest $Ctx 'Post' ("files/fs/upload?parentId=$([Uri]::EscapeDataString($parentId))&parentType=FOLDER") @{ name = $leaf }
+    $uploadId = [string]$init.uploadId
+    $putUrl = ''
+    if ($init.PSObject.Properties['contents'] -and @($init.contents).Count -gt 0) {
+        $putUrl = [string](@($init.contents)[0].url)
+    }
+    if (-not $uploadId -or -not $putUrl) { throw "Trimble Connect did not return an upload URL for '$leaf'." }
+
+    # Stream raw bytes straight to the pre-signed URL with NO Authorization header.
+    $http = New-Object System.Net.Http.HttpClient
+    $http.Timeout = [TimeSpan]::FromMinutes(15)
+    $fs = [System.IO.File]::OpenRead($SourceFile)
+    try {
+        $content = New-Object System.Net.Http.StreamContent($fs)
+        $resp = $http.PutAsync($putUrl, $content).GetAwaiter().GetResult()
+        if (-not $resp.IsSuccessStatusCode) {
+            $errBody = $resp.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+            throw ("Pre-signed upload failed for '$leaf' (HTTP {0}): {1}" -f [int]$resp.StatusCode, $errBody)
+        }
+    }
+    finally {
+        $fs.Dispose()
+        $http.Dispose()
+    }
+
+    # Wait for Connect to register the uploaded version.
+    $status = ''
+    for ($poll = 0; $poll -lt 5; $poll++) {
+        $st = Invoke-ConnectRest $Ctx 'Get' ("files/fs/upload?uploadId=$([Uri]::EscapeDataString($uploadId))&wait=true")
+        $status = ([string]$st.status).ToUpperInvariant()
+        if ($status -in @('DONE', 'AVAILABLE', 'COMPLETED', 'UPLOADED')) { break }
+        if ($status -in @('FAILED', 'EXPIRED', 'ERROR')) {
+            throw ("Trimble Connect upload $status for '$leaf': $($st.errorReason)")
+        }
+        Start-Sleep -Seconds 2
+    }
+    if ($status -and $status -notin @('DONE', 'AVAILABLE', 'COMPLETED', 'UPLOADED')) {
+        throw "Trimble Connect upload did not finish for '$leaf' (status: $status)."
+    }
+
+    $Ctx.ConnectCache.Remove($parentId)
+    if ($Verify) {
+        $info = Get-ConnectInfo $Ctx $DestPath
+        $sz = if ($info) { [long]$info.Length } else { -1 }
+        if ($sz -ne $srcLen) { throw "size mismatch after upload (Connect $sz vs source $srcLen bytes)" }
+    }
+}
+
+function Copy-FileConnectDownload {
+    param($Ctx, $ConnectItem, [string]$DestLocalPath, [long]$SrcLen, [bool]$Verify)
+    Ensure-ConnectTypes
+    $fileId = [string]$ConnectItem.id
+    if (-not $fileId) { throw 'Trimble Connect download missing file id.' }
+    $dl = Invoke-ConnectRest $Ctx 'Get' ("files/fs/$([Uri]::EscapeDataString($fileId))/downloadurl")
+    $url = [string]$dl.url
+    if (-not $url) { throw "Trimble Connect returned no download URL for file '$fileId'." }
+
+    $dir = Split-Path -Parent $DestLocalPath
+    if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+    $tmpPath = $DestLocalPath + $script:TempSuffix
+    if (Test-Path -LiteralPath $tmpPath) { Remove-Item -LiteralPath $tmpPath -Force -ErrorAction SilentlyContinue }
+
+    $http = New-Object System.Net.Http.HttpClient
+    $http.Timeout = [TimeSpan]::FromMinutes(15)
+    try {
+        $resp = $http.GetAsync($url, [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead).GetAwaiter().GetResult()
+        if (-not $resp.IsSuccessStatusCode) {
+            throw ("Download failed (HTTP {0})." -f [int]$resp.StatusCode)
+        }
+        $inStream = $resp.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
+        $outStream = [System.IO.File]::Create($tmpPath)
+        try { $inStream.CopyTo($outStream) }
+        finally {
+            $outStream.Dispose()
+            $inStream.Dispose()
+        }
+    }
+    finally { $http.Dispose() }
+
+    if ($Verify -and $SrcLen -ge 0) {
+        $dstLen = [long](Get-Item -LiteralPath $tmpPath).Length
+        if ($dstLen -ne $SrcLen) {
+            Remove-Item -LiteralPath $tmpPath -Force -ErrorAction SilentlyContinue
+            throw "incomplete download ($dstLen of $SrcLen bytes)"
+        }
+    }
+    if (Test-Path -LiteralPath $DestLocalPath) { Remove-Item -LiteralPath $DestLocalPath -Force }
+    [System.IO.File]::Move($tmpPath, $DestLocalPath)
+}
+
+# --------------------------------------------------------------------------
+# Target abstraction (folder | mtp | connect)
+#
+# Both push (PC -> collector) and pull (collector -> PC) run through these, so
+# either the source or the destination can be MTP or Connect (push vs pull).
+#   $ctx = @{ DeviceName=..; Settings=..; FolderCache=@{}; ConnectCache=@{} }
 # Paths are the *logical* path: fs -> a normal Windows path; mtp -> an on-device
-# path under the device. MTP is driven via the Windows Shell + IFileOperation.
+# path under the device; connect -> TC:<projectId>\... under rootFolderId.
 # All returned Mtime values are UTC so push/pull comparisons are apples-to-apples.
 # --------------------------------------------------------------------------
 function Target-EnsureDir {
@@ -690,19 +1283,27 @@ function Target-EnsureDir {
             New-Item -ItemType Directory -Force -Path $DirPath | Out-Null
         }
     }
+    elseif ($Kind -eq 'connect') {
+        [void](Resolve-ConnectDir $Ctx $DirPath $true)
+    }
     else {
         [void](Resolve-MtpDir $Ctx $DirPath $true)
     }
 }
 
 # Returns @{ Length = <long>; Mtime = <datetime UTC|null> }. Length = -1 means the
-# file does not exist at the target (one enumeration for MTP).
+# file does not exist at the target (one enumeration for MTP; cached per folder for Connect).
 function Target-GetInfo {
     param($Ctx, [string]$Kind, [string]$FilePath)
     if ($Kind -eq 'fs') {
         if (-not (Test-Path -LiteralPath $FilePath -PathType Leaf)) { return @{ Length = -1; Mtime = $null } }
         $i = Get-Item -LiteralPath $FilePath
         return @{ Length = [long]$i.Length; Mtime = [datetime]$i.LastWriteTimeUtc }
+    }
+    if ($Kind -eq 'connect') {
+        $info = Get-ConnectInfo $Ctx $FilePath
+        if (-not $info) { return @{ Length = -1; Mtime = $null } }
+        return @{ Length = $info.Length; Mtime = $info.Mtime }
     }
     $info = Get-MtpInfo $Ctx $FilePath
     if (-not $info) { return @{ Length = -1; Mtime = $null } }
@@ -822,10 +1423,12 @@ function Invoke-CopyWithRetry {
     for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
         try {
             switch ($CopyMode) {
-                'fs2fs'  { Copy-FileFolder $Src $DestPath $verify }
-                'fs2mtp' { Copy-FileMtp $Ctx $Src $DestPath $verify }
-                'mtp2fs' { Copy-FileMtpDownload $Ctx $Src $DestPath $SrcLen $verify }
-                default  { throw "unknown copy mode '$CopyMode'" }
+                'fs2fs'      { Copy-FileFolder $Src $DestPath $verify }
+                'fs2mtp'     { Copy-FileMtp $Ctx $Src $DestPath $verify }
+                'mtp2fs'     { Copy-FileMtpDownload $Ctx $Src $DestPath $SrcLen $verify }
+                'fs2connect' { Copy-FileConnect $Ctx $Src $DestPath $verify }
+                'connect2fs' { Copy-FileConnectDownload $Ctx $Src $DestPath $SrcLen $verify }
+                default      { throw "unknown copy mode '$CopyMode'" }
             }
             return
         }
@@ -833,7 +1436,8 @@ function Invoke-CopyWithRetry {
             if ($attempt -lt $maxAttempts) {
                 & $OnLog ("  attempt $attempt/$maxAttempts failed: $($_.Exception.Message)") 'WARN'
                 Start-Sleep -Milliseconds (600 * $attempt)
-                if ($CopyMode -ne 'fs2fs') { $Ctx.FolderCache.Clear() }
+                if ($CopyMode -like '*mtp*')     { $Ctx.FolderCache.Clear() }
+                if ($CopyMode -like '*connect*') { if ($Ctx.ConnectCache) { $Ctx.ConnectCache.Clear() } }
             }
             else { throw }
         }
@@ -1350,6 +1954,11 @@ function Get-TargetInventory {
         foreach ($f in $inv.Files) { $files += @{ Rel = $f.Rel; Length = $f.Length; Item = $null } }
         return @{ Files = $files; Dirs = @($inv.Dirs) }
     }
+    if ($Kind -eq 'connect') {
+        $inv = Get-ConnectInventory $Ctx $RootPath
+        foreach ($f in $inv.Files) { $files += @{ Rel = $f.Rel; Length = $f.Length; Item = $f.Item } }
+        return @{ Files = $files; Dirs = @($inv.Dirs) }
+    }
     $inv = Get-MtpInventory $Ctx $RootPath
     foreach ($f in $inv.Files) { $files += @{ Rel = $f.Rel; Length = $f.Length; Item = $f.Item } }
     return @{ Files = $files; Dirs = @($inv.Dirs) }
@@ -1359,6 +1968,23 @@ function Target-DeleteFile {
     param($Ctx, [string]$Kind, [string]$FilePath, $MtpItem)
     if ($Kind -eq 'fs') {
         if (Test-Path -LiteralPath $FilePath -PathType Leaf) { Remove-Item -LiteralPath $FilePath -Force }
+        return
+    }
+    if ($Kind -eq 'connect') {
+        $fileId = ''
+        $parentId = ''
+        if ($MtpItem -and $MtpItem.PSObject.Properties['id'] -and $MtpItem.id) {
+            $fileId = [string]$MtpItem.id
+            if ($MtpItem.PSObject.Properties['parentId']) { $parentId = [string]$MtpItem.parentId }
+        }
+        else {
+            $info = Get-ConnectInfo $Ctx $FilePath
+            if (-not $info) { return }
+            $fileId = [string]$info.Item.id
+            $parentId = [string]$info.ParentId
+        }
+        [void](Invoke-ConnectRest $Ctx 'Delete' ("files/$([Uri]::EscapeDataString($fileId))"))
+        if ($parentId) { $Ctx.ConnectCache.Remove($parentId) } else { $Ctx.ConnectCache.Clear() }
         return
     }
     Ensure-MtpInterop
@@ -1375,6 +2001,21 @@ function Target-DeleteDir {
     param($Ctx, [string]$Kind, [string]$DirPath)
     if ($Kind -eq 'fs') {
         if (Test-Path -LiteralPath $DirPath -PathType Container) { Remove-Item -LiteralPath $DirPath -Recurse -Force }
+        return
+    }
+    if ($Kind -eq 'connect') {
+        # Safety net: a Connect folder delete removes everything inside it, including
+        # files only Connect has. Prune already skips folders on Connect; this refuses
+        # anything but an empty folder should any other caller ask.
+        $fid = Resolve-ConnectDir $Ctx $DirPath $false
+        if ($fid) {
+            $Ctx.ConnectCache.Remove($fid)
+            if (@((Get-ConnectFolderItems $Ctx $fid).List).Count -gt 0) {
+                throw "Trimble Connect folder '$DirPath' is not empty; not deleting it."
+            }
+            [void](Invoke-ConnectRest $Ctx 'Delete' ("folders/$([Uri]::EscapeDataString($fid))"))
+            $Ctx.ConnectCache.Clear()
+        }
         return
     }
     Ensure-MtpInterop
@@ -1987,6 +2628,9 @@ function Format-DeviceChoice {
     if ([string]$Dev['Kind'] -eq 'folder' -and $Dev['Root']) {
         $name = ('{0} [USB {1}]' -f $name, ([string]$Dev.Root).TrimEnd('\'))
     }
+    elseif ([string]$Dev['Kind'] -eq 'connect') {
+        $name = ('{0} [Cloud]' -f $name)
+    }
     if ($friendly) { return ('{0} - {1} ({2})' -f $friendly, $name, $s) }
     return ('{0} ({1})' -f $name, $s)
 }
@@ -2057,6 +2701,7 @@ function New-DeviceMarker {
 # Read the marker at a target root. Returns a pscustomobject or $null; never throws.
 function Read-DeviceMarker {
     param($Ctx, [string]$Kind, [string]$RootPath)
+    if ($Kind -eq 'connect') { return $null }
     $path = $RootPath + '\' + $script:MarkerName
     try {
         if ($Kind -eq 'fs') {
@@ -2080,6 +2725,7 @@ function Read-DeviceMarker {
 # Write/refresh the marker at a target root. Best-effort; $true when it landed.
 function Write-DeviceMarker {
     param($Ctx, [string]$Kind, [string]$RootPath, [pscustomobject]$Marker)
+    if ($Kind -eq 'connect') { return $false }
     $path = $RootPath + '\' + $script:MarkerName
     try {
         $json = $Marker | ConvertTo-Json -Depth 6
@@ -2148,6 +2794,9 @@ function Update-SyncRecords {
     if ($Direction -eq 'pull') {
         & $OnLog 'Pull: no marker written to the export destination (it is shared; identity comes from the serial).' 'INFO'
     }
+    elseif ($DstKind -eq 'connect') {
+        & $OnLog 'Trimble Connect: no marker file uploaded (identity comes from the project ID).' 'INFO'
+    }
     else {
         $marker = New-DeviceMarker -DeviceId $deviceId -DeviceName $DeviceName -DeviceSerial $serial `
                     -FriendlyName (Get-DeviceFriendlyName $deviceId) -LastSync $last
@@ -2183,6 +2832,14 @@ function Test-CollectorReachable {
     param($Profile)
     $direction = 'push'
     if ($Profile.PSObject.Properties['direction'] -and $Profile.direction) { $direction = [string]$Profile.direction }
+
+    if ([string]$Profile.targetType -eq 'connect') {
+        $cc = if ($Profile.PSObject.Properties['connectConfig']) { $Profile.connectConfig } else { $null }
+        if (-not $cc -or -not $cc.clientId -or -not $cc.projectId -or -not $cc.rootFolderId) {
+            return @{ Ok = $false; Reason = 'Trimble Connect target is missing clientId, projectId, or rootFolderId in config.json.' }
+        }
+        return @{ Ok = $true; Reason = '' }
+    }
 
     if ([string]$Profile.targetType -eq 'mtp') {
         $dev = [string]$Profile.deviceName
@@ -2248,7 +2905,12 @@ function Invoke-SyncCheck {
         # answers that outright -- no marker needed, so even a brand-new unit is known.
         # For a folder target (a USB stick) the marker is all there is.
         $seenId = ''
-        if ([string]$Profile.targetType -eq 'mtp') {
+        if ([string]$Profile.targetType -eq 'connect') {
+            if ($Profile.PSObject.Properties['collectorSerial'] -and $Profile.collectorSerial) {
+                $seenId = [string]$Profile.collectorSerial
+            }
+        }
+        elseif ([string]$Profile.targetType -eq 'mtp') {
             try {
                 $dev = Resolve-CollectorDevice ([string]$Profile.deviceName) '' $OnChooseDevice
                 $seenId = [string]$dev.Serial
@@ -2636,9 +3298,11 @@ function New-Collector {
         # Where Tidy reads its proof that a file is in OneDrive, for a collector that
         # cannot see OneDrive itself -- a tablet, reading the receipt the office left
         # on the stick. Empty (every office collector) = look in OneDrive directly.
-        [string]$ProofReceipt = ''
+        [string]$ProofReceipt = '',
+        [bool]$PushOnly = $false,
+        $Connect = $null
     )
-    [pscustomobject]@{
+    $obj = [pscustomobject]@{
         serial           = $Serial
         name             = $Name
         model            = $Model
@@ -2653,6 +3317,9 @@ function New-Collector {
         jobRetentionDays = $JobRetentionDays
         proofReceipt     = $ProofReceipt
     }
+    if ($PushOnly) { $obj | Add-Member -NotePropertyName pushOnly -NotePropertyValue $true -Force }
+    if ($null -ne $Connect) { $obj | Add-Member -NotePropertyName connect -NotePropertyValue $Connect -Force }
+    return $obj
 }
 
 function Get-ActiveProject {
@@ -2685,6 +3352,9 @@ function Get-CollectorLabel {
 # of designs; There = right column / where field data comes from.
 function Get-SideNames {
     param($Collector)
+    if ($Collector -and [string]$Collector.type -eq 'connect') {
+        return @{ Here = 'This PC'; There = 'Trimble Connect' }
+    }
     if ($Collector -and [string]$Collector.type -eq 'folder') {
         if (Test-VolumeCollector $Collector) { return @{ Here = 'This PC'; There = 'USB stick' } }
         return @{ Here = 'USB stick'; There = 'This tablet' }
@@ -2727,6 +3397,13 @@ function Get-DeviceProjectSubPath {
 
 function Get-CollectorDeviceRoot {
     param($Project, $Collector)
+    if ([string]$Collector.type -eq 'connect') {
+        $projId = ''
+        if ($Collector.PSObject.Properties['connect'] -and $Collector.connect -and $Collector.connect.PSObject.Properties['projectId']) {
+            $projId = [string]$Collector.connect.projectId
+        }
+        return ('TC:' + $projId)
+    }
     $devRoot = ([string]$Project.deviceProjectPath).Trim().TrimEnd('\')
     # A plain folder target keeps deviceProjectPath as the real path it already is;
     # only a volume-pinned one gets its root swapped for the current mount point.
@@ -2756,8 +3433,11 @@ function New-LegProfile {
         if ($isVol) {
             $P | Add-Member -NotePropertyName volumeSerial -NotePropertyValue ([string]$Collector.serial) -Force
         }
-        if ($type -eq 'folder') {
+        if ($type -eq 'folder' -or $type -eq 'connect') {
             $P | Add-Member -NotePropertyName collectorSerial -NotePropertyValue ([string]$Collector.serial) -Force
+        }
+        if ($type -eq 'connect' -and $Collector.PSObject.Properties['connect'] -and $Collector.connect) {
+            $P | Add-Member -NotePropertyName connectConfig -NotePropertyValue $Collector.connect -Force
         }
         return $P
     }
@@ -2773,6 +3453,13 @@ function New-LegProfile {
         if ($Route) {
             $dName = "$label - " + [string]$Route.name; $dSrc = [string]$Route.source
             $dSub  = ([string]$Route.subPath).Trim('\'); $dExt = @($Route.extensions)
+            if ($type -eq 'connect' -and $Collector.PSObject.Properties['connect'] -and $Collector.connect -and
+                $Collector.connect.PSObject.Properties['extraDesignPaths'] -and $Collector.connect.extraDesignPaths) {
+                $ovProp = $Collector.connect.extraDesignPaths.PSObject.Properties[[string]$Route.name]
+                if ($ovProp -and -not [string]::IsNullOrWhiteSpace([string]$ovProp.Value)) {
+                    $dSub = ([string]$ovProp.Value).Trim('\')
+                }
+            }
         }
         $dp = New-Profile -Name $dName -Direction 'push' `
             -SourcePath $dSrc `
@@ -3135,25 +3822,36 @@ function Invoke-CollectorSync {
                   Title = ('Design  {0} -> {1} (mirrored)' -f $here, $there) } )
     # Extra design sources go out with the design, before anything comes back.
     foreach ($xd in @(Get-ExtraDesigns $Project $Collector $OnLog)) {
+        $xdSub = ([string]$xd.subPath).Trim('\')
+        if ([string]$Collector.type -eq 'connect' -and $Collector.PSObject.Properties['connect'] -and $Collector.connect -and
+            $Collector.connect.PSObject.Properties['extraDesignPaths'] -and $Collector.connect.extraDesignPaths) {
+            $ovProp = $Collector.connect.extraDesignPaths.PSObject.Properties[[string]$xd.name]
+            if ($ovProp -and -not [string]::IsNullOrWhiteSpace([string]$ovProp.Value)) {
+                $xdSub = ([string]$ovProp.Value).Trim('\')
+            }
+        }
         $legs += @{
             Key   = 'design:' + [string]$xd.name
             Kind  = 'design'
             Route = $xd
-            Title = ('{0}  {1} -> {2}\{3} (mirrored)' -f [string]$xd.name, $here, $there, ([string]$xd.subPath).Trim('\'))
+            Title = ('{0}  {1} -> {2}\{3} (mirrored)' -f [string]$xd.name, $here, $there, $xdSub)
         }
     }
-    foreach ($rt in @(Get-ExportRoutes $Project $Collector)) {
-        # Under per-file dating there is no single destination to name, so leave the
-        # date tokens unexpanded rather than printing today's folder -- expanding it
-        # reads as "everything is going here", which is exactly what it is not.
-        $shown = [string]$rt.root
-        if ([string]$rt.dateFrom -ne 'file') { $shown = Expand-PathTokens $shown }
-        else { $shown = (Expand-EnvVars $shown) + '   (dated per file)' }
-        $legs += @{
-            Key   = 'export:' + [string]$rt.name
-            Kind  = 'export'
-            Route = $rt
-            Title = ('{0}  {1} -> {2} (additive)' -f [string]$rt.name, $there, $shown)
+    $isPushOnly = ($Collector.PSObject.Properties['pushOnly'] -and [bool]$Collector.pushOnly)
+    if (-not $isPushOnly) {
+        foreach ($rt in @(Get-ExportRoutes $Project $Collector)) {
+            # Under per-file dating there is no single destination to name, so leave the
+            # date tokens unexpanded rather than printing today's folder -- expanding it
+            # reads as "everything is going here", which is exactly what it is not.
+            $shown = [string]$rt.root
+            if ([string]$rt.dateFrom -ne 'file') { $shown = Expand-PathTokens $shown }
+            else { $shown = (Expand-EnvVars $shown) + '   (dated per file)' }
+            $legs += @{
+                Key   = 'export:' + [string]$rt.name
+                Kind  = 'export'
+                Route = $rt
+                Title = ('{0}  {1} -> {2} (additive)' -f [string]$rt.name, $there, $shown)
+            }
         }
     }
     $copied = 0; $pruned = 0; $kept = 0; $failed = 0; $legErrors = @(); $lines = @()
@@ -3301,12 +3999,20 @@ function Get-ConnectedCollectors {
     # present. Without this the tablet finds only the stick, fails to match it to the
     # generated collector, and reports "no collector connected" with Sync greyed out.
     foreach ($c in @($script:Config.collectors)) {
-        if ([string]$c.type -ne 'folder') { continue }
-        if (Test-VolumeCollector $c) { continue }
-        $local = @{ Name = [string]$c.model; Serial = [string]$c.serial
-                    Path = ''; Item = $null; Kind = 'folder'; Root = '' }
-        $known += [pscustomobject]@{ Device = $local; Collector = $c }
-        $devs  += $local
+        if ([string]$c.type -eq 'folder') {
+            if (Test-VolumeCollector $c) { continue }
+            $local = @{ Name = [string]$c.model; Serial = [string]$c.serial
+                        Path = ''; Item = $null; Kind = 'folder'; Root = '' }
+            $known += [pscustomobject]@{ Device = $local; Collector = $c }
+            $devs  += $local
+        }
+        elseif ([string]$c.type -eq 'connect') {
+            $cname = if ([string]$c.name) { [string]$c.name } else { [string]$c.model }
+            $cloud = @{ Name = $cname; Serial = [string]$c.serial
+                        Path = ''; Item = $null; Kind = 'connect'; Root = '' }
+            $known += [pscustomobject]@{ Device = $cloud; Collector = $c }
+            $devs  += $cloud
+        }
     }
     return @{ Known = @($known); Unknown = @($unknown); All = @($devs) }
 }
@@ -3349,8 +4055,8 @@ function Invoke-Sync {
     # from deviceName, which must stay the MTP model name so the device can be found.
     $collisionLabel = $deviceName
     if ($Profile.PSObject.Properties['collisionLabel'] -and $Profile.collisionLabel) { $collisionLabel = [string]$Profile.collisionLabel }
-    if ($collectorType -ne 'folder' -and $collectorType -ne 'mtp') { throw "Unknown collector type '$collectorType'." }
-    $collectorKind = if ($collectorType -eq 'mtp') { 'mtp' } else { 'fs' }
+    if ($collectorType -ne 'folder' -and $collectorType -ne 'mtp' -and $collectorType -ne 'connect') { throw "Unknown collector type '$collectorType'." }
+    $collectorKind = if ($collectorType -eq 'mtp') { 'mtp' } elseif ($collectorType -eq 'connect') { 'connect' } else { 'fs' }
 
     # Which end is source, which is destination.
     if ($direction -eq 'pull') { $srcKind = $collectorKind; $dstKind = 'fs' }
@@ -3431,7 +4137,11 @@ function Invoke-Sync {
                    "or turn mirror/prune off for this collector.")
         }
     }
-    if ($prune) { & $OnLog 'Prune ON - files at the destination that the source does not account for will be DELETED.' 'WARN' }
+    if ($prune -and $dstKind -eq 'connect') {
+        & $OnLog ('Prune ON (Trimble Connect) - design files (' + ($exts -join ' ') + ') the source does not account for ' +
+                  'will be DELETED. Other files (scans, jobs, ...) and folders are never deleted on Connect.') 'WARN'
+    }
+    elseif ($prune) { & $OnLog 'Prune ON - files at the destination that the source does not account for will be DELETED.' 'WARN' }
 
     # Pulls never overwrite. Exported field data cannot be re-collected, so a name
     # clash writes a new file next to the old one rather than replacing it. Pushes
@@ -3446,15 +4156,24 @@ function Invoke-Sync {
         $provenIndex = $Profile.provenIndex
     }
 
-    $ctx = @{ DeviceName = $deviceName; Settings = $script:Config.mtp; FolderCache = @{} }
-    # A folder collector has no hardware serial to read, so record it under the id it
+    $ctx = @{ DeviceName = $deviceName; Settings = $script:Config.mtp; FolderCache = @{}; ConnectCache = @{}; OnLog = $OnLog }
+    # A folder or connect collector has no hardware serial to read, so record it under the id it
     # is configured by -- the id the banner looks its records up by. Left to fall back,
     # a push took the marker's GUID and every pull minted a new one, so a stick synced
     # a minute ago still read "never synced".
-    if ($collectorType -eq 'folder' -and $Profile.PSObject.Properties['collectorSerial'] -and $Profile.collectorSerial) {
+    if (($collectorType -eq 'folder' -or $collectorType -eq 'connect') -and $Profile.PSObject.Properties['collectorSerial'] -and $Profile.collectorSerial) {
         $ctx.DeviceSerial = [string]$Profile.collectorSerial
     }
     try {
+        # Prepare the Trimble Connect side (whichever end it is).
+        if ($srcKind -eq 'connect' -or $dstKind -eq 'connect') {
+            if (-not $Profile.PSObject.Properties['connectConfig'] -or -not $Profile.connectConfig) {
+                throw 'This profile uses Trimble Connect but has no connect configuration.'
+            }
+            $ctx.Connect = $Profile.connectConfig
+            & $OnLog 'Connecting to Trimble Connect...' 'INFO'
+            $ctx.ConnectToken = Get-ConnectAccessToken $ctx.Connect $OnLog
+        }
         # Prepare the MTP side (whichever end it is).
         if ($srcKind -eq 'mtp' -or $dstKind -eq 'mtp') {
             if ([string]::IsNullOrWhiteSpace($deviceName)) { throw 'This profile uses MTP but no device name is set.' }
@@ -3523,6 +4242,11 @@ function Invoke-Sync {
         if ($srcKind -eq 'fs') {
             $fsInv = Get-FsInventory $srcPath
             $rawFiles = @($fsInv.Files); $rawDirs = @($fsInv.Dirs)
+        }
+        elseif ($srcKind -eq 'connect') {
+            $inv = Get-ConnectInventory $ctx $srcPath
+            foreach ($m in $inv.Files) { $rawFiles += @{ Rel = $m.Rel; Length = $m.Length; MtimeUtc = $m.MtimeUtc; Src = $m.Item; Local = $null; Ext = $m.Ext } }
+            foreach ($d in $inv.Dirs)  { $rawDirs += $d }
         }
         else {
             $inv = Get-MtpInventory $ctx $srcPath
@@ -3851,6 +4575,23 @@ function Invoke-Sync {
             & $OnLog 'Scanning the destination for files the source does not account for...' 'INFO'
             $pruneSet = Get-PruneSet $ctx $dstKind $dstPath $records $sel.Dirs $direction $collisionMode $collisionLabel
             $pf = @($pruneSet.Files); $pd = @($pruneSet.Dirs)
+            # Trimble Connect is a shared project, not a folder this tool owns. Design
+            # files there are copies from the office (S:) and may be mirrored, but scans
+            # and survey jobs can exist ONLY on Connect. So on Connect prune deletes only
+            # the file types this design leg syncs, and never a folder (a Connect folder
+            # delete takes everything inside it, whoever put it there).
+            if ($dstKind -eq 'connect') {
+                $isDesignType = { param($r) $exts -contains ([System.IO.Path]::GetExtension([string]$r)).ToLowerInvariant() }
+                $otherTypes = @($pf | Where-Object { -not (& $isDesignType $_.Rel) })
+                $pf = @($pf | Where-Object { & $isDesignType $_.Rel })
+                if ($otherTypes.Count) {
+                    & $OnLog ("Trimble Connect: leaving $($otherTypes.Count) file(s) of other types in place (not design files).") 'INFO'
+                }
+                if ($pd.Count) {
+                    & $OnLog ("Trimble Connect: folders are never deleted ($($pd.Count) left in place).") 'INFO'
+                }
+                $pd = @()
+            }
             # Say so rather than swallowing it: a device that enumerates unnamed items
             # is one whose listing should be treated with suspicion generally.
             if ([int]$pruneSet.Malformed -gt 0) {
@@ -3921,7 +4662,7 @@ function Invoke-Sync {
                         $backDir = $(if ($i -ge 0) { $srcPath + '\' + ([string]$f.Rel).Substring(0, $i) } else { $srcPath })
                         $back = $srcPath + '\' + [string]$f.Rel
                         Target-EnsureDir $ctx $srcKind $backDir
-                        $from = $(if ($dstKind -eq 'mtp') { $f.Item } else { $dstPath + '\' + $f.Rel })
+                        $from = $(if ($dstKind -eq 'mtp' -or $dstKind -eq 'connect') { $f.Item } else { $dstPath + '\' + $f.Rel })
                         Invoke-CopyWithRetry $ctx $backMode $from $back ([long]$f.Length) $OnLog
                         $keptBack++
                         # SrcLength stays -1 on purpose: the row key is built from the
@@ -4029,6 +4770,7 @@ function Invoke-Sync {
     }
     finally {
         $ctx.FolderCache.Clear()
+        if ($ctx.ConnectCache) { $ctx.ConnectCache.Clear() }
     }
 }
 
@@ -5181,7 +5923,10 @@ function Update-ActionButtons {
     $btnSync.Enabled  = $ready -and (Test-SyncAllowed)
     # Tidy is not behind the Check gate: it does its own comparison and shows the
     # whole list before it touches anything, so a stale plan cannot reach it.
-    $btnTidy.Enabled  = $ready
+    # Cloud / push-only targets hold designs, not field jobs, so Tidy does not apply.
+    $canTidy = $ready -and ([string]$script:CurrentCollector.type -ne 'connect') -and
+               (-not ($script:CurrentCollector.PSObject.Properties['pushOnly'] -and [bool]$script:CurrentCollector.pushOnly))
+    $btnTidy.Enabled  = $canTidy
     if ($ready -and -not $btnSync.Enabled) {
         $tip.SetToolTip($btnSync, 'Press Check first. It reports exactly what both legs would do -' + [Environment]::NewLine +
             'including anything the design leg would DELETE - and writes nothing.' + [Environment]::NewLine +
@@ -5289,7 +6034,9 @@ function Invoke-CollectorAction {
         # one routine rather than a step somebody has to remember. It decides from
         # OneDrive (or the office's receipt), not from what this run copied, so a
         # failed leg does not make it unsafe -- but a cancel means stop.
-        $runTidy = (-not $CheckOnly) -and (-not $script:CancelRequested)
+        $isCloudOrPushOnly = ([string]$script:CurrentCollector.type -eq 'connect') -or
+                             ($script:CurrentCollector.PSObject.Properties['pushOnly'] -and [bool]$script:CurrentCollector.pushOnly)
+        $runTidy = (-not $CheckOnly) -and (-not $script:CancelRequested) -and (-not $isCloudOrPushOnly)
     }
     catch {
         $lblStatus.Text = 'Error: ' + $_.Exception.Message
